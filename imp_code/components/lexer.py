@@ -1,3 +1,7 @@
+from ..utils.position import *
+from ..utils.tokens import *
+from .errors import *
+
 #######################################
 # LEXER
 #######################################
@@ -32,20 +36,50 @@ class Lexer:
             elif self.current_char in "'":
                 tokens.append(self.make_letter())
                 self.advance()
+            elif self.current_char in ALPHA_NUM:
+                if self.current_char in UPPER_ALPHA:
+                    tokens.append(self.make_keyword())
+                    self.advance()
+                elif self.current_char in LOWER_ALPHA:
+                    tokens.append(self.make_identifier())
+                    self.advance()
             elif self.current_char in DIGITS:
                 tokens.append(self.make_numeral())
             elif self.current_char == '+':
-                tokens.append(Tokens(TT_PLUS))
                 self.advance()
+                if self.current_char == '+':
+                    tokens.append(Tokens(TT_INC))
+                    self.advance()
+                elif self.current_char == '=':
+                    tokens.append(Tokens(TT_PLUSEAND))
+                    self.advance()
+                else:
+                    tokens.append(Tokens(TT_PLUS))
+                    self.advance()
             elif self.current_char == '-':
-                tokens.append(Tokens(TT_MINUS))
                 self.advance()
+                if self.current_char == '-':
+                    tokens.append(Tokens(TT_DEC))
+                    self.advance()
+                elif self.current_char == '=':
+                    tokens.append(Tokens(TT_MINUSAND))
+                    self.advance()
+                else:
+                    tokens.append(Tokens(TT_MINUS))
+                    self.advance()
             elif self.current_char == '*':
                 tokens.append(Tokens(TT_MUL))
                 self.advance()
             elif self.current_char == '/':
-                tokens.append(Tokens(TT_DIV))
                 self.advance()
+                if self.current_char == '/':
+                    tokens.append(self.make_slinecom())
+                    self.pos.copy()
+                elif self.current_char == '*':
+                    tokens.append(self.make_mlinecom())
+                else:
+                    tokens.append(Tokens(TT_DIV))
+                    self.advance()
             elif self.current_char == '(':
                 tokens.append(Tokens(TT_LPAREN))
                 self.advance()
@@ -63,7 +97,13 @@ class Lexer:
                 self.advance()
             elif self.current_char == '}':
                 tokens.append(Tokens(TT_RBRACE))
-                self.advance()  
+                self.advance()
+            elif self.current_char == '.':
+                tokens.append(Tokens(TT_PERIOD))
+                self.advance()
+            elif self.current_char == ',':
+                tokens.append(Tokens(TT_COMMA))
+                self.advance()
             elif self.current_char == ';':
                 tokens.append(Tokens(TT_TERMINATE))
                 self.advance()
@@ -73,7 +113,6 @@ class Lexer:
                 self.advance()
                 return [], IllegalCharError (pos_start, self.pos, "'" + char + "'")
 
-        
         return tokens, None
 
     def make_numeral(self):
@@ -82,8 +121,7 @@ class Lexer:
 
         while self.current_char != None and self.current_char in DIGITS + '.':
             if self.current_char == '.':
-                if dot_count == 1: 
-                    break
+                if dot_count == 1: break
                 dot_count += 1
                 num_str += '.'
             else:
@@ -130,3 +168,46 @@ class Lexer:
             self.advance()
         
         return Tokens(TT_CHAR, letter_content) 
+    
+    def make_keyword(self):
+        keyword = ""
+        
+        while self.current_char is not None and self.current_char in ALPHA_NUM:
+            keyword += self.current_char
+            self.advance()
+        
+        token_type = KEYWORDS.get(keyword, TT_IDENTIFIER)
+    
+        return Tokens(token_type, keyword)
+
+    def make_identifier(self):
+        identifier = ""
+        while self.current_char is not None and self.current_char in LOWER_ALPHA:
+            identifier += self.current_char
+            self.advance()
+        return Tokens(TT_IDENTIFIER, identifier)
+    
+    def make_slinecom(self):
+        sline = ""
+        self.advance()
+        self.advance()
+        
+        while self.current_char is not None and self.current_char != '\n':
+            sline += self.current_char
+            self.advance()
+        return Tokens(TT_SLINECOM, sline)
+    
+    def make_mlinecom(self):
+        mline = ""
+        self.advance() 
+        self.advance()  
+        
+        while self.current_char is not None:
+            if self.current_char == '*' and self.text[self.pos.idx + 1] == '/':
+                self.advance() 
+                self.advance() 
+                break
+            mline += self.current_char
+            self.advance()
+        
+        return Tokens(TT_MLINECOM, mline)
