@@ -36,7 +36,7 @@ class Lexer:
             elif self.current_char in "'":
                 tokens.append(self.make_letter())
                 self.advance()
-            elif self.current_char in ALPHA_NUM:
+            elif self.current_char in ALPHABET:
                 if self.current_char in UPPER_ALPHA:
                     tokens.append(self.make_keyword())
                     self.advance()
@@ -68,8 +68,13 @@ class Lexer:
                     tokens.append(Tokens(TT_MINUS))
                     self.advance()
             elif self.current_char == '*':
-                tokens.append(Tokens(TT_MUL))
-                self.advance()
+                self
+                if self.current_char == '=':
+                    tokens.append(Tokens(TT_MULAND))
+                    self.advance()
+                else:
+                    tokens.append(Tokens(TT_MUL))
+                    self.advance()
             elif self.current_char == '/':
                 self.advance()
                 if self.current_char == '/':
@@ -77,9 +82,78 @@ class Lexer:
                     self.pos.copy()
                 elif self.current_char == '*':
                     tokens.append(self.make_mlinecom())
+                elif self.current_char == '*=':
+                    tokens.append(Tokens(TT_DIVAND))
                 else:
                     tokens.append(Tokens(TT_DIV))
                     self.advance()
+            elif self.current_char == '%':
+                self.advance()
+                if self.current_char == '=':
+                    tokens.append(Tokens(TT_MODAND))
+                    self.advance()
+                else:
+                    tokens.append(Tokens(TT_MODULU))
+                    self.advance()
+            elif self.current_char == '=':
+                self.advance()
+                if self.current_char == '=':
+                    tokens.append(Tokens(TT_EQUALTO))
+                    self.advance()
+                tokens.append(Tokens(TT_EQUAL))
+                self.advance()
+            elif self.current_char == '!':
+                self.advance()
+                if self.current_char == '=':
+                    tokens.append(Tokens(TT_NOTEQUAL))
+                    self.advance()
+                else:
+                    tokens.append(Tokens(TT_NOT))
+                    self.advance()
+            elif self.current_char == '<':
+                self.advance()
+                if self.current_char == '=':
+                    tokens.append(Tokens(TT_LESSTHANEQUAL))
+                    self.advance()
+                elif self.current_char == '<':
+                    tokens.append(Tokens(TT_BITLSHIFT))
+                    self.advance()
+                else:
+                    tokens.append(Tokens(TT_LESSTHAN))
+                    self.advance()
+            elif self.current_char == '>':
+                self.advance()
+                if self.current_char == '=':
+                    tokens.append(Tokens(TT_GREATERTHANEQUAL))
+                    self.advance()
+                elif self.current_char == '>':
+                    tokens.append(Tokens(TT_BITRSHIFT))
+                    self.advance()
+                else:
+                    tokens.append(Tokens(TT_GREATERTHAN))
+                    self.advance()
+            elif self.current_char == '&':
+                self.advance()
+                if self.current_char == '&':
+                    tokens.append(Tokens(TT_AND))
+                    self.advance()
+                else:
+                    tokens.append(Tokens(TT_BITAND))
+                    self.advance()
+            elif self.current_char == '|':
+                self.advance()
+                if self.current_char == '|':
+                    tokens.append(Tokens(TT_OR))
+                    self.advance()
+                else:
+                    tokens.append(Tokens(TT_BITOR))
+                    self.advance()
+            elif self.current_char == '^':
+                tokens.append(Tokens(TT_BITXOR))
+                self.advance()
+            elif self.current_char == '~':
+                tokens.append(Tokens(TT_BITNOT))
+                self.advance()
             elif self.current_char == '(':
                 tokens.append(Tokens(TT_LPAREN))
                 self.advance()
@@ -182,6 +256,7 @@ class Lexer:
 
     def make_identifier(self):
         identifier = ""
+        
         while self.current_char is not None and self.current_char in LOWER_ALPHA:
             identifier += self.current_char
             self.advance()
