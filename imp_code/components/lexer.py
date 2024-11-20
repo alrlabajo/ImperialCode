@@ -38,10 +38,18 @@ class Lexer:
                 self.advance()
             elif self.current_char in ALPHABET:
                 if self.current_char in UPPER_ALPHA:
-                    tokens.append(self.make_keyword())
+                    token, error = self.make_keyword()
+                    if error:
+                        return [], error
+                    else:
+                        tokens.append(token)
                     self.advance()
                 elif self.current_char in LOWER_ALPHA:
-                    tokens.append(self.make_identifier())
+                    token, error = self.make_identifier()
+                    if error:
+                        return [], error
+                    else:
+                        tokens.append(token)
                     self.advance()
             elif self.current_char in DIGITS:
                 tokens.append(self.make_numeral())
@@ -244,23 +252,32 @@ class Lexer:
         return Tokens(TT_CHAR, letter_content) 
     
     def make_keyword(self):
+        pos_start = self.pos
         keyword = ""
-        
+
         while self.current_char is not None and self.current_char in ALPHA_NUM:
             keyword += self.current_char
             self.advance()
-        
-        token_type = KEYWORDS.get(keyword, TT_IDENTIFIER)
-    
-        return Tokens(token_type, keyword)
+
+        token_type = KEYWORDS.get(keyword)
+
+        if not token_type:
+            return None, IllegalKeyword(pos_start, self.pos, f'"{keyword}"')
+
+        return Tokens(token_type, keyword), None
 
     def make_identifier(self):
+        pos_start = self.pos
         identifier = ""
-        
-        while self.current_char is not None and self.current_char in LOWER_ALPHA:
+    
+        while self.current_char is not None and self.current_char in LOWER_ALPHA + UPPER_ALPHA + '_':
             identifier += self.current_char
             self.advance()
-        return Tokens(TT_IDENTIFIER, identifier)
+
+            if len(identifier) > ID_LIM:
+                return None, IdentifierLimitError(pos_start, self.pos, f'"{identifier}"')
+            
+        return Tokens(TT_IDENTIFIER, identifier), None
     
     def make_slinecom(self):
         sline = ""

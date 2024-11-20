@@ -2,11 +2,11 @@
 # CONSTANTS
 #######################################
 
-LOWER_ALPHA = list ('abcdefghijklmnopqrstuvwxyz')
-UPPER_ALPHA = [letter.upper() for letter in LOWER_ALPHA]
+LOWER_ALPHA = 'abcdefghijklmnopqrstuvwxyz'
+UPPER_ALPHA = LOWER_ALPHA.upper()
 ALPHABET = LOWER_ALPHA + UPPER_ALPHA
 DIGITS = '0123456789'
-ALPHA_NUM = ALPHABET + list(DIGITS)
+ALPHA_NUM = ALPHABET + DIGITS
 ARITH_OP = ['+', '-', '*', '/']
 REL_OP = ['==', '!=', '<', '>', '<=', '>=']
 BITWISE_OP = ['&', '|', '^', '~', '<<', '>>']
@@ -116,7 +116,7 @@ TT_LESSTHANEQUAL = '<=' #Done w/o delims
 TT_GREATERTHANEQUAL = '>=' #Done w/o delims
 
 # OTHERS
-TT_SPACE     = "SPACE" #Done w/o delims
+TT_SPACE     = 'SPACE' #Done w/o delims
 TT_NEWLINE   = '\\n'
 TT_TERMINATE = ';' #Done w/o delims
 TT_PERIOD    = '.' #Done w/o delims
