@@ -2,14 +2,14 @@
 # CONSTANTS
 #######################################
 
-LOWER_ALPHA = 'abcdefghijklmnopqrstuvwxyz'
-UPPER_ALPHA = LOWER_ALPHA.upper()
+LOWER_ALPHA = list("abcdefghijklmnopqrstuvwxyz")
+UPPER_ALPHA = [letter.upper() for letter in LOWER_ALPHA]
 ALPHABET = LOWER_ALPHA + UPPER_ALPHA
-DIGITS = '0123456789'
+DIGITS = list("0123456789")
 ALPHA_NUM = ALPHABET + DIGITS
-ARITH_OP = ['+', '-', '*', '/']
-REL_OP = ['==', '!=', '<', '>', '<=', '>=']
-BITWISE_OP = ['&', '|', '^', '~', '<<', '>>']
+ARITH_OP = ["+", "-", "*", "/"]
+REL_OP = ["==", "!=", "<", ">", "<=", ">="]
+BITWISE_OP = ["&", "|", "^", "~", "<<", ">>"]
 
 INT_LIM =  999999999
 FLOAT_LIM = 999999999.999999
@@ -37,6 +37,12 @@ TT_CONST    = "Constant"
 TT_STRUCT   = "Assembly"
 TT_ENUM     = "Enumerate"
 TT_ARRAY    = "Ledger"
+
+#LITERALS
+TT_INT_LITERAL = 'Numeral_Lit'
+TT_FLOAT_LITERAL = 'Decimal_Lit'
+TT_CHAR_LITERAL = 'Letter_Lit'
+TT_STRING_LITERAL = 'Missive_Lit'
 
 #INPUT/OUTPUT
 TT_INPUT = "Proclaim"
@@ -70,7 +76,7 @@ TT_PLUS     = '+' #Done w/o delims
 TT_MINUS    = '-' #Done w/o delims
 TT_MUL      = '*' #Done w/o delims
 TT_DIV      = '/' #Done w/o delims
-TT_MODULU   = '%' #Done w/o delims
+TT_MODULO   = '%' #Done w/o delims
 
 #LOGICAL OPERATOR
 TT_AND = '&&' #Done w/o delims
@@ -97,7 +103,7 @@ TT_RBRACE   = '}'#Done w/o delims
 TT_EQUAL    = '=' #Done w/o delims
 
 #COMPOUND ASSIGNMENT OPERATOR
-TT_PLUSEAND = '+=' #Done w/o delims
+TT_PLUSAND = '+=' #Done w/o delims
 TT_MINUSAND = '-='#Done w/o delims
 TT_MULAND   = '*=' #Done w/o delims
 TT_DIVAND   = '/=' #Done w/o delims
@@ -123,6 +129,7 @@ TT_PERIOD    = '.' #Done w/o delims
 TT_COMMA     = ',' #Done w/o delims
 TT_SLINECOM  = 'SLINE COMMENT' #Done w/o delims
 TT_MLINECOM    = 'MLINE COMMENT' #Done w/o delims
+TT_CLRSCR   = 'CLR SCR' #Done w/o delims
 
 #KEYWORDS
 KEYWORDS = {
@@ -153,43 +160,153 @@ KEYWORDS = {
     TT_IF: "Perchance",
     TT_ELSE: "Otherwise",
     TT_SWITCH: "Given",
-    TT_DEFAULT: "Default"
+    TT_DEFAULT: "Default",
+    TT_CLRSCR: "Viola"
 } #Done w/o delims
 
 
 DD_DTYPE = [" ", "[", "(", ","]
-DD_MISSIVE = [" ", "\n", '"']
+DD_MISSIVE = [" ", "\n", '"', "'", ",", ")", "]", "}", ":", "#", "(", "[", "\n"]
 DD_CHAR = [" ", "\n", ";"]
-DD_BREAK = [ALPHA_NUM, " ", "\n", "("]
-DD_BIT = [ALPHA_NUM, " ", "\n", "("]
-DD_ARITH = [ALPHA_NUM, " ", "(", "-"]
-DD_PLUS = [ALPHA_NUM, " ", "(", "-", ",", "'", "["]
-DD_MINUS = [ALPHA_NUM, " ", "(", "-"]
-DD_ASSIGN = [ALPHA_NUM, " ", "(", "-", ",", "{", "[", "'"]
-DD_OPAR = [ALPHA_NUM, " ", "(", ")", "-", ",", "[", "{", "(", ")", "\n", "'"]
-DD_CPAR = [ARITH_OP, " ", "\n", ":", "(", ")", ",", "]", "[", "}", "#", ".", "("]
-DD_OBRACE = [ALPHA_NUM, " ", "\n", "}", ","]
+DD_BREAK = [*ALPHA_NUM, " ", "\n", "("]
+DD_BIT = [*ALPHA_NUM, " ", "\n", "("]
+DD_ARITH = [*ALPHA_NUM, " ", "(", "-"]
+DD_PLUS = [*ALPHA_NUM, " ", "(", "-", ",", "'", "["]
+DD_MINUS = [*ALPHA_NUM, " ", "(", "-"]
+DD_ASSIGN = [*ALPHA_NUM, " ", "(", "-", ",", "{", "[", "'"]
+DD_OPAR = [*ALPHA_NUM, " ", "(", ")", "-", ",", "[", "{", "(", ")", "\n", "'"]
+DD_CPAR = [*ARITH_OP, " ", "\n", ":", "(", ")", ",", "]", "[", "}", "#", ".", "("]
+DD_OBRACE = [*ALPHA_NUM, " ", "\n", "}", ","]
 DD_CBRACE = [" ", "\n", ",", "}", ")", "]"]
-DD_OBRACK = [ALPHA_NUM, " ", "\n", ",", "-", "{", "[", "(", "]", ")", ","]
+DD_OBRACK = [*ALPHA_NUM, " ", "\n", ",", "-", "{", "[", "(", "]", ")", ","]
 DD_CBRACK = [" ", "\n", ",", "[", "]", ")", "}", ".", "(", "+", ":"]
-DD_SPACE = [ALPHA_NUM, ARITH_OP, REL_OP, BITWISE_OP, '"', "#", "$", "&", "(", ")", ",", ".", ":", ";", "?", "@", "[", "\\", "]", "^", "_", "`", "{", "|", "}", "~", "±", "§", "'", "\n"]
-DD_COMMA = [ALPHA_NUM, " ", "(", "-", ",", "[", "{", "(", ")", "\n", "'"]
-DD_PERIOD = [ALPHA_NUM]
+DD_SPACE = [*ALPHA_NUM, *ARITH_OP, *REL_OP, *BITWISE_OP, '"', "#", "$", "&", "(", ")", ",", ".", ":", ";", "?", "@", "[", "\\", "]", "^", "_", "`", "{", "|", "}", "~", "±", "§", "'", "\n", "="]
+DD_COMMA = [*ALPHA_NUM, " ", "(", "-", ",", "[", "{", "(", ")", "\n", "'"]
+DD_PERIOD = [*ALPHA_NUM]
 DD_STRING = [" ", "\n", ",", "]", ")", "}", ",", ".", ":", "#", "!", "=", "["]
-DD_NUM_DECI = [DIGITS, ARITH_OP, REL_OP, BITWISE_OP, " ", ",", "}", "]", ")", ":", "#", "\n"]
+DD_NUM_DECI = [*DIGITS, *ARITH_OP, *REL_OP, *BITWISE_OP, " ", ",", "}", "]", ")", ":", "#", "\n", ";", "(", "."]
 DD_RESERVE = [" "]
-DD_COLON = [ALPHABET, " ", "\n", ":"]
-DD_SEMICOL = [ALPHA_NUM, " ", "\n", "}", ";"]
-DD_FUNC = ["(", " ", "\n"]
+DD_COLON = [*ALPHABET, " ", "\n", ":"]
+DD_SEMICOL = [*ALPHA_NUM, " ", "\n", "}", ";"]
+DD_FUNC = ["(", "\n"]
 DD_COMMENT = ["\n"]
+DD_MAIN = [" ", "("]
+DD_IDENTIFIER = [*ALPHA_NUM, '_', ' ', '\n']
 
+DELIM_LIST = {
+    # MAIN
+    TT_MAIN: DD_MAIN,
+
+    TT_IDENTIFIER: DD_IDENTIFIER,
+    KEYWORDS[TT_MAIN]: DD_FUNC,
+
+    # DATA TYPES
+    TT_INT: DD_DTYPE,
+    TT_FLOAT: DD_DTYPE,
+    TT_CHAR: DD_DTYPE,
+    TT_STRING: DD_DTYPE,
+    TT_BOOL: DD_DTYPE,
+
+    # LITERALS
+    TT_INT_LITERAL: DD_NUM_DECI,
+    TT_FLOAT_LITERAL: DD_NUM_DECI,
+    TT_CHAR_LITERAL: DD_CHAR,
+    TT_STRING_LITERAL: DD_MISSIVE,
+
+    TT_VOID: DD_DTYPE,
+    TT_CONST: DD_DTYPE,
+    TT_STRUCT: DD_DTYPE,
+    TT_ENUM: DD_DTYPE,
+    TT_ARRAY: DD_OBRACK,
+
+    # INPUT/OUTPUT
+    TT_INPUT: DD_FUNC,
+    TT_OUTPUT: DD_FUNC,
+
+    # ARITHMETIC OPERATIONS
+    TT_PLUS: DD_PLUS,
+    TT_MINUS: DD_MINUS,
+    TT_MUL: DD_ARITH,
+    TT_DIV: DD_ARITH,
+    TT_MODULO: DD_ARITH,
+
+    # CONDITIONAL STATEMENTS
+    TT_CASE: DD_SPACE,
+    TT_IF: DD_SPACE,
+    TT_ELSE: DD_SPACE,
+    TT_SWITCH: DD_SPACE,
+    TT_DEFAULT: DD_SPACE,
+
+    # LOOP STATEMENTS
+    TT_WHILE: DD_SPACE,
+    TT_FOR: DD_SPACE,
+    TT_DO: DD_SPACE,
+
+    # LOOP CONTROL
+    TT_BREAK: DD_BREAK,
+    TT_CONTINUE: DD_BREAK,
+    TT_RETURN: DD_OBRACE,
+    TT_GOTO: DD_SPACE,
+
+    # VALUES
+    TT_TRUE: DD_DTYPE,
+    TT_FALSE: DD_DTYPE,
+    TT_NULL: DD_DTYPE,
+
+    # LOGICAL OPERATORS
+    TT_AND: DD_SPACE,
+    TT_OR: DD_SPACE,
+    TT_NOT: DD_SPACE,
+
+    # BRACKETS
+    TT_LPAREN: DD_OPAR,
+    TT_RPAREN: DD_CPAR,
+    TT_LBRACKET: DD_OBRACK,
+    TT_RBRACKET: DD_CBRACK,
+    TT_LBRACE: DD_OBRACE,
+    TT_RBRACE: DD_CBRACE,
+
+    # ASSIGNMENT OPERATOR
+    TT_EQUAL: DD_ASSIGN,
+
+    # COMPOUND ASSIGNMENT OPERATORS
+    TT_PLUSAND: DD_ARITH,
+    TT_MINUSAND: DD_ARITH,
+    TT_MULAND: DD_ARITH,
+    TT_DIVAND: DD_ARITH,
+    TT_MODAND: DD_ARITH,
+
+    # INCREMENT AND DECREMENT OPERATORS
+    TT_INC: DD_ARITH,
+    TT_DEC: DD_ARITH,
+
+    # COMPARISON OPERATORS
+    TT_EQUALTO: DD_SPACE,
+    TT_NOTEQUAL: DD_SPACE,
+    TT_LESSTHAN: DD_SPACE,
+    TT_GREATERTHAN: DD_SPACE,
+    TT_LESSTHANEQUAL: DD_SPACE,
+    TT_GREATERTHANEQUAL: DD_SPACE,
+
+    # OTHERS
+    TT_SPACE: DD_SPACE,
+    TT_NEWLINE: DD_SPACE,
+    TT_TERMINATE: DD_SEMICOL,
+    TT_PERIOD: DD_PERIOD,
+    TT_COMMA: DD_COMMA,
+    TT_SLINECOM: DD_COMMENT,
+    TT_MLINECOM: DD_COMMENT,
+    TT_CLRSCR: DD_FUNC,
+
+}
 
 
 class Tokens:
-    def __init__(self, type_,value=None):
+    def __init__(self, type_, value=None):
         self.type = type_
         self.value = value
 
     def __repr__(self):
-        if self.value: return f'{self.type}: {self.value}'
+        if self.value:
+            return f'{self.type}: {self.value}'
         return f'{self.type}'

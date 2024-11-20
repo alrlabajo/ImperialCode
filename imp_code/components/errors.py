@@ -25,3 +25,7 @@ class IllegalKeyword(Error):
 class IdentifierLimitError(Error):
     def __init__(self, pos_start, pos_end, details):
         super().__init__(pos_start, pos_end, 'Identifier Limit Exceeded', details)
+
+class IllegalDelimiter(Error):
+    def __init__(self, pos_start, pos_end, details):
+        super().__init__(pos_start, pos_end, 'Illegal Delimiter', details)

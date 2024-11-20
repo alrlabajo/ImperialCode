@@ -17,8 +17,8 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    packages=["imp_code", "imp_code.components"],
-    python_requires=">=3.12",
+    packages=["imp_code", "imp_code.components", "imp_code.utils"],
+    python_requires=">=3.10",
     entry_points={
         "console_scripts": [
             "ic = imp_code.cli:main",

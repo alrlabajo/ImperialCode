@@ -15,7 +15,7 @@ import sys
 import random
 import logging
 import platform
-import imp_code as sp 
+import imp_code.compiler as ic
 from PyQt5.QtWidgets import (
     QPushButton,
     QMessageBox,
@@ -358,19 +358,21 @@ if __name__ == "__main__":
         # Clear the table
         token_table.setRowCount(0)
 
-        tokens, _ = sp.run_lexical(current_file_name, code)
+        tokens, _ = ic.run_lexical(current_file_name, code)
+        print(f"DEBUG: {tokens}")
         for token in tokens:
             row_pos = token_table.rowCount()
             token_table.insertRow(row_pos)
 
-            token_table.setItem(row_pos, 0, QTableWidgetItem(token.lexeme_str()))
-            token_table.setItem(row_pos, 1, QTableWidgetItem(token.token_type_str()))
+            # token_table.setItem(row_pos, 0, QTableWidgetItem(repr(token)))
+            token_table.setItem(row_pos, 1, QTableWidgetItem(repr(token.type)))
+            token_table.setItem(row_pos, 2, QTableWidgetItem(repr(token.value if token.value else token.type)))
 
         # Pass and run a command to the terminal
         # clear terminal output
         global clear_command
         terminalIO.write(clear_command)
-        terminalIO.write(f"ic {current_file_name} -m lexical\r".encode("utf-8"))
+        terminalIO.write(f"ic {current_file_name} -m lexical -v\r".encode("utf-8"))
 
     # def analyze_syntax():
     #     global current_file_name
@@ -387,7 +389,7 @@ if __name__ == "__main__":
     #     # Clear the table
     #     token_table.setRowCount(0)
 
-    #     tokens, _ = sp.run_lexical(current_file_name, code)
+    #     tokens, _ = ic.run_lexical(current_file_name, code)
     #     for token in tokens:
     #         row_pos = token_table.rowCount()
     #         token_table.insertRow(row_pos)
@@ -417,7 +419,7 @@ if __name__ == "__main__":
     #     # Clear the table
     #     token_table.setRowCount(0)
 
-    #     tokens, _ = sp.run_lexical(current_file_name, code)
+    #     tokens, _ = ic.run_lexical(current_file_name, code)
     #     for token in tokens:
     #         row_pos = token_table.rowCount()
     #         token_table.insertRow(row_pos)

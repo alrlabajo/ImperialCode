@@ -1,17 +1,24 @@
 from imp_code.components.lexer import *
+
 #######################################
 # RUN
 #######################################
 
+
 def run(fn, text):
     lexer = Lexer(fn, text)
-    tokens, error = lexer.make_tokens()
+    tokens, errors = lexer.make_tokens()
 
-    return tokens, error
+    return tokens, errors
+
 
 while True:
-    text = input ('ic > ')
-    result, error = run('<stdin>', text)
+    text = input("ic > ")
+    result, errors = run("<stdin>", text)
 
-    if error: print(error.as_string())
-    else: print(result)
+    print(result)
+
+    if errors:
+        print()
+        for error in errors:
+            print(error.as_string())

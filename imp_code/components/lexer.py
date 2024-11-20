@@ -6,6 +6,7 @@ from .errors import *
 # LEXER
 #######################################
 
+
 class Lexer:
     def __init__(self, fn, text):
         self.fn = fn
@@ -16,192 +17,193 @@ class Lexer:
 
     def advance(self):
         self.pos.advance(self.current_char)
-        self.current_char = self.text[self.pos.idx] if self.pos.idx < len(self.text) else None
+        self.current_char = (
+            self.text[self.pos.idx] if self.pos.idx < len(self.text) else None
+        )
+
+    def check_delim(self, token):
+        delimiters = DELIM_LIST[token.type]
+
+        if delimiters is None:
+            return None
+
+        if self.current_char not in delimiters and self.current_char is not None:
+            pos_start = self.pos.copy()
+            pos_end = pos_start.copy().advance()
+            return IllegalDelimiter(
+                pos_start,
+                pos_end,
+                f"Unexpected delim {repr(self.current_char)} after {repr(token.value)}",
+            )
+
+        return None
 
     def make_tokens(self):
         tokens = []
+        errors = []
 
-        while self.current_char != None:
-            if self.current_char in '\t':
+        while self.current_char is not None:
+            token = None
+            error = None
+
+            if self.current_char in "\t":
                 self.advance()
-            elif self.current_char == ' ':
-                tokens.append(Tokens(TT_SPACE))
+            elif self.current_char == " ":
+                token = Tokens(TT_SPACE)
                 self.advance()
-            elif self.current_char == '\n':
-                tokens.append(Tokens(TT_NEWLINE))
+            elif self.current_char == "\n":
+                token = Tokens(TT_NEWLINE, "\\n")
                 self.advance()
             elif self.current_char in '"':
-                tokens.append(self.make_missive())
-                self.advance()
+                token, error = self.make_missive()
             elif self.current_char in "'":
-                tokens.append(self.make_letter())
-                self.advance()
+                token, error = self.make_letter()
             elif self.current_char in ALPHABET:
                 if self.current_char in UPPER_ALPHA:
                     token, error = self.make_keyword()
-                    if error:
-                        return [], error
-                    else:
-                        tokens.append(token)
-                    self.advance()
                 elif self.current_char in LOWER_ALPHA:
                     token, error = self.make_identifier()
-                    if error:
-                        return [], error
-                    else:
-                        tokens.append(token)
-                    self.advance()
             elif self.current_char in DIGITS:
-                tokens.append(self.make_numeral())
-            elif self.current_char == '+':
+                token, error = self.make_numeral()
+            elif self.current_char == "+":
                 self.advance()
-                if self.current_char == '+':
-                    tokens.append(Tokens(TT_INC))
+                if self.current_char == "+":
+                    token = Tokens(TT_INC)
                     self.advance()
-                elif self.current_char == '=':
-                    tokens.append(Tokens(TT_PLUSEAND))
+                elif self.current_char == "=":
+                    token = Tokens(TT_PLUSAND)
                     self.advance()
                 else:
-                    tokens.append(Tokens(TT_PLUS))
+                    token = Tokens(TT_PLUS)
                     self.advance()
-            elif self.current_char == '-':
+            elif self.current_char == "-":
                 self.advance()
-                if self.current_char == '-':
-                    tokens.append(Tokens(TT_DEC))
+                if self.current_char == "-":
+                    token = Tokens(TT_DEC)
                     self.advance()
-                elif self.current_char == '=':
-                    tokens.append(Tokens(TT_MINUSAND))
+                elif self.current_char == "=":
+                    token = Tokens(TT_MINUSAND)
                     self.advance()
                 else:
-                    tokens.append(Tokens(TT_MINUS))
+                    token = Tokens(TT_MINUS)
                     self.advance()
-            elif self.current_char == '*':
-                self
-                if self.current_char == '=':
-                    tokens.append(Tokens(TT_MULAND))
+            elif self.current_char == "*":
+                token = Tokens(TT_MUL)
+                self.advance()
+                if self.current_char == "=":
+                    token = Tokens(TT_MULAND)
                     self.advance()
-                else:
-                    tokens.append(Tokens(TT_MUL))
+            elif self.current_char == "/":
+                self.advance()
+                if self.current_char == "/":
+                    token, error = self.make_slinecom()
+                elif self.current_char == "*":
+                    token, error = self.make_mlinecom()
+            elif self.current_char == "%":
+                token = Tokens(TT_MODULO)
+                self.advance()
+                if self.current_char == "=":
+                    token = Tokens(TT_MODAND)
                     self.advance()
-            elif self.current_char == '/':
+            elif self.current_char == "=":
+                token = Tokens(TT_EQUAL)
                 self.advance()
-                if self.current_char == '/':
-                    tokens.append(self.make_slinecom())
-                    self.pos.copy()
-                elif self.current_char == '*':
-                    tokens.append(self.make_mlinecom())
-                elif self.current_char == '*=':
-                    tokens.append(Tokens(TT_DIVAND))
-                else:
-                    tokens.append(Tokens(TT_DIV))
+                if self.current_char == "=":
+                    token = Tokens(TT_EQUALTO)
                     self.advance()
-            elif self.current_char == '%':
+            elif self.current_char == "!":
+                token = Tokens(TT_NOT)
                 self.advance()
-                if self.current_char == '=':
-                    tokens.append(Tokens(TT_MODAND))
+                if self.current_char == "=":
+                    token = Tokens(TT_NOTEQUAL)
                     self.advance()
-                else:
-                    tokens.append(Tokens(TT_MODULU))
+            elif self.current_char == "<":
+                token = Tokens(TT_LESSTHAN)
+                self.advance()
+                if self.current_char == "=":
+                    token = Tokens(TT_LESSTHANEQUAL)
                     self.advance()
-            elif self.current_char == '=':
-                self.advance()
-                if self.current_char == '=':
-                    tokens.append(Tokens(TT_EQUALTO))
+                elif self.current_char == "<":
+                    token = Tokens(TT_BITLSHIFT)
                     self.advance()
-                tokens.append(Tokens(TT_EQUAL))
+            elif self.current_char == ">":
+                token = Tokens(TT_GREATERTHAN)
                 self.advance()
-            elif self.current_char == '!':
-                self.advance()
-                if self.current_char == '=':
-                    tokens.append(Tokens(TT_NOTEQUAL))
+                if self.current_char == "=":
+                    token = Tokens(TT_GREATERTHANEQUAL)
                     self.advance()
-                else:
-                    tokens.append(Tokens(TT_NOT))
+                elif self.current_char == ">":
+                    token = Tokens(TT_BITRSHIFT)
                     self.advance()
-            elif self.current_char == '<':
+            elif self.current_char == "&":
+                token = Tokens(TT_BITAND)
                 self.advance()
-                if self.current_char == '=':
-                    tokens.append(Tokens(TT_LESSTHANEQUAL))
+                if self.current_char == "&":
+                    token = Tokens(TT_AND)
                     self.advance()
-                elif self.current_char == '<':
-                    tokens.append(Tokens(TT_BITLSHIFT))
+            elif self.current_char == "|":
+                token = Tokens(TT_BITOR)
+                self.advance()
+                if self.current_char == "|":
+                    token = Tokens(TT_OR)
                     self.advance()
-                else:
-                    tokens.append(Tokens(TT_LESSTHAN))
-                    self.advance()
-            elif self.current_char == '>':
+            elif self.current_char == "^":
+                token = Tokens(TT_BITXOR)
                 self.advance()
-                if self.current_char == '=':
-                    tokens.append(Tokens(TT_GREATERTHANEQUAL))
-                    self.advance()
-                elif self.current_char == '>':
-                    tokens.append(Tokens(TT_BITRSHIFT))
-                    self.advance()
-                else:
-                    tokens.append(Tokens(TT_GREATERTHAN))
-                    self.advance()
-            elif self.current_char == '&':
+            elif self.current_char == "~":
+                token = Tokens(TT_BITNOT)
                 self.advance()
-                if self.current_char == '&':
-                    tokens.append(Tokens(TT_AND))
-                    self.advance()
-                else:
-                    tokens.append(Tokens(TT_BITAND))
-                    self.advance()
-            elif self.current_char == '|':
+            elif self.current_char == "(":
+                token = Tokens(TT_LPAREN)
                 self.advance()
-                if self.current_char == '|':
-                    tokens.append(Tokens(TT_OR))
-                    self.advance()
-                else:
-                    tokens.append(Tokens(TT_BITOR))
-                    self.advance()
-            elif self.current_char == '^':
-                tokens.append(Tokens(TT_BITXOR))
+            elif self.current_char == ")":
+                token = Tokens(TT_RPAREN)
                 self.advance()
-            elif self.current_char == '~':
-                tokens.append(Tokens(TT_BITNOT))
+            elif self.current_char == "[":
+                token = Tokens(TT_LBRACKET)
                 self.advance()
-            elif self.current_char == '(':
-                tokens.append(Tokens(TT_LPAREN))
+            elif self.current_char == "]":
+                token = Tokens(TT_RBRACKET)
                 self.advance()
-            elif self.current_char == ')':
-                tokens.append(Tokens(TT_RPAREN))
+            elif self.current_char == "{":
+                token = Tokens(TT_LBRACE)
                 self.advance()
-            elif self.current_char == '[':
-                tokens.append(Tokens(TT_LBRACKET))
+            elif self.current_char == "}":
+                token = Tokens(TT_RBRACE)
                 self.advance()
-            elif self.current_char == ']':
-                tokens.append(Tokens(TT_RBRACKET))
+            elif self.current_char == ".":
+                token = Tokens(TT_PERIOD)
                 self.advance()
-            elif self.current_char == '{':
-                tokens.append(Tokens(TT_LBRACE))
+            elif self.current_char == ",":
+                token = Tokens(TT_COMMA)
                 self.advance()
-            elif self.current_char == '}':
-                tokens.append(Tokens(TT_RBRACE))
-                self.advance()
-            elif self.current_char == '.':
-                tokens.append(Tokens(TT_PERIOD))
-                self.advance()
-            elif self.current_char == ',':
-                tokens.append(Tokens(TT_COMMA))
-                self.advance()
-            elif self.current_char == ';':
-                tokens.append(Tokens(TT_TERMINATE))
+            elif self.current_char == ";":
+                print("YAHOOO")
+                token = Tokens(TT_TERMINATE)
                 self.advance()
             else:
                 pos_start = self.pos.copy()
                 char = self.current_char
                 self.advance()
-                return [], IllegalCharError (pos_start, self.pos, "'" + char + "'")
+                error = IllegalCharError(pos_start, self.pos, "'" + char + "'")
 
-        return tokens, None
+            if token:
+                # Check for delim
+                error = self.check_delim(token)
+                if error:
+                    errors.append(error)
+                else:
+                    tokens.append(token)
+            else:
+                errors.append(error)
+
+        return tokens, errors
 
     def make_numeral(self):
         num_str = ''
         dot_count = 0
 
-        while self.current_char != None and self.current_char in DIGITS + '.':
+        while self.current_char != None and self.current_char in DIGITS + ['.']:
             if self.current_char == '.':
                 if dot_count == 1: break
                 dot_count += 1
@@ -211,16 +213,15 @@ class Lexer:
             self.advance()
 
         if dot_count == 0:
-            return Tokens(TT_INT, int(num_str))
+            return Tokens(TT_INT_LITERAL, int(num_str)), None
         else:
-            return Tokens(TT_FLOAT, float(num_str))
+            return Tokens(TT_FLOAT_LITERAL, float(num_str)), None
 
     def make_missive(self):
-        quote_char = self.current_char 
         self.advance()
         missive_content = ""
 
-        while self.current_char != None and self.current_char != quote_char:
+        while self.current_char != None and self.current_char != '"':
             if self.current_char == "\\":
                 self.advance()
                 if self.current_char in ['"']:
@@ -230,15 +231,15 @@ class Lexer:
             else:
                 missive_content += self.current_char
             self.advance()
+        self.advance()
         
-        return Tokens(TT_STRING, missive_content)
+        return Tokens(TT_STRING_LITERAL, missive_content), None
 
-    def make_letter(self):
-        quote_char = self.current_char 
+    def make_letter(self): 
         self.advance()
         letter_content = ""
 
-        while self.current_char != None and self.current_char != quote_char:
+        while self.current_char != None and self.current_char != "'":
             if self.current_char == "\\":
                 self.advance()
                 if self.current_char in ["'"]:
@@ -249,7 +250,7 @@ class Lexer:
                 letter_content += self.current_char
             self.advance()
         
-        return Tokens(TT_CHAR, letter_content) 
+        return Tokens(TT_CHAR_LITERAL, letter_content), None
     
     def make_keyword(self):
         pos_start = self.pos
@@ -269,37 +270,38 @@ class Lexer:
     def make_identifier(self):
         pos_start = self.pos
         identifier = ""
-    
-        while self.current_char is not None and self.current_char in LOWER_ALPHA + UPPER_ALPHA + '_':
+
+        while self.current_char is not None and self.current_char in ALPHA_NUM + ["_"]:
             identifier += self.current_char
             self.advance()
 
-            if len(identifier) > ID_LIM:
+        if len(identifier) > ID_LIM:
                 return None, IdentifierLimitError(pos_start, self.pos, f'"{identifier}"')
-            
+
         return Tokens(TT_IDENTIFIER, identifier), None
-    
+
     def make_slinecom(self):
         sline = ""
         self.advance()
         self.advance()
-        
-        while self.current_char is not None and self.current_char != '\n':
+
+        while self.current_char is not None and self.current_char != "\n":
             sline += self.current_char
             self.advance()
-        return Tokens(TT_SLINECOM, sline)
-    
+
+        return Tokens(TT_SLINECOM, sline), None
+
     def make_mlinecom(self):
         mline = ""
-        self.advance() 
-        self.advance()  
-        
+        self.advance()
+        self.advance()
+
         while self.current_char is not None:
-            if self.current_char == '*' and self.text[self.pos.idx + 1] == '/':
-                self.advance() 
-                self.advance() 
+            if self.current_char == "*" and self.text[self.pos.idx + 1] == "/":
+                self.advance()
+                self.advance()
                 break
             mline += self.current_char
             self.advance()
-        
-        return Tokens(TT_MLINECOM, mline)
+
+        return Tokens(TT_MLINECOM, mline), None
