@@ -365,8 +365,8 @@ if __name__ == "__main__":
             token_table.insertRow(row_pos)
 
             # token_table.setItem(row_pos, 0, QTableWidgetItem(repr(token)))
-            token_table.setItem(row_pos, 1, QTableWidgetItem(repr(token.type)))
-            token_table.setItem(row_pos, 2, QTableWidgetItem(repr(token.value if token.value else token.type)))
+            token_table.setItem(row_pos, 1, QTableWidgetItem(repr(token.value if token.value else token.type)))
+            token_table.setItem(row_pos, 2, QTableWidgetItem(repr(token.type)))
 
         # Pass and run a command to the terminal
         # clear terminal output

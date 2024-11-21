@@ -52,7 +52,7 @@ class Lexer:
                 token = Tokens(TT_SPACE)
                 self.advance()
             elif self.current_char == "\n":
-                token = Tokens(TT_NEWLINE, "\\n")
+                token = Tokens(TT_NEWLINE)
                 self.advance()
             elif self.current_char in '"':
                 token, error = self.make_missive()
