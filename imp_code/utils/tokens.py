@@ -45,8 +45,8 @@ TT_CHAR_LITERAL = 'Letter_Lit'
 TT_STRING_LITERAL = 'Missive_Lit'
 
 #INPUT/OUTPUT
-TT_INPUT = "Proclaim"
-TT_OUTPUT = "Inquire"
+TT_INPUT = "Inquire"
+TT_OUTPUT = "Proclaim"
 
 #CONDITIONAL STATEMENTS
 TT_CASE     = "Event"
@@ -161,12 +161,14 @@ KEYWORDS = {
     TT_ELSE: "Otherwise",
     TT_SWITCH: "Given",
     TT_DEFAULT: "Default",
-    TT_CLRSCR: "Viola"
+    TT_CLRSCR: "Viola",
+    TT_INPUT: "Inquire",
+    TT_OUTPUT: "Proclaim"
 } #Done w/o delims
 
 
 DD_DTYPE = [" ", "[", "(", ","]
-DD_MISSIVE = [" ", "\n", '"', "'", ",", ")", "]", "}", ":", "#", "(", "[", "\n"]
+DD_MISSIVE = [" ", "\n", '"', "'", ",", ")", "]", "}", ":", "#", "(", "[", "\n", ";"]
 DD_CHAR = [" ", "\n", ";"]
 DD_BREAK = [*ALPHA_NUM, " ", "\n", "("]
 DD_BIT = [*ALPHA_NUM, " ", "\n", "("]

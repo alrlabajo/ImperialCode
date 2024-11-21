@@ -178,7 +178,6 @@ class Lexer:
                 token = Tokens(TT_COMMA)
                 self.advance()
             elif self.current_char == ";":
-                print("YAHOOO")
                 token = Tokens(TT_TERMINATE)
                 self.advance()
             else:

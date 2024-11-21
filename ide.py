@@ -548,9 +548,9 @@ if __name__ == "__main__":
    # SECTION - Token table
     token_table = QTableWidget()
     token_table.setObjectName("token_table")
-    token_table.setColumnCount(4)  # Update column count to 4
+    token_table.setColumnCount(3)  # Update column count to 3
     token_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-    token_table.setHorizontalHeaderLabels(["Line", "Lexeme", "Token", "Attribute"])  # Update headers
+    token_table.setHorizontalHeaderLabels(["Line", "Lexeme", "Token"])  # Update headers
     token_table.horizontalHeader().setObjectName("token_table_headings")
     # Auto resize columns based on window size
     token_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
