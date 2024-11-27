@@ -168,32 +168,32 @@ KEYWORDS = {
 
 
 DD_DTYPE = [" ", "[", "(", ","]
-DD_MISSIVE = ["\n", '"', "'", ",", ")", "]", "}", ":", "#", "(", "[", "\n", ";"]
-DD_CHAR = [" ", "\n", ";"]
+DD_MISSIVE = ["\n", "'", ",", ")", "]", "}", ":", "#", "(", "[", "\n", ";"]
+DD_CHAR = [" ", "\n", "'"]
 DD_BREAK = [*ALPHA_NUM, " ", "\n", "("]
 DD_BIT = [*ALPHA_NUM, " ", "\n", "("]
 DD_ARITH = [*ALPHA_NUM, " ", "(", "-"]
 DD_PLUS = [*ALPHA_NUM, " ", "(", "-", ",", "'", "["]
 DD_MINUS = [*ALPHA_NUM, " ", "(", "-"]
 DD_ASSIGN = [*ALPHA_NUM, " ", "(", "-", ",", "{", "[", "'"]
-DD_OPAR = [*ALPHA_NUM, " ", "(", ")", "-", ",", "[", "{", "(", ")", "\n", "'"]
-DD_CPAR = [*ARITH_OP, " ", "\n", ":", "(", ")", ",", "]", "[", "}", "#", ".", "("]
+DD_OPAR = [*ALPHA_NUM, " ", "(", ")", "-", ",", "[", "{", "(", ")", "\n", "'", '"']
+DD_CPAR = [*ARITH_OP, " ", "\n", ":", "(", ")", ",", "]", "[", "}", "#", ".", "(", ";"]
 DD_OBRACE = [*ALPHA_NUM, " ", "\n", "}", ","]
-DD_CBRACE = [" ", "\n", ",", "}", ")", "]"]
+DD_CBRACE = [" ", "\n", ",", "}", ")", "]", ";"]
 DD_OBRACK = [*ALPHA_NUM, " ", "\n", ",", "-", "{", "[", "(", "]", ")", ","]
-DD_CBRACK = [" ", "\n", ",", "[", "]", ")", "}", ".", "(", "+", ":"]
-DD_SPACE = [*ALPHA_NUM, *ARITH_OP, *REL_OP, *BITWISE_OP, '"', "#", "$", "&", "(", ")", ",", ".", ":", ";", "?", "@", "[", "\\", "]", "^", "_", "`", "{", "|", "}", "~", "±", "§", "'", "\n", "="]
+DD_CBRACK = [" ", "\n", ",", "[", "]", ")", "}", ".", "(", "+", ":", ";"]
+DD_SPACE = [*ALPHA_NUM, *ARITH_OP, *REL_OP, *BITWISE_OP, '"', "#", "$", "&", "(", ")", ",", ".", ":", ";", "?", "@", "[", "\\", "]", "^", "_", "`", "{", "|", "}", "~", "±", "§", "'", "\n", "=", " "]
 DD_COMMA = [*ALPHA_NUM, " ", "(", "-", ",", "[", "{", "(", ")", "\n", "'"]
 DD_PERIOD = [*ALPHA_NUM]
 DD_STRING = [" ", "\n", ",", "]", ")", "}", ",", ".", ":", "#", "!", "=", "["]
 DD_NUM_DECI = [*DIGITS, *ARITH_OP, *REL_OP, *BITWISE_OP, " ", ",", "}", "]", ")", ":", "#", "\n", ";", "(", "."]
-DD_RESERVE = [" "]
+DD_RESERVE = [" ", ";"]
 DD_COLON = [*ALPHABET, " ", "\n", ":"]
 DD_SEMICOL = [*ALPHA_NUM, " ", "\n", "}", ";"]
 DD_FUNC = ["(", "\n"]
-DD_COMMENT = ["\n"]
+DD_COMMENT = ["\n", " "]
 DD_MAIN = [" ", "("]
-DD_IDENTIFIER = [*ALPHA_NUM, '_', ' ', '\n']
+DD_IDENTIFIER = [*ALPHA_NUM, '_', ' ', '\n', ';', *ARITH_OP, *REL_OP, *BITWISE_OP, "(", ")", "[" ,"]", "{", "}"]
 
 DELIM_LIST = {
     # MAIN
@@ -251,9 +251,9 @@ DELIM_LIST = {
     TT_GOTO: DD_SPACE,
 
     # VALUES
-    TT_TRUE: DD_DTYPE,
-    TT_FALSE: DD_DTYPE,
-    TT_NULL: DD_DTYPE,
+    TT_TRUE: DD_RESERVE,
+    TT_FALSE: DD_RESERVE,
+    TT_NULL: DD_RESERVE,
 
     # LOGICAL OPERATORS
     TT_AND: DD_SPACE,

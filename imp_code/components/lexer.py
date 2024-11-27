@@ -33,7 +33,7 @@ class Lexer:
             return IllegalDelimiter(
                 pos_start,
                 pos_end,
-                f"Unexpected delim {repr(self.current_char)} after {repr(token.value)}",
+                f"Unexpected delim {repr(self.current_char)} after {token}",
             )
 
         return None
@@ -66,6 +66,7 @@ class Lexer:
             elif self.current_char in DIGITS:
                 token, error = self.make_numeral()
             elif self.current_char == "+":
+                token = Tokens(TT_PLUS)
                 self.advance()
                 if self.current_char == "+":
                     token = Tokens(TT_INC)
@@ -73,19 +74,14 @@ class Lexer:
                 elif self.current_char == "=":
                     token = Tokens(TT_PLUSAND)
                     self.advance()
-                else:
-                    token = Tokens(TT_PLUS)
-                    self.advance()
             elif self.current_char == "-":
+                token = Tokens(TT_MINUS)
                 self.advance()
                 if self.current_char == "-":
                     token = Tokens(TT_DEC)
                     self.advance()
                 elif self.current_char == "=":
                     token = Tokens(TT_MINUSAND)
-                    self.advance()
-                else:
-                    token = Tokens(TT_MINUS)
                     self.advance()
             elif self.current_char == "*":
                 token = Tokens(TT_MUL)
@@ -94,6 +90,7 @@ class Lexer:
                     token = Tokens(TT_MULAND)
                     self.advance()
             elif self.current_char == "/":
+                token = Tokens(TT_DIV)
                 self.advance()
                 if self.current_char == "/":
                     token, error = self.make_slinecom()
