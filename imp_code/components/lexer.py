@@ -278,6 +278,7 @@ class Lexer:
             elif self.current_state == 'Ac' and self.current_char == 't':
                 self.current_state = 'Act'
                 keyword += self.current_char
+                self.advance()
                 return Tokens(TT_DO, keyword), None
             elif self.current_state == 'A' and self.current_char == 's':
                 self.current_state = 'As'
@@ -377,6 +378,7 @@ class Lexer:
             elif self.current_state == 'Emi' and self.current_char == 't':
                 self.current_state = 'Emit'
                 keyword += self.current_char
+                self.advance()
                 return Tokens(TT_OUTPUT, keyword), None
             elif self.current_state == 'E' and self.current_char == 'n':
                 self.current_state = 'En'

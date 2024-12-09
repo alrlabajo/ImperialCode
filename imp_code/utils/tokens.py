@@ -45,8 +45,8 @@ TT_CHAR_LITERAL = 'Letter_Lit'
 TT_STRING_LITERAL = 'Missive_Lit'
 
 #INPUT/OUTPUT
-TT_INPUT = "Emit"
-TT_OUTPUT = "Seek"
+TT_INPUT = "Seek"
+TT_OUTPUT = "Emit"
 
 #CONDITIONAL STATEMENTS
 TT_CASE     = "Opt"
@@ -130,39 +130,6 @@ TT_COMMA     = ',' #Done w/o delims
 TT_SLINECOM  = 'SLINE COMMENT' #Done w/o delims
 TT_MLINECOM    = 'MLINE COMMENT' #Done w/o delims
 TT_CLRSCR   = 'Voila' #Done w/o delims
-
-#KEYWORDS
-KEYWORDS = {
-    TT_MAIN: "Embark",
-    TT_INT: 'Numeral',
-    TT_FLOAT: 'Decimal',
-    TT_CHAR: "Letter",
-    TT_STRING: "Missive",
-    TT_BOOL: "Veracity",
-    TT_VOID: "Void",
-    TT_CONST: "Constant",
-    TT_STRUCT: "Assembly",
-    TT_ENUM: "Enumerate",
-    TT_ARRAY: "Ledger",
-    TT_WHILE: "Until",
-    TT_FOR: "Per",
-    TT_DO: "Act",
-    TT_BREAK: "Halt",
-    TT_CONTINUE: "Extend",
-    TT_RETURN: "Recede",
-    TT_GOTO: "Flow",
-    TT_TRUE: "Pure",
-    TT_FALSE: "Nay",
-    TT_NULL: "Nil",
-    TT_CASE: "Opt",
-    TT_IF: "Thou",
-    TT_ELSE: "Or",
-    TT_SWITCH: "Shift",
-    TT_DEFAULT: "Usual",
-    TT_CLRSCR: "Viola",
-    TT_INPUT: "Emit",
-    TT_OUTPUT: "Seek"
-} #Done w/o delims
 
 
 DD_DTYPE = [" ", "[", "(", ",", *ALPHABET, "\n"]
