@@ -364,9 +364,8 @@ if __name__ == "__main__":
             row_pos = token_table.rowCount()
             token_table.insertRow(row_pos)
 
-            # token_table.setItem(row_pos, 0, QTableWidgetItem(repr(token)))
-            token_table.setItem(row_pos, 1, QTableWidgetItem(repr(token.value if token.value else token.type)))
-            token_table.setItem(row_pos, 2, QTableWidgetItem(repr(token.type)))
+            token_table.setItem(row_pos, 0, QTableWidgetItem(token.value if token.value else token.type))
+            token_table.setItem(row_pos, 1, QTableWidgetItem(token.type))
 
         # Pass and run a command to the terminal
         # clear terminal output
@@ -548,9 +547,9 @@ if __name__ == "__main__":
    # SECTION - Token table
     token_table = QTableWidget()
     token_table.setObjectName("token_table")
-    token_table.setColumnCount(3)  # Update column count to 3
+    token_table.setColumnCount(2)  # Update column count to 2
     token_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-    token_table.setHorizontalHeaderLabels(["Line", "Lexeme", "Token"])  # Update headers
+    token_table.setHorizontalHeaderLabels(["Lexeme", "Token"])  # Update headers
     token_table.horizontalHeader().setObjectName("token_table_headings")
     # Auto resize columns based on window size
     token_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)

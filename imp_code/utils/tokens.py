@@ -11,9 +11,9 @@ ARITH_OP = ["+", "-", "*", "/"]
 REL_OP = ["==", "!=", "<", ">", "<=", ">="]
 BITWISE_OP = ["&", "|", "^", "~", "<<", ">>"]
 
-INT_LIM =  999999999
-FLOAT_LIM = 999999999.999999
-FLOAT_PRECISION_LIM = 15
+INT_LIM =  9
+FLOAT_LIM = 9
+FLOAT_PRECISION_LIM = 6
 ID_LIM = 20
 
 #######################################
@@ -21,13 +21,13 @@ ID_LIM = 20
 #######################################
 
 # MAIN
-TT_MAIN     = 'Commence'
+TT_MAIN     = 'Embark'
 
 # KEYWORDS AND IDENTIFIERS
 TT_IDENTIFIER = 'Identifier' #Done in variable and w/o delims
 
 # DATA TYPES
-TT_INT		= 'Numeral' #Done in variable and w/o delims
+TT_INT		= "Numeral" #Done in variable and w/o delims
 TT_FLOAT    = 'Decimal' #Done in variable and w/o delims
 TT_CHAR     = "Letter" #Done in variable and w/o delims
 TT_STRING   = "Missive" #Done in variable and w/o delims
@@ -45,31 +45,31 @@ TT_CHAR_LITERAL = 'Letter_Lit'
 TT_STRING_LITERAL = 'Missive_Lit'
 
 #INPUT/OUTPUT
-TT_INPUT = "Inquire"
-TT_OUTPUT = "Proclaim"
+TT_INPUT = "Emit"
+TT_OUTPUT = "Seek"
 
 #CONDITIONAL STATEMENTS
-TT_CASE     = "Event"
-TT_IF       = "Perchance"
-TT_ELSE     = "Otherwise"
-TT_SWITCH   = "Given"
-TT_DEFAULT  = "Default"
+TT_CASE     = "Opt"
+TT_IF       = "Thou"
+TT_ELSE     = "Or"
+TT_SWITCH   = "Shift"
+TT_DEFAULT  = "Usual"
 
 #LOOP STATEMENTS
-TT_WHILE    = "Whilst"
-TT_FOR      = "Iterate"
-TT_DO       = "Perform"
+TT_WHILE    = "Until"
+TT_FOR      = "Per"
+TT_DO       = "Act"
 
 #LOOP CONTROL
-TT_BREAK = "Cease"
-TT_CONTINUE = "Proceed"
-TT_RETURN = "Dispatch"
-TT_GOTO = "Direct"
+TT_BREAK = "Halt"
+TT_CONTINUE = "Extend"
+TT_RETURN = "Recede"
+TT_GOTO = "Flow"
 
 #VALUES
-TT_TRUE     = "Indeed"
+TT_TRUE     = "Pure"
 TT_FALSE    = "Nay"
-TT_NULL     = "Naught"
+TT_NULL     = "Nil"
 
 # ARITHMETIC OPERATIONS
 TT_PLUS     = '+' #Done w/o delims
@@ -129,11 +129,11 @@ TT_PERIOD    = '.' #Done w/o delims
 TT_COMMA     = ',' #Done w/o delims
 TT_SLINECOM  = 'SLINE COMMENT' #Done w/o delims
 TT_MLINECOM    = 'MLINE COMMENT' #Done w/o delims
-TT_CLRSCR   = 'CLR SCR' #Done w/o delims
+TT_CLRSCR   = 'Voila' #Done w/o delims
 
 #KEYWORDS
 KEYWORDS = {
-    TT_MAIN: "Commence",
+    TT_MAIN: "Embark",
     TT_INT: 'Numeral',
     TT_FLOAT: 'Decimal',
     TT_CHAR: "Letter",
@@ -144,36 +144,34 @@ KEYWORDS = {
     TT_STRUCT: "Assembly",
     TT_ENUM: "Enumerate",
     TT_ARRAY: "Ledger",
-    TT_INPUT: "Inquire",
-    TT_OUTPUT: "Proclaim",
-    TT_WHILE: "Whilst",
-    TT_FOR: "Iterate",
-    TT_DO: "Perform",
-    TT_BREAK: "Cease",
-    TT_CONTINUE: "Proceed",
-    TT_RETURN: "Dispatch",
-    TT_GOTO: "Direct",
-    TT_TRUE: "Indeed",
+    TT_WHILE: "Until",
+    TT_FOR: "Per",
+    TT_DO: "Act",
+    TT_BREAK: "Halt",
+    TT_CONTINUE: "Extend",
+    TT_RETURN: "Recede",
+    TT_GOTO: "Flow",
+    TT_TRUE: "Pure",
     TT_FALSE: "Nay",
-    TT_NULL: "Naught",
-    TT_CASE: "Event",
-    TT_IF: "Perchance",
-    TT_ELSE: "Otherwise",
-    TT_SWITCH: "Given",
-    TT_DEFAULT: "Default",
+    TT_NULL: "Nil",
+    TT_CASE: "Opt",
+    TT_IF: "Thou",
+    TT_ELSE: "Or",
+    TT_SWITCH: "Shift",
+    TT_DEFAULT: "Usual",
     TT_CLRSCR: "Viola",
-    TT_INPUT: "Inquire",
-    TT_OUTPUT: "Proclaim"
+    TT_INPUT: "Emit",
+    TT_OUTPUT: "Seek"
 } #Done w/o delims
 
 
-DD_DTYPE = [" ", "[", "(", ","]
+DD_DTYPE = [" ", "[", "(", ",", *ALPHABET, "\n"]
 DD_MISSIVE = ["\n", "'", ",", ")", "]", "}", ":", "#", "(", "[", "\n", ";"]
 DD_CHAR = [" ", "\n", "'"]
 DD_BREAK = [*ALPHA_NUM, " ", "\n", "("]
 DD_BIT = [*ALPHA_NUM, " ", "\n", "("]
-DD_ARITH = [*ALPHA_NUM, " ", "(", "-"]
-DD_PLUS = [*ALPHA_NUM, " ", "(", "-", ",", "'", "["]
+DD_ARITH = [*ALPHA_NUM, " ", "(", "-", ")"]
+DD_PLUS = [*ALPHA_NUM, " ", "(", "-", ",", "'", "[", ")"]
 DD_MINUS = [*ALPHA_NUM, " ", "(", "-"]
 DD_ASSIGN = [*ALPHA_NUM, " ", "(", "-", ",", "{", "[", "'"]
 DD_OPAR = [*ALPHA_NUM, " ", "(", ")", "-", ",", "[", "{", "(", ")", "\n", "'", '"']
@@ -182,7 +180,7 @@ DD_OBRACE = [*ALPHA_NUM, " ", "\n", "}", ","]
 DD_CBRACE = [" ", "\n", ",", "}", ")", "]", ";"]
 DD_OBRACK = [*ALPHA_NUM, " ", "\n", ",", "-", "{", "[", "(", "]", ")", ","]
 DD_CBRACK = [" ", "\n", ",", "[", "]", ")", "}", ".", "(", "+", ":", ";"]
-DD_SPACE = [*ALPHA_NUM, *ARITH_OP, *REL_OP, *BITWISE_OP, '"', "#", "$", "&", "(", ")", ",", ".", ":", ";", "?", "@", "[", "\\", "]", "^", "_", "`", "{", "|", "}", "~", "±", "§", "'", "\n", "=", " "]
+DD_SPACE = [*ALPHA_NUM, *ARITH_OP, *REL_OP, *BITWISE_OP, '"', "#", "$", "&", "(", ")", ",", ".", ":", ";", "?", "@", "[", "\\", "]", "^", "_", "`", "{", "|", "}", "~", "±", "§", "'", "\n", "=", " ", "\t"]
 DD_COMMA = [*ALPHA_NUM, " ", "(", "-", ",", "[", "{", "(", ")", "\n", "'"]
 DD_PERIOD = [*ALPHA_NUM]
 DD_STRING = [" ", "\n", ",", "]", ")", "}", ",", ".", ":", "#", "!", "=", "["]
@@ -200,7 +198,6 @@ DELIM_LIST = {
     TT_MAIN: DD_MAIN,
 
     TT_IDENTIFIER: DD_IDENTIFIER,
-    KEYWORDS[TT_MAIN]: DD_FUNC,
 
     # DATA TYPES
     TT_INT: DD_DTYPE,
@@ -312,3 +309,6 @@ class Tokens:
         if self.value:
             return f'{self.type}: {self.value}'
         return f'{self.type}'
+    
+    def lexeme_str(self):
+        return self.value if self.value else self.type
