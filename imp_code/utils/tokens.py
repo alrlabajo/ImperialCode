@@ -134,7 +134,7 @@ TT_CLRSCR   = 'Voila' #Done w/o delims
 
 DD_DTYPE = [" ", "[", "(", ",", *ALPHABET, "\n"]
 DD_MISSIVE = ["\n", "'", ",", ")", "]", "}", ":", "#", "(", "[", "\n", ";"]
-DD_CHAR = [" ", "\n", "'"]
+DD_CHAR = [" ", "\n", "'", ';']
 DD_BREAK = [*ALPHA_NUM, " ", "\n", "("]
 DD_BIT = [*ALPHA_NUM, " ", "\n", "("]
 DD_ARITH = [*ALPHA_NUM, " ", "(", "-", ")"]

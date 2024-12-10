@@ -1,6 +1,7 @@
 from ..utils.position import *
 from ..utils.tokens import *
 from .errors import *
+from string import punctuation
 
 #######################################
 # LEXER
@@ -246,22 +247,15 @@ class Lexer:
         
         return Tokens(TT_STRING_LITERAL, missive_content), None
 
-    def make_letter(self): 
+    def make_letter(self):
+        pos_start = self.pos
         self.advance()
-        letter_content = ""
-
-        while self.current_char != None and self.current_char != "'":
-            if self.current_char == "\\":
-                self.advance()
-                if self.current_char in ["'"]:
-                    letter_content += self.current_char
-                else:
-                    letter_content = "\\" + self.current_char
-            else:
-                letter_content += self.current_char
-            self.advance()
-        
-        return Tokens(TT_CHAR_LITERAL, letter_content), None
+        char = self.current_char
+        self.advance()
+        if self.current_char != "'":
+            return None, IllegalCharError(pos_start, self.pos, f"Expected ' after {char}")
+        self.advance()
+        return Tokens(TT_CHAR_LITERAL, char), None
     
     def make_keyword(self):
         pos_start = self.pos.copy()
@@ -485,6 +479,29 @@ class Lexer:
                 keyword += self.current_char
                 self.advance()
                 return Tokens(TT_CHAR, keyword), None
+            elif self.current_state == '' and self.current_char == 'M':
+                self.current_state = 'M'
+                keyword += self.current_char
+            elif self.current_state == 'M' and self.current_char == 'i':
+                self.current_state = 'Mi'
+                keyword += self.current_char
+            elif self.current_state == 'Mi' and self.current_char == 's':
+                self.current_state = 'Mis'
+                keyword += self.current_char
+            elif self.current_state == 'Mis' and self.current_char == 's':
+                self.current_state = 'Miss'
+                keyword += self.current_char
+            elif self.current_state == 'Miss' and self.current_char == 'i':
+                self.current_state = 'Missi'
+                keyword += self.current_char
+            elif self.current_state == 'Missi' and self.current_char == 'v':
+                self.current_state = 'Missiv'
+                keyword += self.current_char
+            elif self.current_state == 'Missiv' and self.current_char == 'e':
+                self.current_state = 'Missive'
+                keyword += self.current_char
+                self.advance()
+                return Tokens(TT_STRING, keyword), None
             elif self.current_state == '' and self.current_char == 'N':
                 self.current_state = 'N'
                 keyword += self.current_char
@@ -704,12 +721,14 @@ class Lexer:
                 self.advance()
                 return Tokens(TT_CLRSCR, keyword), None
             else:
-                while self.current_char is not None and self.current_char.isalpha():
-                    keyword += self.current_char
-                    self.advance()
-                return None, IllegalKeyword(pos_start, self.pos, f"Invalid keyword '{keyword}'")
-
+                break
             self.advance()
+
+        if self.current_char is not None and ( (self.current_char.isalpha() or self.current_char.isdigit() or punctuation)):
+            keyword += self.current_char
+            self.advance()
+            return None, IllegalKeyword(pos_start, self.pos, f"Invalid keyword '{keyword}'")
+
 
 
     def make_identifier(self):
