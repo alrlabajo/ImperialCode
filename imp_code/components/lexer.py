@@ -15,6 +15,7 @@ class Lexer:
         self.pos = Position(-1, 0, -1, fn, text)
         self.current_char = None
         self.advance()
+        self.state = '0'
 
     def advance(self):
         self.pos.advance(self.current_char)
@@ -721,14 +722,13 @@ class Lexer:
                 self.advance()
                 return Tokens(TT_CLRSCR, keyword), None
             else:
-                while self.current_char is not None and (self.current_char.isalpha() or self.current_char.isdigit() or punctuation):
-                    keyword += self.current_char
-                    self.advance()
-                return None, IllegalKeyword(pos_start, self.pos, f"Invalid keyword '{keyword}'")
+                break
             self.advance()
 
-
-
+        if self.current_char is not None and (self.current_char.isalpha() or self.current_char.isdigit() or punctuation):
+                keyword += self.current_char
+                self.advance()
+                return None, IllegalKeyword(pos_start, self.pos, f"Invalid keyword '{keyword}'")
 
     def make_identifier(self):
         pos_start = self.pos
