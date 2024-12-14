@@ -5,7 +5,6 @@ import os
 from .compiler import run_lexical
 import time
 
-from .components.hello import testMe
 
 # def main():
 #     testMe()
@@ -73,7 +72,8 @@ def _run_lexical(file_path, code):
             print()
         if errors:
             for error in errors:
-                print(error.as_string())
+                if error is not None:
+                    print(error.as_string())
     elif args.verbose:
         print("Tokens:", tokens)
 

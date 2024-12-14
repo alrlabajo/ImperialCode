@@ -721,13 +721,12 @@ class Lexer:
                 self.advance()
                 return Tokens(TT_CLRSCR, keyword), None
             else:
-                break
+                while self.current_char is not None and (self.current_char.isalpha() or self.current_char.isdigit() or punctuation):
+                    keyword += self.current_char
+                    self.advance()
+                return None, IllegalKeyword(pos_start, self.pos, f"Invalid keyword '{keyword}'")
             self.advance()
 
-        if self.current_char is not None and ( (self.current_char.isalpha() or self.current_char.isdigit() or punctuation)):
-            keyword += self.current_char
-            self.advance()
-            return None, IllegalKeyword(pos_start, self.pos, f"Invalid keyword '{keyword}'")
 
 
 
