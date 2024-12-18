@@ -1,4 +1,4 @@
-from imp_code.components.lexer import *
+from imp_code.components.lexer2 import *
 
 #######################################
 # RUN

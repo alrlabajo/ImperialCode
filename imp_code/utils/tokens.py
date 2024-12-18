@@ -126,6 +126,7 @@ TT_SPACE     = 'SPACE' #Done w/o delims
 TT_NEWLINE   = '\\n'
 TT_TERMINATE = ';' #Done w/o delims
 TT_PERIOD    = '.' #Done w/o delims
+TT_COLON     = ':' #Done w/o delims
 TT_COMMA     = ',' #Done w/o delims
 TT_SLINECOM  = 'SLINE COMMENT' #Done w/o delims
 TT_MLINECOM    = 'MLINE COMMENT' #Done w/o delims
@@ -260,6 +261,7 @@ DELIM_LIST = {
     TT_TERMINATE: DD_SEMICOL,
     TT_PERIOD: DD_PERIOD,
     TT_COMMA: DD_COMMA,
+    TT_COLON: DD_COLON,
     TT_SLINECOM: DD_COMMENT,
     TT_MLINECOM: DD_COMMENT,
     TT_CLRSCR: DD_FUNC,

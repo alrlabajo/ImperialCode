@@ -726,9 +726,9 @@ class Lexer:
             self.advance()
 
         if self.current_char is not None and (self.current_char.isalpha() or self.current_char.isdigit() or punctuation):
-                keyword += self.current_char
-                self.advance()
-                return None, IllegalKeyword(pos_start, self.pos, f"Invalid keyword '{keyword}'")
+            keyword += self.current_char
+            self.advance()
+            return None, IllegalKeyword(pos_start, self.pos, f"Invalid keyword '{keyword}'")
 
     def make_identifier(self):
         pos_start = self.pos
