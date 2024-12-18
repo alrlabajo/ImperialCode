@@ -1746,7 +1746,6 @@ class Lexer:
                     self.advance()
                 else:
                     token = Tokens(TT_MODULO) # Double check tokens pls hehe
-                    self.advance()
                     self.state = '0'
 
                     error = self.check_delim(token) 
@@ -1754,7 +1753,6 @@ class Lexer:
                         errors.append(error.as_string())
                     else:
                         tokens.append(token)
-                    self.advance()
 
             # %=
             elif self.state == '184':
