@@ -135,7 +135,7 @@ TT_CLRSCR   = 'Voila' #Done w/o delims
 
 DD_DTYPE = [" ", "[", "(", ",", *ALPHABET, "\n"]
 DD_MISSIVE = ["\n", "'", ",", ")", "]", "}", ":", "#", "(", "[", "\n", ";"]
-DD_CHAR = [" ", "\n", "'", ';']
+DD_CHAR = [" ", "\n", "'", ';', ")"]
 DD_BREAK = [*ALPHA_NUM, " ", "\n", "("]
 DD_BIT = [*ALPHA_NUM, " ", "\n", "("]
 DD_ARITH = [*ALPHA_NUM, " ", "(", "-", ")"]
@@ -143,12 +143,12 @@ DD_PLUS = [*ALPHA_NUM, " ", "(", "-", ",", "'", "[", ")"]
 DD_MINUS = [*ALPHA_NUM, " ", "(", "-"]
 DD_ASSIGN = [*ALPHA_NUM, " ", "(", "-", ",", "{", "[", "'"]
 DD_OPAR = [*ALPHA_NUM, " ", "(", ")", "-", ",", "[", "{", "(", ")", "\n", "'", '"']
-DD_CPAR = [*ARITH_OP, " ", "\n", ":", "(", ")", ",", "]", "[", "}", "#", ".", "(", ";"]
+DD_CPAR = [*ARITH_OP, " ", "\n", ":", "(", ")", ",", "]", "[", "}", "#", ".", "(", ";", "{"]
 DD_OBRACE = [*ALPHA_NUM, " ", "\n", "}", ","]
 DD_CBRACE = [" ", "\n", ",", "}", ")", "]", ";"]
 DD_OBRACK = [*ALPHA_NUM, " ", "\n", ",", "-", "{", "[", "(", "]", ")", ","]
 DD_CBRACK = [" ", "\n", ",", "[", "]", ")", "}", ".", "(", "+", ":", ";"]
-DD_SPACE = [*ALPHA_NUM, *ARITH_OP, *REL_OP, *BITWISE_OP, '"', "#", "$", "&", "(", ")", ",", ".", ":", ";", "?", "@", "[", "\\", "]", "^", "_", "`", "{", "|", "}", "~", "±", "§", "'", "\n", "=", " ", "\t"]
+DD_SPACE = [*ALPHA_NUM, *ARITH_OP, *REL_OP, *BITWISE_OP, '"', "#", "$", "&", "(", ")", ",", ".", ":", ";", "?", "@", "[", "\\", "]", "^", "_", "`", "{", "|", "}", "~", "±", "§", "'", "\n", "=", " ", "\t", "%"]
 DD_COMMA = [*ALPHA_NUM, " ", "(", "-", ",", "[", "{", "(", ")", "\n", "'"]
 DD_PERIOD = [*ALPHA_NUM]
 DD_STRING = [" ", "\n", ",", "]", ")", "}", ",", ".", ":", "#", "!", "=", "["]
@@ -159,7 +159,7 @@ DD_SEMICOL = [*ALPHA_NUM, " ", "\n", "}", ";"]
 DD_FUNC = ["(", "\n"]
 DD_COMMENT = ["\n", " "]
 DD_MAIN = [" ", "("]
-DD_IDENTIFIER = [*ALPHA_NUM, '_', ' ', '\n', ';', *ARITH_OP, *REL_OP, *BITWISE_OP, "(", ")", "[" ,"]", "{", "}"]
+DD_IDENTIFIER = [*ALPHA_NUM, '_', ' ', '\n', ';', *ARITH_OP, *REL_OP, *BITWISE_OP, "(", ")", "[" ,"]", "{", "}", "%", ",", "="]
 
 DELIM_LIST = {
     # MAIN
@@ -254,6 +254,14 @@ DELIM_LIST = {
     TT_GREATERTHAN: DD_SPACE,
     TT_LESSTHANEQUAL: DD_SPACE,
     TT_GREATERTHANEQUAL: DD_SPACE,
+
+    # BITWISE OPERATORS
+    TT_BITAND: DD_BIT,
+    TT_BITOR: DD_BIT,
+    TT_BITXOR: DD_BIT,
+    TT_BITNOT: DD_BIT,
+    TT_BITLSHIFT: DD_BIT,
+    TT_BITRSHIFT: DD_BIT,
 
     # OTHERS
     TT_SPACE: DD_SPACE,

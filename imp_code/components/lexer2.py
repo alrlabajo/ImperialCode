@@ -55,58 +55,79 @@ class Lexer:
                 elif self.current_char == " ":
                     token = Tokens(TT_SPACE)
 
-                    error = self.check_delim(token) 
-                    if error:
-                        errors.append(error.as_string())
+                    if token:
+                        error = self.check_delim(token) 
+                        if error:
+                            errors.append(error)
+                        else:
+                            tokens.append(token)
                     else:
-                        tokens.append(token)
+                        errors.append(error)
+
                     self.advance()
+                    
                 elif self.current_char == "\n":
                     token = Tokens(TT_NEWLINE)
 
-                    error = self.check_delim(token) 
-                    if error:
-                        errors.append(error.as_string())
+                    if token:
+                        error = self.check_delim(token) 
+                        if error:
+                            errors.append(error)
+                        else:
+                            tokens.append(token)
                     else:
-                        tokens.append(token)
-
+                        errors.append(error)
                     self.advance()
+                    
                 elif self.current_char in '"':
                     token, error = self.make_missive()
 
-                    error = self.check_delim(token) 
-                    if error:
-                        errors.append(error.as_string())
+                    if token:
+                        error = self.check_delim(token) 
+                        if error:
+                            errors.append(error)
+                        else:
+                            tokens.append(token)
                     else:
-                        tokens.append(token)
+                        errors.append(error)
+
 
                 elif self.current_char in "'":
                     token, error = self.make_letter()
 
-                    error = self.check_delim(token) 
-                    if error:
-                        errors.append(error.as_string())
+                    if token:
+                        error = self.check_delim(token) 
+                        if error:
+                            errors.append()
+                        else:
+                            tokens.append(token)
                     else:
-                        tokens.append(token)
+                        errors.append(error)
 
                 elif self.current_char.isdigit(): 
                     token, error = self.make_numeral_decimal()
 
-                    error = self.check_delim(token) 
-                    if error:
-                        errors.append(error.as_string())
+                    if token:
+                        error = self.check_delim(token) 
+                        if error:
+                            errors.append(error)
+                        else:
+                            tokens.append(token)
                     else:
-                        tokens.append(token)
+                        errors.append(error)
 
                 elif self.current_char.islower():
                     token, error = self.make_identifier()
-
                     
-                    error = self.check_delim(token) 
-                    if error:
-                        errors.append(error.as_string())
+                    if token:
+                        error = self.check_delim(token) 
+                        if error:
+                            errors.append(error)
+                        else:
+                            tokens.append(token)
                     else:
-                        tokens.append(token)
+                        errors.append(error)
+
 
                 elif self.current_char == 'A': # Assembly and Act
                     self.state = '1'
@@ -256,6 +277,7 @@ class Lexer:
                     keyword += self.current_char
                     self.advance()
                 else:
+                    
                     self.state = '0'
                     keyword = ""
 
@@ -273,13 +295,14 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token)
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                
-                self.advance()
+                    errors.append(error)
 
             # Assembly
             elif self.state == '5':
@@ -335,13 +358,14 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-
-                self.advance()
+                    errors.append(error)
 
                 # Constant
             elif self.state == '13':
@@ -412,13 +436,14 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token)
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                    
-                self.advance()
+                    errors.append(error)
 
             # Decimal
             elif self.state == '22':
@@ -480,11 +505,14 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token)
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
+                    errors.append(error)
                 
                 self.advance()
 
@@ -550,13 +578,14 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token)
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-
-                self.advance()
+                    errors.append(error)
 
             # Emit
             elif self.state == '37':
@@ -572,13 +601,14 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token)
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-
-                self.advance()
+                    errors.append(error)
 
             #Enumerate
             elif self.state == '40':
@@ -642,13 +672,14 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token)
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token) 
-                
-                self.advance()
+                    errors.append(error)
             
             # Extend
             elif self.state == '49':
@@ -688,14 +719,14 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token)
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-
-                self.advance()
-
+                    errors.append(error)
             
             # Flow
             elif self.state == '55':
@@ -727,15 +758,15 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token)
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
+                    errors.append(error)
 
-                self.advance()
-
-                    
             # Halt
             elif self.state == '60':
                 if self.current_char == 'a':
@@ -766,13 +797,15 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token)
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                
-                self.advance()
+                    errors.append(error)
+
             
             # Ledger, Letter
             elif self.state == '65':
@@ -828,13 +861,14 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token)
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-
-                self.advance()
+                    errors.append(error)
             
             # Letter
             elif self.state == '72':
@@ -866,14 +900,14 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token)
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-
-                self.advance()
-
+                    errors.append(error)
             
             # Missive
             elif self.state == '77':
@@ -929,13 +963,14 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                
-                self.advance()
+                    errors.append(error)
 
             
             elif self.state == '85':
@@ -971,13 +1006,14 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token)
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)  
-
-                self.advance()
+                    errors.append(error)
 
             # Nil
             elif self.state == '89':
@@ -994,13 +1030,14 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token)
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token) 
-
-                self.advance()
+                    errors.append(error)
 
             # Numeral
             elif self.state == '92':
@@ -1048,14 +1085,14 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-
-                self.advance()
-
+                    errors.append(error)
 
             # Opt, Or
             elif self.state == '99':
@@ -1084,27 +1121,29 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-            
-                self.advance()
+                    errors.append(error)
+
             # Or
             elif self.state == '103':
                 token = Tokens(TT_ELSE, keyword) #Double check Token pls hehe
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-
-                self.advance()
-
+                    errors.append(error)
             
             # Per, Pure
             elif self.state == '105':
@@ -1133,14 +1172,14 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-
-                self.advance()
-
+                    errors.append(error)
             
             # Pure
             elif self.state == '109':
@@ -1164,13 +1203,14 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-
-                self.advance()
+                    errors.append(error)
 
             # Recede
             elif self.state == '113':
@@ -1218,13 +1258,14 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-            
-                self.advance()
+                    errors.append(error)
             
             # Seek, Shift
             elif self.state == '120':
@@ -1261,15 +1302,15 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
+                    errors.append(error)
 
-                self.advance()
-
-            
             # Shift
             elif self.state == '125':
                 if self.current_char == 'i':
@@ -1300,13 +1341,14 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-
-                self.advance()
+                    errors.append(error)
 
             
             # Thou
@@ -1339,11 +1381,14 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
+                    errors.append(error)
 
                 self.advance()
 
@@ -1391,13 +1436,14 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-
-                self.advance()
+                    errors.append(error)
             
             # Usual
             elif self.state == '141':
@@ -1429,14 +1475,14 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-
-                self.advance()
-                
+                    errors.append(error)
             
             # Veracity, Void
             elif self.state == '146':
@@ -1505,13 +1551,14 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-
-                self.advance()
+                    errors.append(error)
                 
                     
             # Void
@@ -1542,13 +1589,14 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-
-                self.advance()
+                    errors.append(error)
 
                     
             # Voila       
@@ -1565,14 +1613,14 @@ class Lexer:
                 keyword = ""
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-
-                self.advance()
-
+                    errors.append(error)
 
             # RESERVED SYMBOLS:           
             # +       
@@ -1585,43 +1633,45 @@ class Lexer:
                     self.advance()
                 else:
                     token = Tokens(TT_PLUS) # Double check tokens pls hehe
-                    self.advance()
                     self.state = '0'
 
-                    error = self.check_delim(token) 
-                    if error:
-                        errors.append(error.as_string())
+                    if token:
+                        error = self.check_delim(token) 
+                        if error:
+                            errors.append(error)
+                        else:
+                            tokens.append(token)
                     else:
-                        tokens.append(token)  
-                    self.advance()
+                        errors.append(error)
 
             # +=  
             elif self.state == '164':
                 token = Tokens(TT_PLUSAND) #Double check tokens pls hehe
-                self.advance()
                 self.state = '0'
             
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                self.advance()
-
+                    errors.append(error)
             
             # ++   
             elif self.state == '166':
                 token = Tokens(TT_INC) #Double check tokens pls hehe
-                self.advance()
                 self.state = '0'
                 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                self.advance()
-            
+                    errors.append(error)
+
             # -       
             elif self.state == '168':
                 if self.current_char == '=':
@@ -1632,40 +1682,44 @@ class Lexer:
                     self.advance()
                 else:
                     token = Tokens(TT_MINUS) # Double check tokens pls hehe
-                    self.advance()
                     self.state = '0'
 
-                    error = self.check_delim(token) 
-                    if error:
-                        errors.append(error.as_string())
+                    if token:
+                        error = self.check_delim(token) 
+                        if error:
+                            errors.append(error)
+                        else:
+                            tokens.append(token)
                     else:
-                        tokens.append(token)      
-                    self.advance()
+                        errors.append(error)
+
             # -=         
             elif self.state == '170':
                 token = Tokens(TT_MINUSAND) #Double check tokens pls hehe
-                self.advance()
                 self.state = '0'
             
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                self.advance()
+                    errors.append(error)
             
             # --  
             elif self.state == '172':
                 token = Tokens(TT_DEC) #Double check tokens pls hehe
-                self.advance()
                 self.state = '0'
                 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                self.advance()
+                    errors.append(error)
             
              # *       
             elif self.state == '174':   
@@ -1674,28 +1728,30 @@ class Lexer:
                     self.advance()
                 else:
                     token = Tokens(TT_MUL) # Double check tokens pls hehe
-                    self.advance()
                     self.state = '0'
 
-                    error = self.check_delim(token) 
-                    if error:
-                        errors.append(error.as_string())
+                    if token:
+                        error = self.check_delim(token) 
+                        if error:
+                            errors.append(error)
+                        else:
+                            tokens.append(token)
                     else:
-                        tokens.append(token)
-                    self.advance() 
+                        errors.append(error)
 
             # yung "=" under kay "*"          
             elif self.state == '176':
                 token = Tokens(TT_MULAND) #Double check tokens pls hehe
-                self.advance()
                 self.state = '0'
             
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                self.advance()
+                    errors.append(error)
             
             # /       
             elif self.state == '178':
@@ -1704,40 +1760,52 @@ class Lexer:
                     self.advance()
                 elif self.current_char == '/':
                     token, error = self.make_slinecom()
-                    if error:
-                        errors.append(error.as_string())
+                    if token:
+                        error = self.check_delim(token) 
+                        if error:
+                            errors.append(error)
+                        else:
+                            tokens.append(token)
                     else:
-                        tokens.append(token)   
+                        errors.append(error)
+
                 elif self.current_char == '*':
                     token, error = self.make_mlinecom()
-                    if error:
-                        errors.append(error.as_string())
+                    if token:
+                        error = self.check_delim(token) 
+                        if error:
+                            errors.append(error)
+                        else:
+                            tokens.append(token)
                     else:
-                        tokens.append(token)   
+                        errors.append(error)
+
                 else:
                     token = Tokens(TT_DIV) # Double check tokens pls hehe
-                    self.advance()
                     self.state = '0'
 
-                    error = self.check_delim(token) 
-                    if error:
-                        errors.append(error.as_string())
+                    if token:
+                        error = self.check_delim(token) 
+                        if error:
+                            errors.append(error)
+                        else:
+                            tokens.append(token)
                     else:
-                        tokens.append(token)
-                    self.advance()
+                        errors.append(error)
 
             # /=     
             elif self.state == '180':
                 token = Tokens(TT_DIVAND) #Double check tokens pls hehe
-                self.advance()
                 self.state = '0'
             
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                self.advance()
+                    errors.append(error)
             
             # %   
             elif self.state == '182':
@@ -1748,25 +1816,27 @@ class Lexer:
                     token = Tokens(TT_MODULO) # Double check tokens pls hehe
                     self.state = '0'
 
-                    error = self.check_delim(token) 
-                    if error:
-                        errors.append(error.as_string())
+                    if token:
+                        error = self.check_delim(token) 
+                        if error:
+                            errors.append(error)
+                        else:
+                            tokens.append(token)
                     else:
-                        tokens.append(token)
-
+                        errors.append(error)
             # %=
             elif self.state == '184':
                 token = Tokens(TT_MODAND) #Double check tokens pls hehe
-                self.advance()
                 self.state = '0'
             
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                self.advance()
-            
+                    errors.append(error)
             # =   
             elif self.state == '186':
                 if self.current_char == '=':
@@ -1774,28 +1844,30 @@ class Lexer:
                     self.advance()
                 else:
                     token = Tokens(TT_EQUAL) # Double check tokens pls hehe
-                    self.advance()
                     self.state = '0'
 
-                    error = self.check_delim(token) 
-                    if error:
-                        errors.append(error.as_string())
+                    if token:
+                        error = self.check_delim(token) 
+                        if error:
+                            errors.append(error)
+                        else:
+                            tokens.append(token)
                     else:
-                        tokens.append(token)    
-                    self.advance()
+                        errors.append(error)
 
             # ==         
             elif self.state == '188':
                 token = Tokens(TT_EQUALTO) #Double check tokens pls hehe
-                self.advance()
                 self.state = '0'
             
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                self.advance()
+                    errors.append(error)
             
             # !   
             elif self.state == '190':
@@ -1804,28 +1876,30 @@ class Lexer:
                     self.advance()
                 else:
                     token = Tokens(TT_NOT) # Double check tokens pls hehe
-                    self.advance()
                     self.state = '0'
 
-                    error = self.check_delim(token) 
-                    if error:
-                        errors.append(error.as_string())
+                    if token:
+                        error = self.check_delim(token) 
+                        if error:
+                            errors.append(error)
+                        else:
+                            tokens.append(token)
                     else:
-                        tokens.append(token)  
-                    self.advance()
+                        errors.append(error)
 
             # !=       
             elif self.state == '192':
                 token = Tokens(TT_NOTEQUAL) #Double check tokens pls hehe
-                self.advance()
                 self.state = '0'
             
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                self.advance()
+                    errors.append(error)
             
             # <       
             elif self.state == '194':
@@ -1837,41 +1911,44 @@ class Lexer:
                     self.advance()
                 else:
                     token = Tokens(TT_LESSTHAN) # Double check tokens pls hehe
-                    self.advance()
                     self.state = '0'
 
-                    error = self.check_delim(token) 
-                    if error:
-                        errors.append(error.as_string())
+                    if token:
+                        error = self.check_delim(token) 
+                        if error:
+                            errors.append(error)
+                        else:
+                            tokens.append(token)
                     else:
-                        tokens.append(token) 
-                    self.advance()
+                        errors.append(error)
 
             # <=      
             elif self.state == '196':
                 token = Tokens(TT_LESSTHANEQUAL) #Double check tokens pls hehe
-                self.advance()
                 self.state = '0'
             
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                self.advance()
+                    errors.append(error)
             
             # <<   
             elif self.state == '198':
                 token = Tokens(TT_BITLSHIFT) #Double check tokens pls hehe
-                self.advance()
                 self.state = '0'
                 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                self.advance()
+                    errors.append(error)
             
             # >       
             elif self.state == '200':
@@ -1885,38 +1962,43 @@ class Lexer:
                     token = Tokens(TT_GREATERTHAN) # Double check tokens pls hehe
                     self.state = '0'
 
-                    error = self.check_delim(token) 
-                    if error:
-                        errors.append(error.as_string())
+                    if token:
+                        error = self.check_delim(token) 
+                        if error:
+                            errors.append(error)
+                        else:
+                            tokens.append(token)
                     else:
-                        tokens.append(token)
-                    self.advance()
+                        errors.append(error)
 
             # >=        
             elif self.state == '202':
                 token = Tokens(TT_GREATERTHANEQUAL) #Double check tokens pls hehe
-                self.advance()
                 self.state = '0'
             
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                self.advance()
-            
+                    errors.append(error)
+                
             # >>
             elif self.state == '204':
                 token = Tokens(TT_BITRSHIFT) #Double check tokens pls hehe
                 self.advance()
                 self.state = '0'
                 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                self.advance()
+                    errors.append(error)
             
             # |   
             elif self.state == '206':
@@ -1925,159 +2007,172 @@ class Lexer:
                     self.advance()
                 else:
                     token = Tokens(TT_BITOR) # Double check tokens pls hehe
-                    self.advance()
                     self.state = '0'
 
-                    error = self.check_delim(token) 
-                    if error:
-                        errors.append(error.as_string())
+                    if token:
+                        error = self.check_delim(token) 
+                        if error:
+                            errors.append(error)
+                        else:
+                            tokens.append(token)
                     else:
-                        tokens.append(token) 
-                    self.advance() 
-
+                        errors.append(error)
 
             # ||       
             elif self.state == '208':
                 token = Tokens(TT_OR) #Double check tokens pls hehe
-                self.advance()
                 self.state = '0'
             
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                self.advance()
+                    errors.append(error)
                     
             # (      
             elif self.state == '210':
                 token = Tokens(TT_LPAREN) # Double check tokens pls hehe
-                self.advance()
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                self.advance()
+                    errors.append(error)
+
             
             # )      
             elif self.state == '212':
                 token = Tokens(TT_RPAREN) # Double check tokens pls hehe
-                self.advance()
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                self.advance()
+                    errors.append(error)
             
             # {      
             elif self.state == '214':
                 token = Tokens(TT_LBRACE) # Double check tokens pls hehe
-                self.advance()
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                self.advance()
+                    errors.append(error)
             
             # }      
             elif self.state == '216':
                 token = Tokens(TT_RBRACE) # Double check tokens pls hehe
-                self.advance()
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                self.advance()
+                    errors.append(error)
             
             # [      
             elif self.state == '218':
                 token = Tokens(TT_LBRACKET) # Double check tokens pls hehe
-                self.advance()
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
+                    errors.append(error)
                 self.advance()
             
             # ]      
             elif self.state == '220':
                 token = Tokens(TT_RBRACKET) # Double check tokens pls hehe
-                self.advance()
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                self.advance()
+                    errors.append(error)
             
             # ,      
             elif self.state == '222':
                 token = Tokens(TT_COMMA) # Double check tokens pls hehe
-                self.advance()
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                self.advance()
+                    errors.append(error)
             
             # .      
             elif self.state == '224':
                 token = Tokens(TT_PERIOD) # Double check tokens pls hehe
-                self.advance()
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                self.advance()
+                    errors.append(error)
             
             # :      
             elif self.state == '226':
                 token = Tokens(TT_COLON) # Double check tokens pls hehe
-                self.advance()
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                self.advance()
+                    errors.append(error)
             
             # ^      
             elif self.state == '228':
                 token = Tokens(TT_BITXOR) # Double check tokens pls hehe
-                self.advance()
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                self.advance()
+                    errors.append(error)
             
             # &   
             elif self.state == '230':
@@ -2086,55 +2181,58 @@ class Lexer:
                     self.advance()
                 else:
                     token = Tokens(TT_BITAND) # Double check tokens pls hehe
-                    self.advance()
                     self.state = '0'
 
-                    error = self.check_delim(token) 
-                    if error:
-                        errors.append(error.as_string())
+                    if token:
+                        error = self.check_delim(token) 
+                        if error:
+                            errors.append(error)
+                        else:
+                            tokens.append(token)
                     else:
-                        tokens.append(token)
-                    self.advance()
+                        errors.append(error)
 
             # &&
             elif self.state == '232':
                 token = Tokens(TT_AND) #Double check tokens pls hehe
-                self.advance()
                 self.state = '0'
             
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                self.advance()
-            
-            
+                    errors.append(error)
+
             #   ~    
             elif self.state == '234':
                 token = Tokens(TT_BITNOT) # Double check tokens pls hehe
-                self.advance()
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                self.advance()
+                    errors.append(error)
             
             # ;      
             elif self.state == '236':
                 token = Tokens(TT_TERMINATE) # Double check tokens pls hehe
-                self.advance()
                 self.state = '0'
 
-                error = self.check_delim(token) 
-                if error:
-                    errors.append(error.as_string())
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
                 else:
-                    tokens.append(token)
-                self.advance()
+                    errors.append(error)
         
             else:
                 errors.append(f"Invalid state: {self.state}")
@@ -2180,6 +2278,9 @@ class Lexer:
         self.advance()
         missive_content = ""
 
+        if self.current_char == None:
+            return None, IllegalCharError(pos_start, self.pos, "Unclosed Missive")
+
         while self.current_char != None and self.current_char != '"':
             if self.current_char == "\\":
                 self.advance()
@@ -2197,6 +2298,10 @@ class Lexer:
     def make_letter(self):
         pos_start = self.pos
         self.advance()
+
+        if self.current_char == None:
+            return None, IllegalCharError(pos_start, self.pos, "Unclosed Letter")
+        
         char = self.current_char
         self.advance()
         if self.current_char != "'":
