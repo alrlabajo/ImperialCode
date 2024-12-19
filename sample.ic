@@ -1,4 +1,1 @@
-Embark(){
-	Emit("Hello");
-	Recede 0;
-}
+Num?eral age = 123;

@@ -263,8 +263,11 @@ class Lexer:
                     self.state = '236'
                     self.advance()
                 else:
-                    errors.append(f"Unexpected character: {self.current_char}")
+                    pos_start = self.pos.copy()
+                    char = self.current_char
                     self.advance()
+                    error = IllegalCharError(pos_start, self.pos, f"'{char}'")
+                    errors.append(error)
 
             # State 1
             elif self.state == '1':
@@ -998,7 +1001,6 @@ class Lexer:
                     keyword += self.current_char
                     self.advance()
                 else:
-                    errors.append(f"Invalid keyword: {keyword}")
                     self.state = '0'
                     keyword = ""
             elif self.state == '87':
@@ -1022,7 +1024,6 @@ class Lexer:
                     keyword += self.current_char
                     self.advance()
                 else:
-                    errors.append(f"Invalid keyword: {keyword}")
                     self.state = '0'
                     keyword = ""
             elif self.state == '90':
@@ -1298,7 +1299,7 @@ class Lexer:
                     self.state = '0'
                     keyword = ""
             elif self.state == '123':
-                token = Tokens(TT_OUTPUT, keyword) 
+                token = Tokens(TT_INPUT, keyword) 
                 keyword = ""
                 self.state = '0'
 
