@@ -132,13 +132,20 @@ TT_SLINECOM  = 'SLINE COMMENT' #Done w/o delims
 TT_MLINECOM    = 'MLINE COMMENT' #Done w/o delims
 TT_CLRSCR   = 'Voila' #Done w/o delims
 
+ESC_SEQ = {
+    'n': '\n',
+    't': '\t',
+    '\\': '\\',
+    '"': '"',
+    "'": "'"
+}
 
 DD_DTYPE = [" ", "[", "(", ",", *ALPHABET, "\n"]
-DD_MISSIVE = ["\n", "'", ",", ")", "]", "}", ":", "#", "(", "[", "\n", ";"]
+DD_MISSIVE = ["\n", "'", ",", ")", "]", "}", ":", "#", "(", "[", "\n", ";", " "]
 DD_CHAR = [" ", "\n", "'", ';', ")"]
 DD_BREAK = [*ALPHA_NUM, " ", "\n", "("]
 DD_BIT = [*ALPHA_NUM, " ", "\n", "("]
-DD_ARITH = [*ALPHA_NUM, " ", "(", "-", ")"]
+DD_ARITH = [*ALPHA_NUM, " ", "(", "-", ")", ";"]
 DD_PLUS = [*ALPHA_NUM, " ", "(", "-", ",", "'", "[", ")"]
 DD_MINUS = [*ALPHA_NUM, " ", "(", "-"]
 DD_ASSIGN = [*ALPHA_NUM, " ", "(", "-", ",", "{", "[", "'"]
