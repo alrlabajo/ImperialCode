@@ -231,8 +231,12 @@ class Lexer:
                 return Tokens(TT_FLOAT_LITERAL, str(float(num_str))), None
                 
     def make_missive(self):
+        pos_start = self.pos
         self.advance()
         missive_content = ""
+
+        if self.current_char == None:
+            return None, IllegalCharError(pos_start, self.pos, "Unclosed Missive")
 
         while self.current_char != None and self.current_char != '"':
             if self.current_char == "\\":
@@ -251,6 +255,10 @@ class Lexer:
     def make_letter(self):
         pos_start = self.pos
         self.advance()
+
+        if self.current_char == None:
+            return None, IllegalCharError(pos_start, self.pos, "Unclosed Letter")
+        
         char = self.current_char
         self.advance()
         if self.current_char != "'":
@@ -722,13 +730,11 @@ class Lexer:
                 self.advance()
                 return Tokens(TT_CLRSCR, keyword), None
             else:
-                break
+                return None, IllegalKeyword(pos_start, self.pos, f"Invalid keyword '{keyword}'")
             self.advance()
 
-        if self.current_char is not None and (self.current_char.isalpha() or self.current_char.isdigit() or punctuation):
-                keyword += self.current_char
-                self.advance()
-                return None, IllegalKeyword(pos_start, self.pos, f"Invalid keyword '{keyword}'")
+        return None, IllegalKeyword(pos_start, self.pos, f"Invalid keyword '{keyword}'")
+        
 
     def make_identifier(self):
         pos_start = self.pos

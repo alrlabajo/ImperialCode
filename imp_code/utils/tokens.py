@@ -126,28 +126,36 @@ TT_SPACE     = 'SPACE' #Done w/o delims
 TT_NEWLINE   = '\\n'
 TT_TERMINATE = ';' #Done w/o delims
 TT_PERIOD    = '.' #Done w/o delims
+TT_COLON     = ':' #Done w/o delims
 TT_COMMA     = ',' #Done w/o delims
 TT_SLINECOM  = 'SLINE COMMENT' #Done w/o delims
 TT_MLINECOM    = 'MLINE COMMENT' #Done w/o delims
 TT_CLRSCR   = 'Voila' #Done w/o delims
 
+ESC_SEQ = {
+    'n': '\n',
+    't': '\t',
+    '\\': '\\',
+    '"': '"',
+    "'": "'"
+}
 
 DD_DTYPE = [" ", "[", "(", ",", *ALPHABET, "\n"]
-DD_MISSIVE = ["\n", "'", ",", ")", "]", "}", ":", "#", "(", "[", "\n", ";"]
-DD_CHAR = [" ", "\n", "'", ';']
+DD_MISSIVE = ["\n", "'", ",", ")", "]", "}", ":", "#", "(", "[", "\n", ";", " "]
+DD_CHAR = [" ", "\n", "'", ';', ")"]
 DD_BREAK = [*ALPHA_NUM, " ", "\n", "("]
 DD_BIT = [*ALPHA_NUM, " ", "\n", "("]
-DD_ARITH = [*ALPHA_NUM, " ", "(", "-", ")"]
+DD_ARITH = [*ALPHA_NUM, " ", "(", "-", ")", ";"]
 DD_PLUS = [*ALPHA_NUM, " ", "(", "-", ",", "'", "[", ")"]
 DD_MINUS = [*ALPHA_NUM, " ", "(", "-"]
 DD_ASSIGN = [*ALPHA_NUM, " ", "(", "-", ",", "{", "[", "'"]
 DD_OPAR = [*ALPHA_NUM, " ", "(", ")", "-", ",", "[", "{", "(", ")", "\n", "'", '"']
-DD_CPAR = [*ARITH_OP, " ", "\n", ":", "(", ")", ",", "]", "[", "}", "#", ".", "(", ";"]
+DD_CPAR = [*ARITH_OP, " ", "\n", ":", "(", ")", ",", "]", "[", "}", "#", ".", "(", ";", "{"]
 DD_OBRACE = [*ALPHA_NUM, " ", "\n", "}", ","]
 DD_CBRACE = [" ", "\n", ",", "}", ")", "]", ";"]
 DD_OBRACK = [*ALPHA_NUM, " ", "\n", ",", "-", "{", "[", "(", "]", ")", ","]
 DD_CBRACK = [" ", "\n", ",", "[", "]", ")", "}", ".", "(", "+", ":", ";"]
-DD_SPACE = [*ALPHA_NUM, *ARITH_OP, *REL_OP, *BITWISE_OP, '"', "#", "$", "&", "(", ")", ",", ".", ":", ";", "?", "@", "[", "\\", "]", "^", "_", "`", "{", "|", "}", "~", "±", "§", "'", "\n", "=", " ", "\t"]
+DD_SPACE = [*ALPHA_NUM, *ARITH_OP, *REL_OP, *BITWISE_OP, '"', "#", "$", "&", "(", ")", ",", ".", ":", ";", "?", "@", "[", "\\", "]", "^", "_", "`", "{", "|", "}", "~", "±", "§", "'", "\n", "=", " ", "\t", "%"]
 DD_COMMA = [*ALPHA_NUM, " ", "(", "-", ",", "[", "{", "(", ")", "\n", "'"]
 DD_PERIOD = [*ALPHA_NUM]
 DD_STRING = [" ", "\n", ",", "]", ")", "}", ",", ".", ":", "#", "!", "=", "["]
@@ -158,7 +166,7 @@ DD_SEMICOL = [*ALPHA_NUM, " ", "\n", "}", ";"]
 DD_FUNC = ["(", "\n"]
 DD_COMMENT = ["\n", " "]
 DD_MAIN = [" ", "("]
-DD_IDENTIFIER = [*ALPHA_NUM, '_', ' ', '\n', ';', *ARITH_OP, *REL_OP, *BITWISE_OP, "(", ")", "[" ,"]", "{", "}"]
+DD_IDENTIFIER = [*ALPHA_NUM, '_', ' ', '\n', ';', *ARITH_OP, *REL_OP, *BITWISE_OP, "(", ")", "[" ,"]", "{", "}", "%", ",", "="]
 
 DELIM_LIST = {
     # MAIN
@@ -254,12 +262,21 @@ DELIM_LIST = {
     TT_LESSTHANEQUAL: DD_SPACE,
     TT_GREATERTHANEQUAL: DD_SPACE,
 
+    # BITWISE OPERATORS
+    TT_BITAND: DD_BIT,
+    TT_BITOR: DD_BIT,
+    TT_BITXOR: DD_BIT,
+    TT_BITNOT: DD_BIT,
+    TT_BITLSHIFT: DD_BIT,
+    TT_BITRSHIFT: DD_BIT,
+
     # OTHERS
     TT_SPACE: DD_SPACE,
     TT_NEWLINE: DD_SPACE,
     TT_TERMINATE: DD_SEMICOL,
     TT_PERIOD: DD_PERIOD,
     TT_COMMA: DD_COMMA,
+    TT_COLON: DD_COLON,
     TT_SLINECOM: DD_COMMENT,
     TT_MLINECOM: DD_COMMENT,
     TT_CLRSCR: DD_FUNC,
