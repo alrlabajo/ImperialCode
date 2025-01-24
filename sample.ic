@@ -1,1 +1,18 @@
-Num?eral age = 123;
+Numeral day = 4;
+Shift(day)
+{
+Opt 1:
+Emit(“Monday”);
+Opt 2:
+Emit(“Tuesday”);
+Opt 3:
+Emit(“Wednesday”);
+Opt 4:
+Emit(“Thursday”);
+Opt 5:
+Emit(“Friday”);
+Opt 6:
+Emit(“Saturday”);
+Opt 7:
+Emit(“Sunday”);
+}
