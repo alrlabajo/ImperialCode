@@ -142,8 +142,8 @@ ESC_SEQ = {
 
 DD_DTYPE = [" ", "[", "(", ",", *ALPHABET, "\n"]
 DD_MISSIVE = ["\n", "'", ",", ")", "]", "}", ":", "#", "(", "[", "\n", ";", " "]
-DD_CHAR = [" ", "\n", "'", ';', ")"]
-DD_BREAK = [*ALPHA_NUM, " ", "\n", "("]
+DD_CHAR = [" ", "\n", "'", ';', ")", ":"]
+DD_BREAK = [*ALPHA_NUM, " ", "\n", "(", ":"]
 DD_BIT = [*ALPHA_NUM, " ", "\n", "("]
 DD_ARITH = [*ALPHA_NUM, " ", "(", "-", ")", ";"]
 DD_PLUS = [*ALPHA_NUM, " ", "(", "-", ",", "'", "[", ")"]
@@ -166,7 +166,7 @@ DD_SEMICOL = [*ALPHA_NUM, " ", "\n", "}", ";"]
 DD_FUNC = ["(", "\n"]
 DD_COMMENT = ["\n", " "]
 DD_MAIN = [" ", "("]
-DD_IDENTIFIER = [*ALPHA_NUM, '_', ' ', '\n', ';', *ARITH_OP, *REL_OP, *BITWISE_OP, "(", ")", "[" ,"]", "{", "}", "%", ",", "="]
+DD_IDENTIFIER = [*ALPHA_NUM, '_', ' ', '\n', ';', *ARITH_OP, *REL_OP, *BITWISE_OP, "(", ")", "[" ,"]", "{", "}", "%", ",", "=", ":"]
 
 DELIM_LIST = {
     # MAIN
@@ -206,9 +206,9 @@ DELIM_LIST = {
 
     # CONDITIONAL STATEMENTS
     TT_CASE: DD_SPACE,
-    TT_IF: DD_SPACE,
+    TT_IF: DD_FUNC,
     TT_ELSE: DD_SPACE,
-    TT_SWITCH: DD_SPACE,
+    TT_SWITCH: DD_FUNC,
     TT_DEFAULT: DD_SPACE,
 
     # LOOP STATEMENTS
@@ -217,9 +217,9 @@ DELIM_LIST = {
     TT_DO: DD_SPACE,
 
     # LOOP CONTROL
-    TT_BREAK: DD_BREAK,
-    TT_CONTINUE: DD_BREAK,
-    TT_RETURN: DD_OBRACE,
+    TT_BREAK: DD_RESERVE,
+    TT_CONTINUE: DD_RESERVE,
+    TT_RETURN: DD_RESERVE,
     TT_GOTO: DD_SPACE,
 
     # VALUES

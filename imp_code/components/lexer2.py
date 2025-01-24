@@ -98,7 +98,7 @@ class Lexer:
                     if token:
                         error = self.check_delim(token) 
                         if error:
-                            errors.append()
+                            errors.append(error)
                         else:
                             tokens.append(token)
                     else:
@@ -1390,8 +1390,6 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
-
-                self.advance()
 
             
             # Until, Usual
