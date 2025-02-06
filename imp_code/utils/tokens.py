@@ -131,6 +131,7 @@ TT_COMMA     = ',' #Done w/o delims
 TT_SLINECOM  = 'SLINE COMMENT' #Done w/o delims
 TT_MLINECOM    = 'MLINE COMMENT' #Done w/o delims
 TT_CLRSCR   = 'Voila' #Done w/o delims
+TT_EOF      = 'EOF'
 
 ESC_SEQ = {
     'n': '\n',
@@ -213,7 +214,7 @@ DELIM_LIST = {
 
     # LOOP STATEMENTS
     TT_WHILE: DD_SPACE,
-    TT_FOR: DD_SPACE,
+    TT_FOR: DD_FUNC,
     TT_DO: DD_SPACE,
 
     # LOOP CONTROL

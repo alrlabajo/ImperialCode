@@ -39,6 +39,16 @@ class Lexer:
 
         return None
 
+    def keyword_error(self, keyword, errors):
+        pos_start = self.pos.copy()
+        while self.current_char is not None and self.current_char.isalpha():
+            keyword += self.current_char
+            self.advance()
+        error = IllegalKeyword(pos_start, self.pos, f"{keyword}")
+        errors.append(error)
+        self.state = '0'
+        return ""
+
     def make_tokens(self):
         tokens = []
         errors = []
@@ -48,6 +58,9 @@ class Lexer:
         while not stop:
             token = None
             error = None
+
+            if self.current_char is None and self.state == '0':
+                break
 
             if self.state == '0':
                 if self.current_char in "\t":
@@ -129,145 +142,141 @@ class Lexer:
                         errors.append(error)
 
 
-                elif self.current_char == 'A': # Assembly and Act
+                elif self.current_char == 'A': # Act
                     self.state = '1'
                     keyword += self.current_char
                     self.advance()
                 elif self.current_char == 'C':  # Constant
-                    self.state = '13'
+                    self.state = '5'
                     keyword += self.current_char
                     self.advance()
                 elif self.current_char == 'D':  # Decimal
-                    self.state = '22'
+                    self.state = '14'
                     keyword += self.current_char
                     self.advance()
                 elif self.current_char == 'E':  # Embark , Emit, Enumerate, Extend
-                    self.state = '30'
-                    keyword += self.current_char
-                    self.advance()
-                elif self.current_char == 'F':  # Flow
-                    self.state = '55'
+                    self.state = '22'
                     keyword += self.current_char
                     self.advance()
                 elif self.current_char == 'H':  # Halt
-                    self.state = '60'
+                    self.state = '47'
                     keyword += self.current_char
                     self.advance()
-                elif self.current_char == 'L':  # Ledger
-                    self.state = '65'
+                elif self.current_char == 'L':  # Letter
+                    self.state = '52'
                     keyword += self.current_char
                     self.advance()
                 elif self.current_char == 'M': # Missive
-                    self.state = '77'
+                    self.state = '59'
                     keyword += self.current_char
                     self.advance()
                 elif self.current_char == 'N':  # Nay, Nil, Numeral
-                    self.state = '85'
+                    self.state = '67'
                     keyword += self.current_char
                     self.advance()
                 elif self.current_char == 'O':  # Opt, Or
-                    self.state = '99'
+                    self.state = '81'
                     keyword += self.current_char
                     self.advance()
                 elif self.current_char == 'P':  # Per, Pure
-                    self.state = '105'
+                    self.state = '87'
                     keyword += self.current_char
                     self.advance()
                 elif self.current_char == 'R':  # Recede
-                    self.state = '113'
+                    self.state = '95'
                     keyword += self.current_char
                     self.advance()
                 elif self.current_char == 'S':  # Seek, Shift
-                    self.state = '120'
+                    self.state = '102'
                     keyword += self.current_char
                     self.advance()
                 elif self.current_char == 'T':  # Thou
-                    self.state = '130'
+                    self.state = '112'
                     keyword += self.current_char
                     self.advance()
                 elif self.current_char == 'U':  # Until, Usual
-                    self.state = '135'
+                    self.state = '117'
                     keyword += self.current_char
                     self.advance()
                 elif self.current_char == 'V':  # Veracity, Void, Voila
-                    self.state = '146'
+                    self.state = '128'
                     keyword += self.current_char
                     self.advance()
                 elif self.current_char == '+':  # +
-                    self.state = '162'
+                    self.state = '144'
                     self.advance()
                 elif self.current_char == '-':  # -
-                    self.state = '168'
+                    self.state = '150'
                     self.advance()
                 elif self.current_char == '*':  # *
-                    self.state = '174'
+                    self.state = '156'
                     self.advance()
                 elif self.current_char == '/':  # /
-                    self.state = '178'
+                    self.state = '160'
                     self.advance()
                 elif self.current_char == '%':  # %
-                    self.state = '182'
+                    self.state = '164'
                     self.advance()
                 elif self.current_char == '=':  # =
-                    self.state = '186'
+                    self.state = '168'
                     self.advance()
                 elif self.current_char == '!':  # !
-                    self.state = '190'
+                    self.state = '172'
                     self.advance()
                 elif self.current_char == '<':  # <
-                    self.state = '194'
+                    self.state = '176'
                     self.advance()
                 elif self.current_char == '>':  # >
-                    self.state = '200'
+                    self.state = '180'
                     self.advance()
                 elif self.current_char == '|':  # |
-                    self.state = '206'
+                    self.state = '184'
                     self.advance()
                 elif self.current_char == '(':  # (
-                    self.state = '210'
+                    self.state = '187'
                     self.advance()
                 elif self.current_char == ')':  # )
-                    self.state = '212'
+                    self.state = '189'
                     self.advance()
                 elif self.current_char == '{':  # {
-                    self.state = '214'
+                    self.state = '191'
                     self.advance()
                 elif self.current_char == '}':  # }
-                    self.state = '216'
+                    self.state = '193'
                     self.advance()
                 elif self.current_char == '[':  # [
-                    self.state = '218'
+                    self.state = '195'
                     self.advance()
                 elif self.current_char == ']':  # ]
-                    self.state = '220'
+                    self.state = '197'
                     self.advance()
                 elif self.current_char == ',':  # ,
-                    self.state = '222'
+                    self.state = '199'
                     self.advance()
                 elif self.current_char == '.':  # .
-                    self.state = '224'
+                    self.state = '201'
                     self.advance()
                 elif self.current_char == ':':  # :
-                    self.state = '226'
-                    self.advance()
-                elif self.current_char == '^':  # ^
-                    self.state = '228'
-                    self.advance()
-                elif self.current_char == '&':  # &
-                    self.state = '230'
-                    self.advance()
-                elif self.current_char == '~':  # ~
-                    self.state = '234'
+                    self.state = '203'
                     self.advance()
                 elif self.current_char == ';':  # ;
-                    self.state = '236'
+                    self.state = '205'
                     self.advance()
+                elif self.current_char.isalpha():
+                    pos_start = self.pos.copy()
+                    while self.current_char is not None and self.current_char.isalpha():
+                        keyword += self.current_char
+                        self.advance()
+                    error = IllegalKeyword(pos_start, self.pos, f"{keyword}")
+                    errors.append(error)
+                    continue
                 else:
                     pos_start = self.pos.copy()
                     char = self.current_char
                     self.advance()
                     error = IllegalCharError(pos_start, self.pos, f"'{char}'")
                     errors.append(error)
+                    continue
 
             # State 1
             elif self.state == '1':
@@ -275,14 +284,9 @@ class Lexer:
                     self.state = '2'  # If "Act"
                     keyword += self.current_char
                     self.advance()
-                elif self.current_char == 's':
-                    self.state = '5'  # If "Assembly"
-                    keyword += self.current_char
-                    self.advance()
                 else:
-                    
-                    self.state = '0'
-                    keyword = ""
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
 
             # Act
             elif self.state == '2':
@@ -291,9 +295,12 @@ class Lexer:
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
             elif self.state == '3':
+                if self.current_char is not None and self.current_char.isalpha():
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
                 token = Tokens(TT_DO, keyword)
                 keyword = ""
                 self.state = '0'
@@ -306,135 +313,70 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
+                continue
 
-            # Assembly
+            # Constant
             elif self.state == '5':
-                if self.current_char == 's':
+                if self.current_char == 'o':
                     self.state = '6'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
             elif self.state == '6':
-                if self.current_char == 'e':
+                if self.current_char == 'n':
                     self.state = '7'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
             elif self.state == '7':
-                if self.current_char == 'm':
+                if self.current_char == 's':
                     self.state = '8'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
             elif self.state == '8':
-                if self.current_char == 'b':
+                if self.current_char == 't':
                     self.state = '9'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
             elif self.state == '9':
-                if self.current_char == 'l':
+                if self.current_char == 'a':
                     self.state = '10'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
             elif self.state == '10':
-                if self.current_char == 'y':
+                if self.current_char == 'n':
                     self.state = '11'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
             elif self.state == '11':
-                token = Tokens(TT_STRUCT, keyword)
-                keyword = ""
-                self.state = '0'
-
-                if token:
-                    error = self.check_delim(token) 
-                    if error:
-                        errors.append(error)
-                    else:
-                        tokens.append(token)
-                else:
-                    errors.append(error)
-
-            # Constant
-            elif self.state == '13':
-                if self.current_char == 'o':
-                    self.state = '14'
-                    keyword += self.current_char
-                    self.advance()
-                else:
-                    self.state = '0'
-                    keyword = ""
-
-            elif self.state == '14':
-                if self.current_char == 'n':
-                    self.state = '15'
-                    keyword += self.current_char
-                    self.advance()
-                else:
-                    self.state = '0'
-                    keyword = ""
-
-            elif self.state == '15':
-                if self.current_char == 's':
-                    self.state = '16'
-                    keyword += self.current_char
-                    self.advance()
-                else:
-                    self.state = '0'
-                    keyword = ""
-
-            elif self.state == '16':
                 if self.current_char == 't':
-                    self.state = '17'
+                    self.state = '12'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
 
-            elif self.state == '17':
-                if self.current_char == 'a':
-                    self.state = '18'
-                    keyword += self.current_char
-                    self.advance()
-                else:
-                    self.state = '0'
-                    keyword = ""
-
-            elif self.state == '18':
-                if self.current_char == 'n':
-                    self.state = '19'
-                    keyword += self.current_char
-                    self.advance()
-                else:
-                    self.state = '0'
-                    keyword = ""
-
-            elif self.state == '19':
-                if self.current_char == 't':
-                    self.state = '20'
-                    keyword += self.current_char
-                    self.advance()
-                else:
-                    self.state = '0'
-                    keyword = ""
-
-            elif self.state == '20':
+            elif self.state == '12':
+                if self.current_char is not None and self.current_char.isalpha():
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
                 token = Tokens(TT_CONST, keyword)
                 keyword = ""
                 self.state = '0'
@@ -447,63 +389,61 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
+                continue
 
             # Decimal
-            elif self.state == '22':
+            elif self.state == '14':
                 if self.current_char == 'e':
-                    self.state = '23'
+                    self.state = '15'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-
-            elif self.state == '23':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '15':
                 if self.current_char == 'c':
-                    self.state = '24'
+                    self.state = '16'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-
-            elif self.state == '24':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '16':
                 if self.current_char == 'i':
-                    self.state = '25'
+                    self.state = '17'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-
-            elif self.state == '25':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '17':
                 if self.current_char == 'm':
-                    self.state = '26'
+                    self.state = '18'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-
-            elif self.state == '26':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '18':
                 if self.current_char == 'a':
-                    self.state = '27'
+                    self.state = '19'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-
-            elif self.state == '27':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '19':
                 if self.current_char == 'l':
-                    self.state = '28'
+                    self.state = '20'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
             elif self.state == '28':
+                if self.current_char is not None and self.current_char.isalpha():
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
                 token = Tokens(TT_FLOAT, keyword)
                 keyword = ""
                 self.state = '0'
@@ -516,67 +456,68 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
+                continue
                 
-                self.advance()
-
-            elif self.state == '30':
+            # Embark, Emit, Enumerate, Extend
+            elif self.state == '22':
                 if self.current_char == 'm':  # Embark or Emit
-                    self.state = '31'
+                    self.state = '23'
                     keyword += self.current_char
                     self.advance()
                 elif self.current_char == 'n':  # Enumerate
-                    self.state = '40'
-                    keyword += self.current_char
-                    self.advance()
-                elif self.current_char == 'x':  # Extend
-                    self.state = '49'
-                    keyword += self.current_char
-                    self.advance()
-                else:
-                    self.state = '0'
-                    keyword = ""
-                    self.advance()
-
-            elif self.state == '31':
-                if self.current_char == 'b':  # Embark
                     self.state = '32'
                     keyword += self.current_char
                     self.advance()
-                elif self.current_char == 'i':  # Emit
-                    self.state = '37'
+                elif self.current_char == 'x':  # Extend
+                    self.state = '41'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+
+            elif self.state == '23':
+                if self.current_char == 'b':  # Embark
+                    self.state = '24'
+                    keyword += self.current_char
                     self.advance()
+                elif self.current_char == 'i':  # Emit
+                    self.state = '29'
+                    keyword += self.current_char
+                    self.advance()
+                else:
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
 
             # Embark
-            elif self.state == '32':
+            elif self.state == '24':
                 if self.current_char == 'a':
-                    self.state = '33'
+                    self.state = '25'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '33':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '25':
                 if self.current_char == 'r':
-                    self.state = '34'
+                    self.state = '26'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '34':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '26':
                 if self.current_char == 'k':
-                    self.state = '35'
+                    self.state = '27'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '35':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '27':
+                if self.current_char is not None and self.current_char.isalpha():
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
                 token = Tokens(TT_MAIN, keyword) 
                 keyword = ""
                 self.state = '0'
@@ -589,17 +530,21 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
+                continue
 
             # Emit
-            elif self.state == '37':
+            elif self.state == '29':
                 if self.current_char == 't':
-                    self.state = '38'
+                    self.state = '30'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '38':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '30':
+                if self.current_char is not None and self.current_char.isalpha():
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
                 token = Tokens(TT_OUTPUT, keyword) 
                 keyword = ""
                 self.state = '0'
@@ -612,65 +557,69 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
+                continue
 
             #Enumerate
-            elif self.state == '40':
+            elif self.state == '32':
                 if self.current_char == 'u':
-                    self.state = '41'
+                    self.state = '33'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '41':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '33':
                 if self.current_char == 'm':
-                    self.state = '42'
+                    self.state = '34'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '42':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '34':
                 if self.current_char == 'e':
-                    self.state = '43'
+                    self.state = '35'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '43':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '35':
                 if self.current_char == 'r':
-                    self.state = '44'
+                    self.state = '36'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '44':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '36':
                 if self.current_char == 'a':
-                    self.state = '45'
+                    self.state = '37'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '45':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '37':
                 if self.current_char == 't':
-                    self.state = '46'
+                    self.state = '38'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '46':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '38':
                 if self.current_char == 'e':
-                    self.state = '47'
+                    self.state = '39'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '47':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '39':
+                if self.current_char is not None and self.current_char.isalpha():
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
                 token = Tokens(TT_ENUM, keyword)
                 keyword = ""
                 self.state = '0'
@@ -683,41 +632,45 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
+                continue
             
             # Extend
-            elif self.state == '49':
+            elif self.state == '41':
                 if self.current_char == 't':
-                    self.state = '50'
+                    self.state = '42'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '50':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '42':
                 if self.current_char == 'e':
-                    self.state = '51'
+                    self.state = '43'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '51':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '43':
                 if self.current_char == 'n':
-                    self.state = '52'
+                    self.state = '44'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '52':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '44':
                 if self.current_char == 'd':
-                    self.state = '53'
+                    self.state = '45'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '53':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '45':
+                if self.current_char is not None and self.current_char.isalpha():
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
                 token = Tokens(TT_CONTINUE, keyword)
                 keyword = ""
                 self.state = '0'
@@ -730,72 +683,37 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
-            
-            # Flow
-            elif self.state == '55':
-                if self.current_char == 'l':
-                    self.state = '56'
-                    keyword += self.current_char
-                    self.advance()
-                else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '56':
-                if self.current_char == 'o':
-                    self.state = '57'
-                    keyword += self.current_char
-                    self.advance()
-                else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '57':
-                if self.current_char == 'w':
-                    self.state = '58'
-                    keyword += self.current_char
-                    self.advance()
-                else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '58':
-                token = Tokens(TT_GOTO, keyword)
-                keyword = ""
-                self.state = '0'
-
-                if token:
-                    error = self.check_delim(token) 
-                    if error:
-                        errors.append(error)
-                    else:
-                        tokens.append(token)
-                else:
-                    errors.append(error)
+                continue
 
             # Halt
-            elif self.state == '60':
+            elif self.state == '47':
                 if self.current_char == 'a':
-                    self.state = '61'
+                    self.state = '48'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '61':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '48':
                 if self.current_char == 'l':
-                    self.state = '62'
+                    self.state = '49'
                     keyword += self.current_char
                     self.advance()
                 else:
                     self.state = '0'
                     keyword = ""
-            elif self.state == '62':
+            elif self.state == '49':
                 if self.current_char == 't':
-                    self.state = '63'
+                    self.state = '50'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '63':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '50':
+                if self.current_char is not None and self.current_char.isalpha():
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
                 token = Tokens(TT_BREAK, keyword)
                 keyword = ""
                 self.state = '0'
@@ -808,97 +726,53 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
+                continue
 
-            
-            # Ledger, Letter
-            elif self.state == '65':
-                if self.current_char == 'e':
-                    self.state = '66'
-                    keyword += self.current_char
-                    self.advance()
-                else:
-                    self.state = '0'
-                    keyword = "" 
-                    
-                    
-            elif self.state == '66':
-                if self.current_char == 'd': #Ledger
-                    self.state = '67' 
-                    keyword += self.current_char
-                    self.advance()
-                elif self.current_char == 't': #Letter 
-                    self.state = '72' 
-                    keyword += self.current_char
-                    self.advance()
-                else:
-                    self.state = '0'
-                    keyword = ""
-                    self.advance()
-                    
-            elif self.state == '67':
-                if self.current_char == 'g':
-                    self.state = '68'
-                    keyword += self.current_char
-                    self.advance()
-                else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '68':
-                if self.current_char == 'e':
-                    self.state = '69'
-                    keyword += self.current_char
-                    self.advance()
-                else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '69':
-                if self.current_char == 'r':
-                    self.state = '70'
-                    keyword += self.current_char
-                    self.advance()
-                else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '70':
-                token = Tokens(TT_ARRAY, keyword)
-                keyword = ""
-                self.state = '0'
-
-                if token:
-                    error = self.check_delim(token) 
-                    if error:
-                        errors.append(error)
-                    else:
-                        tokens.append(token)
-                else:
-                    errors.append(error)
-            
             # Letter
-            elif self.state == '72':
-                if self.current_char == 't':
-                    self.state = '73'
-                    keyword += self.current_char
-                    self.advance()
-                else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '73':
+            elif self.state == '52':
                 if self.current_char == 'e':
-                    self.state = '74'
+                    self.state = '53'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '74':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '53':
+                if self.current_char == 't':
+                    self.state = '54' 
+                    keyword += self.current_char
+                    self.advance()
+                else:
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '54':
+                if self.current_char == 't':
+                    self.state = '55'
+                    keyword += self.current_char
+                    self.advance()
+                else:
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '55':
+                if self.current_char == 'e':
+                    self.state = '56'
+                    keyword += self.current_char
+                    self.advance()
+                else:
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '56':
                 if self.current_char == 'r':
-                    self.state = '75'
+                    self.state = '57'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '75':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '57':
+                if self.current_char is not None and self.current_char.isalpha():
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
                 token = Tokens(TT_CHAR, keyword)
                 keyword = ""
                 self.state = '0'
@@ -911,57 +785,61 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
+                continue
             
             # Missive
-            elif self.state == '77':
+            elif self.state == '59':
                 if self.current_char == 'i':
-                    self.state = '78'
+                    self.state = '60'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '78':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '60':
                 if self.current_char == 's':
-                    self.state = '79'
+                    self.state = '61'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '79':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '61':
                 if self.current_char == 's':
-                    self.state = '80'
+                    self.state = '62'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '80':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '62':
                 if self.current_char == 'i':
-                    self.state = '81'
+                    self.state = '63'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '81':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '63':
                 if self.current_char == 'v':
-                    self.state = '82'
+                    self.state = '64'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '82':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '64':
                 if self.current_char == 'e':
-                    self.state = '83'
+                    self.state = '65'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '83':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '65':
+                if self.current_char is not None and self.current_char.isalpha():
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
                 token = Tokens(TT_STRING, keyword)
                 keyword = ""
                 self.state = '0'
@@ -974,36 +852,39 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
+                continue
 
             
-            elif self.state == '85':
+            elif self.state == '67':
                 if self.current_char == 'a':  # Nay
-                    self.state = '86'
+                    self.state = '68'
                     keyword += self.current_char
                     self.advance()
                 elif self.current_char == 'i':  # Nil
-                    self.state = '89'
+                    self.state = '71'
                     keyword += self.current_char
                     self.advance()
                 elif self.current_char == 'u':  # Numeral
-                    self.state = '92'
+                    self.state = '74'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-                    self.advance()
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
 
             # Nay
-            elif self.state == '86':
+            elif self.state == '68':
                 if self.current_char == 'y':
-                    self.state = '87'
+                    self.state = '69'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '87':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '69':
+                if self.current_char is not None and self.current_char.isalpha():
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
                 token = Tokens(TT_FALSE, keyword)
                 keyword = ""
                 self.state = '0'
@@ -1016,17 +897,21 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
+                continue
 
             # Nil
-            elif self.state == '89':
+            elif self.state == '71':
                 if self.current_char == 'l':
-                    self.state = '90'
+                    self.state = '72'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '90':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '72':
+                if self.current_char is not None and self.current_char.isalpha():
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
                 token = Tokens(TT_NULL, keyword)
                 keyword = ""
                 self.state = '0'
@@ -1039,49 +924,53 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
+                continue
 
             # Numeral
-            elif self.state == '92':
+            elif self.state == '74':
                 if self.current_char == 'm':
-                    self.state = '93'
+                    self.state = '75'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '93':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '75':
                 if self.current_char == 'e':
-                    self.state = '94'
+                    self.state = '76'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '94':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '76':
                 if self.current_char == 'r':
-                    self.state = '95'
+                    self.state = '77'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '95':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '77':
                 if self.current_char == 'a':
-                    self.state = '96'
+                    self.state = '78'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '96':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '78':
                 if self.current_char == 'l':
-                    self.state = '97'
+                    self.state = '79'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '97':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '79':
+                if self.current_char is not None and self.current_char.isalpha():
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
                 token = Tokens(TT_INT, keyword)
                 keyword = ""
                 self.state = '0'
@@ -1094,30 +983,34 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
+                continue
 
             # Opt, Or
-            elif self.state == '99':
+            elif self.state == '81':
                 if self.current_char == 'p': # Opt
-                    self.state = '100'
+                    self.state = '82'
                     keyword += self.current_char
                     self.advance()
                 elif self.current_char == 'r': # Or
-                    self.state = '103'
+                    self.state = '85'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
             # Opt      
-            elif self.state == '100':
+            elif self.state == '82':
                 if self.current_char == 't':
-                    self.state = '101'
+                    self.state = '83'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '101':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '83':
+                if self.current_char is not None and self.current_char.isalpha():
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
                 token = Tokens(TT_CASE, keyword)
                 keyword = ""
                 self.state = '0'
@@ -1130,9 +1023,13 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
+                continue
 
             # Or
-            elif self.state == '103':
+            elif self.state == '85':
+                if self.current_char is not None and self.current_char.isalpha():
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
                 token = Tokens(TT_ELSE, keyword)
                 keyword = ""
                 self.state = '0'
@@ -1145,30 +1042,34 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
+                continue
             
             # Per, Pure
-            elif self.state == '105':
+            elif self.state == '87':
                 if self.current_char == 'e': # Per
-                    self.state = '106'
+                    self.state = '88'
                     keyword += self.current_char
                     self.advance()
                 elif self.current_char == 'u': # Pure
-                    self.state = '109'
+                    self.state = '91'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
             # Per    
-            elif self.state == '106':
+            elif self.state == '88':
                 if self.current_char == 'r':
-                    self.state = '107'
+                    self.state = '89'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '107':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '89':
+                if self.current_char is not None and self.current_char.isalpha():
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
                 token = Tokens(TT_FOR, keyword)
                 keyword = ""
                 self.state = '0'
@@ -1181,25 +1082,29 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
+                continue
             
             # Pure
-            elif self.state == '109':
+            elif self.state == '91':
                 if self.current_char == 'r':
-                    self.state = '110'
+                    self.state = '92'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '110':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '92':
                 if self.current_char == 'e':
-                    self.state = '111'
+                    self.state = '93'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '111':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '93':
+                if self.current_char is not None and self.current_char.isalpha():
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
                 token = Tokens(TT_TRUE, keyword)
                 keyword = ""
                 self.state = '0'
@@ -1212,49 +1117,53 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
+                continue
 
             # Recede
-            elif self.state == '113':
+            elif self.state == '95':
                 if self.current_char == 'e':
-                    self.state = '114'
+                    self.state = '96'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '114':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '96':
                 if self.current_char == 'c':
-                    self.state = '115'
+                    self.state = '97'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '115':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '97':
                 if self.current_char == 'e':
-                    self.state = '116'
+                    self.state = '98'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '116':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '98':
                 if self.current_char == 'd':
-                    self.state = '117'
+                    self.state = '99'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '117':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '99':
                 if self.current_char == 'e':
-                    self.state = '118'
+                    self.state = '100'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '118':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '100':
+                if self.current_char is not None and self.current_char.isalpha():
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
                 token = Tokens(TT_RETURN, keyword)
                 keyword = ""
                 self.state = '0'
@@ -1267,38 +1176,42 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
+                continue
             
             # Seek, Shift
-            elif self.state == '120':
+            elif self.state == '102':
                 if self.current_char == 'e':
-                    self.state = '121'
+                    self.state = '103'
                     keyword += self.current_char
                     self.advance()
                 elif self.current_char == 'h':
-                    self.state = '125'
+                    self.state = '107'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
             # Seek
-            elif self.state == '121':
+            elif self.state == '103':
                 if self.current_char == 'e':
-                    self.state = '122'
+                    self.state = '104'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '122':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '104':
                 if self.current_char == 'k':
-                    self.state = '123'
+                    self.state = '105'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '123':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '105':
+                if self.current_char is not None and self.current_char.isalpha():
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
                 token = Tokens(TT_INPUT, keyword) 
                 keyword = ""
                 self.state = '0'
@@ -1311,33 +1224,37 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
+                continue
 
             # Shift
-            elif self.state == '125':
+            elif self.state == '107':
                 if self.current_char == 'i':
-                    self.state = '126'
+                    self.state = '108'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '126':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '108':
                 if self.current_char == 'f':
-                    self.state = '127'
+                    self.state = '109'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '127':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '109':
                 if self.current_char == 't':
-                    self.state = '128'
+                    self.state = '110'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '128':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '110':
+                if self.current_char is not None and self.current_char.isalpha():
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
                 token = Tokens(TT_SWITCH, keyword)
                 keyword = ""
                 self.state = '0'
@@ -1350,34 +1267,38 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
+                continue
 
             
             # Thou
-            elif self.state == '130':
+            elif self.state == '112':
                 if self.current_char == 'h':
-                    self.state = '131'
+                    self.state = '113'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '131':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '113':
                 if self.current_char == 'o':
-                    self.state = '132'
+                    self.state = '114'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '132':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '114':
                 if self.current_char == 'u':
-                    self.state = '133'
+                    self.state = '115'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '133':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '115':
+                if self.current_char is not None and self.current_char.isalpha():
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
                 token = Tokens(TT_IF, keyword)
                 keyword = ""
                 self.state = '0'
@@ -1390,47 +1311,51 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
+                continue
 
             
             # Until, Usual
-            elif self.state == '135':
+            elif self.state == '117':
                 if self.current_char == 'n': # Until
-                    self.state = '136'
+                    self.state = '118'
                     keyword += self.current_char
                     self.advance()
                 elif self.current_char == 's': # Usual
-                    self.state = '141'
+                    self.state = '123'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
             # Until
-            elif self.state == '136':
+            elif self.state == '118':
                 if self.current_char == 't':
-                    self.state = '137'
+                    self.state = '119'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '137':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '119':
                 if self.current_char == 'i':
-                    self.state = '138'
+                    self.state = '120'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '138':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '120':
                 if self.current_char == 'l':
-                    self.state = '139'
+                    self.state = '121'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '139':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '121':
+                if self.current_char is not None and self.current_char.isalpha():
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
                 token = Tokens(TT_WHILE, keyword)
                 keyword = ""
                 self.state = '0'
@@ -1443,33 +1368,37 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
+                continue
             
             # Usual
-            elif self.state == '141':
+            elif self.state == '123':
                 if self.current_char == 'u':
-                    self.state = '142'
+                    self.state = '124'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '142':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '124':
                 if self.current_char == 'a':
-                    self.state = '143'
+                    self.state = '125'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '143':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '125':
                 if self.current_char == 'l':
-                    self.state = '144'
+                    self.state = '126'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '144':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '126':
+                if self.current_char is not None and self.current_char.isalpha():
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
                 token = Tokens(TT_DEFAULT, keyword)
                 keyword = ""
                 self.state = '0'
@@ -1482,70 +1411,74 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
+                continue
             
-            # Veracity, Void
-            elif self.state == '146':
+            # Veracity, Void, Voila
+            elif self.state == '128':
                 if self.current_char == 'e': # Veracity
-                    self.state = '147'
+                    self.state = '129'
                     keyword += self.current_char
                     self.advance()
-                elif self.current_char == 'o': # Void
-                    self.state = '155'
+                elif self.current_char == 'o': # Void, Voila
+                    self.state = '137'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
             #Veracity        
-            elif self.state == '147':
+            elif self.state == '129':
                 if self.current_char == 'r':
-                    self.state = '148'
+                    self.state = '130'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '148':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '130':
                 if self.current_char == 'a':
-                    self.state = '149'
+                    self.state = '131'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '149':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '131':
                 if self.current_char == 'c':
-                    self.state = '150'
+                    self.state = '132'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '150':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '132':
                 if self.current_char == 'i':
-                    self.state = '151'
+                    self.state = '133'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '151':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '133':
                 if self.current_char == 't':
-                    self.state = '152'
+                    self.state = '134'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '152':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '134':
                 if self.current_char == 'y':
-                    self.state = '153'
+                    self.state = '135'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
-            elif self.state == '153':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
+            elif self.state == '135':
+                if self.current_char is not None and self.current_char.isalpha():
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
                 token = Tokens(TT_BOOL, keyword)
                 keyword = ""
                 self.state = '0'
@@ -1558,32 +1491,36 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
+                continue
                 
                     
             # Void
-            elif self.state == '155':
+            elif self.state == '137':
                 if self.current_char == 'i':
-                    self.state = '156'
+                    self.state = '138'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
             # Void, Voila      
-            elif self.state == '156':
-                if self.current_char == 'd': 
-                    self.state = '157'
+            elif self.state == '138':
+                if self.current_char == 'd': # Void
+                    self.state = '139'
                     keyword += self.current_char
                     self.advance()
-                elif self.current_char == 'l':
-                    self.state = '159'
+                elif self.current_char == 'l': # Voila
+                    self.state = '141'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
             # Void   
-            elif self.state == '157': 
+            elif self.state == '139':
+                if self.current_char is not None and self.current_char.isalpha():
+                    keyword = self.keyword_error(keyword, errors)
+                    continue 
                 token = Tokens(TT_VOID , keyword)
                 keyword = ""
                 self.state = '0'
@@ -1596,18 +1533,22 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
+                continue
 
                     
             # Voila       
-            elif self.state == '159':
+            elif self.state == '141':
                 if self.current_char == 'a':
-                    self.state = '160'
+                    self.state = '142'
                     keyword += self.current_char
                     self.advance()
                 else:
-                    self.state = '0'
-                    keyword = ""      
-            elif self.state == '160':
+                    keyword = self.keyword_error(keyword, errors)
+                    continue   
+            elif self.state == '142':
+                if self.current_char is not None and self.current_char.isalpha():
+                    keyword = self.keyword_error(keyword, errors)
+                    continue
                 token = Tokens(TT_CLRSCR, keyword)
                 keyword = ""
                 self.state = '0'
@@ -1620,15 +1561,16 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
+                continue
 
             # RESERVED SYMBOLS:           
             # +       
-            elif self.state == '162':
+            elif self.state == '144':
                 if self.current_char == '=':
-                    self.state = '164'
+                    self.state = '146'
                     self.advance()
                 elif self.current_char == '+':
-                    self.state = '166'
+                    self.state = '148'
                     self.advance()
                 else:
                     token = Tokens(TT_PLUS)
@@ -1644,7 +1586,7 @@ class Lexer:
                         errors.append(error)
 
             # +=  
-            elif self.state == '164':
+            elif self.state == '146':
                 token = Tokens(TT_PLUSAND)
                 self.state = '0'
             
@@ -1658,7 +1600,7 @@ class Lexer:
                     errors.append(error)
             
             # ++   
-            elif self.state == '166':
+            elif self.state == '148':
                 token = Tokens(TT_INC)
                 self.state = '0'
                 
@@ -1672,12 +1614,12 @@ class Lexer:
                     errors.append(error)
 
             # -       
-            elif self.state == '168':
+            elif self.state == '150':
                 if self.current_char == '=':
-                    self.state = '170'
+                    self.state = '152'
                     self.advance()
                 elif self.current_char == '-':
-                    self.state = '172'
+                    self.state = '154'
                     self.advance()
                 else:
                     token = Tokens(TT_MINUS) 
@@ -1693,7 +1635,7 @@ class Lexer:
                         errors.append(error)
 
             # -=         
-            elif self.state == '170':
+            elif self.state == '152':
                 token = Tokens(TT_MINUSAND)
                 self.state = '0'
             
@@ -1707,7 +1649,7 @@ class Lexer:
                     errors.append(error)
             
             # --  
-            elif self.state == '172':
+            elif self.state == '154':
                 token = Tokens(TT_DEC)
                 self.state = '0'
                 
@@ -1721,9 +1663,9 @@ class Lexer:
                     errors.append(error)
             
              # *       
-            elif self.state == '174':   
+            elif self.state == '156':   
                 if self.current_char == '=':
-                    self.state = '176'
+                    self.state = '158'
                     self.advance()
                 else:
                     token = Tokens(TT_MUL) 
@@ -1739,7 +1681,7 @@ class Lexer:
                         errors.append(error)
 
             # *= 
-            elif self.state == '176':
+            elif self.state == '158':
                 token = Tokens(TT_MULAND)
                 self.state = '0'
             
@@ -1753,9 +1695,9 @@ class Lexer:
                     errors.append(error)
             
             # /       
-            elif self.state == '178':
+            elif self.state == '160':
                 if self.current_char == '=':
-                    self.state = '180'
+                    self.state = '162'
                     self.advance()
                 elif self.current_char == '/':
                     token, error = self.make_slinecom()
@@ -1794,7 +1736,7 @@ class Lexer:
                         errors.append(error)
 
             # /=     
-            elif self.state == '180':
+            elif self.state == '162':
                 token = Tokens(TT_DIVAND)
                 self.state = '0'
             
@@ -1808,9 +1750,9 @@ class Lexer:
                     errors.append(error)
             
             # %   
-            elif self.state == '182':
+            elif self.state == '164':
                 if self.current_char == '=':
-                    self.state = '184'
+                    self.state = '166'
                     self.advance()
                 else:
                     token = Tokens(TT_MODULO) 
@@ -1825,7 +1767,7 @@ class Lexer:
                     else:
                         errors.append(error)
             # %=
-            elif self.state == '184':
+            elif self.state == '166':
                 token = Tokens(TT_MODAND)
                 self.state = '0'
             
@@ -1838,9 +1780,9 @@ class Lexer:
                 else:
                     errors.append(error)
             # =   
-            elif self.state == '186':
+            elif self.state == '168':
                 if self.current_char == '=':
-                    self.state = '188'
+                    self.state = '170'
                     self.advance()
                 else:
                     token = Tokens(TT_EQUAL) 
@@ -1856,7 +1798,7 @@ class Lexer:
                         errors.append(error)
 
             # ==         
-            elif self.state == '188':
+            elif self.state == '170':
                 token = Tokens(TT_EQUALTO)
                 self.state = '0'
             
@@ -1870,9 +1812,9 @@ class Lexer:
                     errors.append(error)
             
             # !   
-            elif self.state == '190':
+            elif self.state == '172':
                 if self.current_char == '=':
-                    self.state = '192'
+                    self.state = '174'
                     self.advance()
                 else:
                     token = Tokens(TT_NOT) 
@@ -1888,7 +1830,7 @@ class Lexer:
                         errors.append(error)
 
             # !=       
-            elif self.state == '192':
+            elif self.state == '174':
                 token = Tokens(TT_NOTEQUAL)
                 self.state = '0'
             
@@ -1902,12 +1844,9 @@ class Lexer:
                     errors.append(error)
             
             # <       
-            elif self.state == '194':
+            elif self.state == '176':
                 if self.current_char == '=':
-                    self.state = '196'
-                    self.advance()
-                elif self.current_char == '<':
-                    self.state = '198'
+                    self.state = '178'
                     self.advance()
                 else:
                     token = Tokens(TT_LESSTHAN) 
@@ -1923,7 +1862,7 @@ class Lexer:
                         errors.append(error)
 
             # <=      
-            elif self.state == '196':
+            elif self.state == '178':
                 token = Tokens(TT_LESSTHANEQUAL)
                 self.state = '0'
             
@@ -1935,28 +1874,12 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
-            
-            # <<   
-            elif self.state == '198':
-                token = Tokens(TT_BITLSHIFT)
-                self.state = '0'
-                
-                if token:
-                    error = self.check_delim(token) 
-                    if error:
-                        errors.append(error)
-                    else:
-                        tokens.append(token)
-                else:
-                    errors.append(error)
+
             
             # >       
-            elif self.state == '200':
+            elif self.state == '180':
                 if self.current_char == '=':
-                    self.state = '202'
-                    self.advance()
-                if self.current_char == '>':
-                    self.state = '204'
+                    self.state = '182'
                     self.advance()
                 else:
                     token = Tokens(TT_GREATERTHAN) 
@@ -1972,7 +1895,7 @@ class Lexer:
                         errors.append(error)
 
             # >=        
-            elif self.state == '202':
+            elif self.state == '182':
                 token = Tokens(TT_GREATERTHANEQUAL)
                 self.state = '0'
             
@@ -1985,41 +1908,15 @@ class Lexer:
                 else:
                     errors.append(error)
                 
-            # >>
-            elif self.state == '204':
-                token = Tokens(TT_BITRSHIFT)
-                self.advance()
-                self.state = '0'
-                
-                if token:
-                    error = self.check_delim(token) 
-                    if error:
-                        errors.append(error)
-                    else:
-                        tokens.append(token)
-                else:
-                    errors.append(error)
-            
-            # |   
-            elif self.state == '206':
-                if self.current_char == '|':
-                    self.state = '208'
-                    self.advance()
-                else:
-                    token = Tokens(TT_BITOR) 
-                    self.state = '0'
 
-                    if token:
-                        error = self.check_delim(token) 
-                        if error:
-                            errors.append(error)
-                        else:
-                            tokens.append(token)
-                    else:
-                        errors.append(error)
+            # |   
+            elif self.state == '184':
+                if self.current_char == '|':
+                    self.state = '185'
+                    self.advance()
 
             # ||       
-            elif self.state == '208':
+            elif self.state == '185':
                 token = Tokens(TT_OR)
                 self.state = '0'
             
@@ -2033,7 +1930,7 @@ class Lexer:
                     errors.append(error)
                     
             # (      
-            elif self.state == '210':
+            elif self.state == '187':
                 token = Tokens(TT_LPAREN) 
                 self.state = '0'
 
@@ -2048,7 +1945,7 @@ class Lexer:
 
             
             # )      
-            elif self.state == '212':
+            elif self.state == '189':
                 token = Tokens(TT_RPAREN) 
                 self.state = '0'
 
@@ -2062,7 +1959,7 @@ class Lexer:
                     errors.append(error)
             
             # {      
-            elif self.state == '214':
+            elif self.state == '191':
                 token = Tokens(TT_LBRACE) 
                 self.state = '0'
 
@@ -2076,7 +1973,7 @@ class Lexer:
                     errors.append(error)
             
             # }      
-            elif self.state == '216':
+            elif self.state == '193':
                 token = Tokens(TT_RBRACE) 
                 self.state = '0'
 
@@ -2090,7 +1987,7 @@ class Lexer:
                     errors.append(error)
             
             # [      
-            elif self.state == '218':
+            elif self.state == '195':
                 token = Tokens(TT_LBRACKET) 
                 self.state = '0'
 
@@ -2105,7 +2002,7 @@ class Lexer:
                 self.advance()
             
             # ]      
-            elif self.state == '220':
+            elif self.state == '197':
                 token = Tokens(TT_RBRACKET) 
                 self.state = '0'
 
@@ -2119,7 +2016,7 @@ class Lexer:
                     errors.append(error)
             
             # ,      
-            elif self.state == '222':
+            elif self.state == '199':
                 token = Tokens(TT_COMMA) 
                 self.state = '0'
 
@@ -2133,7 +2030,7 @@ class Lexer:
                     errors.append(error)
             
             # .      
-            elif self.state == '224':
+            elif self.state == '201':
                 token = Tokens(TT_PERIOD) 
                 self.state = '0'
 
@@ -2147,7 +2044,7 @@ class Lexer:
                     errors.append(error)
             
             # :      
-            elif self.state == '226':
+            elif self.state == '203':
                 token = Tokens(TT_COLON) 
                 self.state = '0'
 
@@ -2158,70 +2055,9 @@ class Lexer:
                     else:
                         tokens.append(token)
                 else:
-                    errors.append(error)
-            
-            # ^      
-            elif self.state == '228':
-                token = Tokens(TT_BITXOR) 
-                self.state = '0'
-
-                if token:
-                    error = self.check_delim(token) 
-                    if error:
-                        errors.append(error)
-                    else:
-                        tokens.append(token)
-                else:
-                    errors.append(error)
-            
-            # &   
-            elif self.state == '230':
-                if self.current_char == '&':
-                    self.state = '232'
-                    self.advance()
-                else:
-                    token = Tokens(TT_BITAND) 
-                    self.state = '0'
-
-                    if token:
-                        error = self.check_delim(token) 
-                        if error:
-                            errors.append(error)
-                        else:
-                            tokens.append(token)
-                    else:
-                        errors.append(error)
-
-            # &&
-            elif self.state == '232':
-                token = Tokens(TT_AND)
-                self.state = '0'
-            
-                if token:
-                    error = self.check_delim(token) 
-                    if error:
-                        errors.append(error)
-                    else:
-                        tokens.append(token)
-                else:
-                    errors.append(error)
-
-            #   ~    
-            elif self.state == '234':
-                token = Tokens(TT_BITNOT) 
-                self.state = '0'
-
-                if token:
-                    error = self.check_delim(token) 
-                    if error:
-                        errors.append(error)
-                    else:
-                        tokens.append(token)
-                else:
-                    errors.append(error)
-            
+                    errors.append(error)            
             # ;      
-            elif self.state == '236':
+            elif self.state == '205':
                 token = Tokens(TT_TERMINATE) 
                 self.state = '0'
 
@@ -2233,13 +2069,22 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
+                
         
             else:
-                errors.append(f"Invalid state: {self.state}")
+                pos_start = self.pos.copy()
+                keyword = ""
+                while self.current_char is not None and self.current_char.isalpha():
+                    keyword += self.current_char
+                    self.advance()
+                error = IllegalKeyword(pos_start, self.pos, f'Invalid Keyword: {keyword}')
+                errors.append(error)
                 self.state = '0'
 
             if self.current_char is None and self.state == '0':
                 stop = True
+
+        tokens.append(Tokens(TT_EOF))
 
         return tokens, errors
     
