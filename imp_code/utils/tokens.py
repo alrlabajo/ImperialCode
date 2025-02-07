@@ -83,13 +83,6 @@ TT_AND = '&&' #Done w/o delims
 TT_OR = '||' #Done w/o delims
 TT_NOT = '!' #Done w/o delims
 
-#BITWISE OPERATORS
-TT_BITAND = '&' #Done w/o delims
-TT_BITOR = '|' #Done w/o delims
-TT_BITXOR = '^' #Done w/o delims
-TT_BITNOT = '~' #Done w/o delims
-TT_BITLSHIFT = '<<' #Done w/o delims
-TT_BITRSHIFT = '>>' #Done w/o delims
 
 #GROUPING SYMBOLS
 TT_LPAREN   = '(' #Done w/o delims
@@ -262,14 +255,6 @@ DELIM_LIST = {
     TT_GREATERTHAN: DD_SPACE,
     TT_LESSTHANEQUAL: DD_SPACE,
     TT_GREATERTHANEQUAL: DD_SPACE,
-
-    # BITWISE OPERATORS
-    TT_BITAND: DD_BIT,
-    TT_BITOR: DD_BIT,
-    TT_BITXOR: DD_BIT,
-    TT_BITNOT: DD_BIT,
-    TT_BITLSHIFT: DD_BIT,
-    TT_BITRSHIFT: DD_BIT,
 
     # OTHERS
     TT_SPACE: DD_SPACE,

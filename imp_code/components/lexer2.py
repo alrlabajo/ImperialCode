@@ -262,6 +262,9 @@ class Lexer:
                 elif self.current_char == ';':  # ;
                     self.state = '205'
                     self.advance()
+                elif self.current_char == '&': # &
+                    self.state = '207'
+                    self.advance()
                 elif self.current_char.isalpha():
                     pos_start = self.pos.copy()
                     while self.current_char is not None and self.current_char.isalpha():
@@ -440,7 +443,7 @@ class Lexer:
                 else:
                     keyword = self.keyword_error(keyword, errors)
                     continue
-            elif self.state == '28':
+            elif self.state == '20':
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
@@ -2069,7 +2072,27 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
-                
+
+            # &
+            elif self.state == '207':
+                if self.current_char == '&':
+                    self.state = '208'
+                    self.advance()
+
+            # &&
+            elif self.state == '208':
+                token = Tokens(TT_AND)
+                self.state = '0'
+            
+                if token:
+                    error = self.check_delim(token) 
+                    if error:
+                        errors.append(error)
+                    else:
+                        tokens.append(token)
+                else:
+                    errors.append(error)
+
         
             else:
                 pos_start = self.pos.copy()
