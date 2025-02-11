@@ -1,0 +1,39 @@
+Embar ()
+{
+RecedE 0; 
+@
+}
+
+a$ = 1b + 2c * 2; 
+
+DECIMAL x = 3.14;
+
+Missive str = "Hello, World!
+hello;
+
+/ This is a comment
+* This is a comment
+Too*/
+
+Numeral sum = a ++ b; //sum of a and b
+
+Numeral a = 5, b = 10, c = 15; 
+result = (a < b && b < c) || a (a == 5 && c == 20); 
+
+VERACITY %flag = Pure;
+
+Thou (a > b
+} 
+a = b;
+}
+
+UnTIl (x && y) 
+{ 
+x = 0; 
+}
+
+total = (price * quantity + tax;
+
+Letter letter = A;
+
+x ++= 5; // Equivalent to x = x + 5;

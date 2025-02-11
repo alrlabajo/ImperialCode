@@ -2151,6 +2151,9 @@ class Lexer:
         missive_content = '"'
 
         while self.current_char is not None and self.current_char != '"':
+            if self.current_char == ";":
+                return None, IllegalCharError(pos_start, self.pos, "Unclosed Missive")
+        
             if self.current_char == '\\':
                 self.advance()
                 if self.current_char in ESC_SEQ:
@@ -2163,7 +2166,7 @@ class Lexer:
                 missive_content += self.current_char
             self.advance()
 
-        if self.current_char != '"':
+        if self.current_char != '"' or self.current_char == ";":
             return None, IllegalCharError(pos_start, self.pos, "Unclosed Missive")
         
         missive_content += '"'

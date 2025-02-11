@@ -157,7 +157,7 @@ DD_NUM_DECI = [*DIGITS, *ARITH_OP, *REL_OP, *BITWISE_OP, " ", ",", "}", "]", ")"
 DD_RESERVE = [" ", ";"]
 DD_COLON = [*ALPHABET, " ", "\n", ":"]
 DD_SEMICOL = [*ALPHA_NUM, " ", "\n", "}", ";"]
-DD_FUNC = ["(", "\n"]
+DD_FUNC = ["(", "\n", " "]
 DD_COMMENT = ["\n", " "]
 DD_MAIN = [" ", "("]
 DD_IDENTIFIER = [*ALPHA_NUM, '_', ' ', '\n', ';', *ARITH_OP, *REL_OP, *BITWISE_OP, "(", ")", "[" ,"]", "{", "}", "%", ",", "=", ":"]
