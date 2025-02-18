@@ -1,17 +1,14 @@
 import argparse
 import datetime
 import os
-# from .compiler import run_lexical, run_semantic
-from .compiler import run_lexical
+from .compiler import run_lexical, run_syntax
 import time
 
 
-# def main():
-#     testMe()
     
 def main():
     parser = argparse.ArgumentParser(
-        description="An object-oriented programming language inspired by Python and C++"
+        description="Aa programming language inspired by C Language in Victorian Era"
     )
     parser.add_argument(
         "file", nargs="?", type=str, help="The .ic file to run.", default=""
@@ -35,8 +32,9 @@ def main():
 
     if args.mode == "lexical":
         _run_lexical(args.file, code)
-    # elif args.mode == "syntax":
-    #     _run_syntax(args.file, code)
+    elif args.mode == "syntax":
+        args.verbose = True
+        _run_syntax(args.file, code)
     # else:
     #     _run_semantic(args.file, code)
 
@@ -77,17 +75,18 @@ def _run_lexical(file_path, code):
     elif args.verbose:
         print("Tokens:", tokens)
 
-# @log_runtime
-# def _run_syntax(file_path, code):
-#     start_time = time.time()
-#     tokens, ast, errors = run_syntax(file_path, code)
+@log_runtime
+def _run_syntax(file_path, code):
+    start_time = time.time()
+    tokens, ast, errors = run_syntax(file_path, code)
 
-#     if errors:
-#         for error in errors:
-#             print(error.as_string())
-#     else:
-#         if args.verbose:
-#             print("AST:", ast)
+    if errors:
+        for error in errors:
+            print(error.as_string())
+    else:
+        if args.verbose:
+            print("AST:", ast)
+
 
 # @log_runtime
 # def _run_semantic(file_path, code):

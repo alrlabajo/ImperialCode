@@ -67,7 +67,7 @@ class Lexer:
                     self.advance()
                 elif self.current_char == " ":
                     token = Tokens(TT_SPACE)
-
+                    
                     if token:
                         error = self.check_delim(token) 
                         if error:
@@ -76,7 +76,6 @@ class Lexer:
                             tokens.append(token)
                     else:
                         errors.append(error)
-
                     self.advance()
                     
                 elif self.current_char == "\n":
@@ -447,7 +446,7 @@ class Lexer:
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
-                token = Tokens(TT_FLOAT, keyword)
+                token = Tokens(TT_FLOAT, keyword,  pos_start=self.pos)
                 keyword = ""
                 self.state = '0'
 
@@ -776,7 +775,7 @@ class Lexer:
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
-                token = Tokens(TT_CHAR, keyword)
+                token = Tokens(TT_CHAR, keyword, pos_start=self.pos)
                 keyword = ""
                 self.state = '0'
 
@@ -843,7 +842,7 @@ class Lexer:
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
-                token = Tokens(TT_STRING, keyword)
+                token = Tokens(TT_STRING, keyword, pos_start=self.pos)
                 keyword = ""
                 self.state = '0'
 
@@ -974,7 +973,7 @@ class Lexer:
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
-                token = Tokens(TT_INT, keyword)
+                token = Tokens(TT_INT, keyword,  pos_start=self.pos)
                 keyword = ""
                 self.state = '0'
 
@@ -1482,7 +1481,7 @@ class Lexer:
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
-                token = Tokens(TT_BOOL, keyword)
+                token = Tokens(TT_BOOL, keyword, pos_start=self.pos)
                 keyword = ""
                 self.state = '0'
 
@@ -1576,7 +1575,7 @@ class Lexer:
                     self.state = '148'
                     self.advance()
                 else:
-                    token = Tokens(TT_PLUS)
+                    token = Tokens(TT_PLUS, pos_start=self.pos)
                     self.state = '0'
 
                     if token:
@@ -1625,7 +1624,7 @@ class Lexer:
                     self.state = '154'
                     self.advance()
                 else:
-                    token = Tokens(TT_MINUS) 
+                    token = Tokens(TT_MINUS, pos_start=self.pos) 
                     self.state = '0'
 
                     if token:
@@ -1671,7 +1670,7 @@ class Lexer:
                     self.state = '158'
                     self.advance()
                 else:
-                    token = Tokens(TT_MUL) 
+                    token = Tokens(TT_MUL, pos_start=self.pos) 
                     self.state = '0'
 
                     if token:
@@ -1726,7 +1725,7 @@ class Lexer:
                         errors.append(error)
 
                 else:
-                    token = Tokens(TT_DIV) 
+                    token = Tokens(TT_DIV, pos_start=self.pos) 
                     self.state = '0'
 
                     if token:
@@ -1788,7 +1787,7 @@ class Lexer:
                     self.state = '170'
                     self.advance()
                 else:
-                    token = Tokens(TT_EQUAL) 
+                    token = Tokens(TT_EQUAL, pos_start=self.pos)
                     self.state = '0'
 
                     if token:
@@ -1802,7 +1801,7 @@ class Lexer:
 
             # ==         
             elif self.state == '170':
-                token = Tokens(TT_EQUALTO)
+                token = Tokens(TT_EQUALTO, pos_start=self.pos)
                 self.state = '0'
             
                 if token:
@@ -1820,7 +1819,7 @@ class Lexer:
                     self.state = '174'
                     self.advance()
                 else:
-                    token = Tokens(TT_NOT) 
+                    token = Tokens(TT_NOT, pos_start=self.pos) 
                     self.state = '0'
 
                     if token:
@@ -1834,7 +1833,7 @@ class Lexer:
 
             # !=       
             elif self.state == '174':
-                token = Tokens(TT_NOTEQUAL)
+                token = Tokens(TT_NOTEQUAL, pos_start=self.pos)
                 self.state = '0'
             
                 if token:
@@ -1852,7 +1851,7 @@ class Lexer:
                     self.state = '178'
                     self.advance()
                 else:
-                    token = Tokens(TT_LESSTHAN) 
+                    token = Tokens(TT_LESSTHAN, pos_start=self.pos) 
                     self.state = '0'
 
                     if token:
@@ -1866,7 +1865,7 @@ class Lexer:
 
             # <=      
             elif self.state == '178':
-                token = Tokens(TT_LESSTHANEQUAL)
+                token = Tokens(TT_LESSTHANEQUAL, pos_start=self.pos)
                 self.state = '0'
             
                 if token:
@@ -1885,7 +1884,7 @@ class Lexer:
                     self.state = '182'
                     self.advance()
                 else:
-                    token = Tokens(TT_GREATERTHAN) 
+                    token = Tokens(TT_GREATERTHAN, pos_start=self.pos) 
                     self.state = '0'
 
                     if token:
@@ -1899,7 +1898,7 @@ class Lexer:
 
             # >=        
             elif self.state == '182':
-                token = Tokens(TT_GREATERTHANEQUAL)
+                token = Tokens(TT_GREATERTHANEQUAL, pos_start=self.pos)
                 self.state = '0'
             
                 if token:
@@ -1920,7 +1919,7 @@ class Lexer:
 
             # ||       
             elif self.state == '185':
-                token = Tokens(TT_OR)
+                token = Tokens(TT_OR, pos_start=self.pos)
                 self.state = '0'
             
                 if token:
@@ -1934,7 +1933,7 @@ class Lexer:
                     
             # (      
             elif self.state == '187':
-                token = Tokens(TT_LPAREN) 
+                token = Tokens(TT_LPAREN, pos_start=self.pos) 
                 self.state = '0'
 
                 if token:
@@ -1949,7 +1948,7 @@ class Lexer:
             
             # )      
             elif self.state == '189':
-                token = Tokens(TT_RPAREN) 
+                token = Tokens(TT_RPAREN, pos_start=self.pos) 
                 self.state = '0'
 
                 if token:
@@ -1963,7 +1962,7 @@ class Lexer:
             
             # {      
             elif self.state == '191':
-                token = Tokens(TT_LBRACE) 
+                token = Tokens(TT_LBRACE, pos_start=self.pos) 
                 self.state = '0'
 
                 if token:
@@ -1977,7 +1976,7 @@ class Lexer:
             
             # }      
             elif self.state == '193':
-                token = Tokens(TT_RBRACE) 
+                token = Tokens(TT_RBRACE, pos_start=self.pos) 
                 self.state = '0'
 
                 if token:
@@ -2061,7 +2060,7 @@ class Lexer:
                     errors.append(error)            
             # ;      
             elif self.state == '205':
-                token = Tokens(TT_TERMINATE) 
+                token = Tokens(TT_TERMINATE, pos_start=self.pos) 
                 self.state = '0'
 
                 if token:
@@ -2081,7 +2080,7 @@ class Lexer:
 
             # &&
             elif self.state == '208':
-                token = Tokens(TT_AND)
+                token = Tokens(TT_AND, pos_start=self.pos)
                 self.state = '0'
             
                 if token:
@@ -2107,7 +2106,7 @@ class Lexer:
             if self.current_char is None and self.state == '0':
                 stop = True
 
-        tokens.append(Tokens(TT_EOF))
+        tokens.append(Tokens(TT_EOF, pos_start=self.pos))
 
         return tokens, errors
     
@@ -2118,6 +2117,7 @@ class Lexer:
         left_digits = 0
         right_digits = 0
         is_left = True
+        pos_start = self.pos.copy()
 
         while self.current_char is not None and (self.current_char.isdigit() or self.current_char == '.'):
             if self.current_char == '.':
@@ -2138,12 +2138,12 @@ class Lexer:
             if len(num_str) > INT_LIM:
                 return None, ExceedNumeralError(pos_start, self.pos, f'{num_str}')
             else:
-                return Tokens(TT_INT_LITERAL, str(int(num_str))), None
+                return Tokens(TT_INT_LITERAL, str(int(num_str)), pos_start, self.pos), None
         else:
             if left_digits > FLOAT_LIM or right_digits > FLOAT_PRECISION_LIM:
                 return None, ExceedDecimalError(pos_start, self.pos, f'{num_str}')
             else:
-                return Tokens(TT_FLOAT_LITERAL, str(float(num_str))), None
+                return Tokens(TT_FLOAT_LITERAL, str(float(num_str)), pos_start, self.pos), None
                 
     def make_missive(self):
         pos_start = self.pos
@@ -2200,7 +2200,7 @@ class Lexer:
         if len(identifier) > ID_LIM:
                 return None, IdentifierLimitError(pos_start, self.pos, f'"{identifier}"')
 
-        return Tokens(TT_IDENTIFIER, identifier), None
+        return Tokens(TT_IDENTIFIER, identifier,  pos_start, self.pos), None
     
     def make_slinecom(self):
         sline = "//"

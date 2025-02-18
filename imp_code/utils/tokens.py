@@ -34,9 +34,7 @@ TT_STRING   = "Missive" #Done in variable and w/o delims
 TT_BOOL     = "Veracity"
 TT_VOID     = "Void"
 TT_CONST    = "Constant"
-TT_STRUCT   = "Assembly"
 TT_ENUM     = "Enumerate"
-TT_ARRAY    = "Ledger"
 
 #LITERALS
 TT_INT_LITERAL = 'Numeral_Lit'
@@ -64,7 +62,6 @@ TT_DO       = "Act"
 TT_BREAK = "Halt"
 TT_CONTINUE = "Extend"
 TT_RETURN = "Recede"
-TT_GOTO = "Flow"
 
 #VALUES
 TT_TRUE     = "Pure"
@@ -183,9 +180,7 @@ DELIM_LIST = {
 
     TT_VOID: DD_DTYPE,
     TT_CONST: DD_DTYPE,
-    TT_STRUCT: DD_DTYPE,
     TT_ENUM: DD_DTYPE,
-    TT_ARRAY: DD_OBRACK,
 
     # INPUT/OUTPUT
     TT_INPUT: DD_FUNC,
@@ -214,7 +209,6 @@ DELIM_LIST = {
     TT_BREAK: DD_RESERVE,
     TT_CONTINUE: DD_RESERVE,
     TT_RETURN: DD_RESERVE,
-    TT_GOTO: DD_SPACE,
 
     # VALUES
     TT_TRUE: DD_RESERVE,
@@ -271,10 +265,18 @@ DELIM_LIST = {
 
 
 class Tokens:
-    def __init__(self, type_, value=None):
+    def __init__(self, type_, value=None, pos_start=None, pos_end=None):
         self.type = type_
         self.value = value
 
+        if pos_start:
+            self.pos_start = pos_start.copy()
+            self.pos_end = pos_start.copy()
+            self.pos_end.advance()
+
+        if pos_end:
+            self.pos_end = pos_end
+            
     def __repr__(self):
         if self.value:
             return f'{self.type}: {self.value}'
