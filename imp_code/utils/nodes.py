@@ -2,58 +2,54 @@
 # NODES
 #######################################
 
-class KeywordNode:
-    def __init__(self, keyword):
-        self.keyword = keyword
+# Program Node
+class ProgramNode:
+    def __init__(self, statements):
+        self.statements = statements
 
     def __repr__(self):
-        return f'{self.keyword}'
+        return f'{self.statements}'
 
 # Expression nodes
-
 class NumeralNode:
-    def __init__(self, value):
-        self.value = value
+	def __init__(self, tok):
+		self.tok = tok
 
-    def __repr__(self):
-        return f'{self.value}'
-    
+	def __repr__(self):
+		return f'{self.tok}'
+
 class DecimalNode:
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, tok):
+        self.tok = tok
 
     def __repr__(self):
-        return f'{self.value}'
-    
+        return f'{self.tok}'
 
-class OpNode:
-    def __init__(self, left, op, right):
-        self.left = left
-        self.op = op
-        self.right = right
+class BinOpNode:
+	def __init__(self, left_node, op_tok, right_node):
+		self.left_node = left_node
+		self.op_tok = op_tok
+		self.right_node = right_node
 
-    def __repr__(self):
-        return f'({self.left}, {self.op}, {self.right})'
-    
+	def __repr__(self):
+		return f'({self.left_node}, {self.op_tok}, {self.right_node})'
+
 class UnaryOpNode:
-    def __init__(self, op, node):
-        self.op = op
+    def __init__(self, op_tok, node, is_post=False):
+        self.op_tok = op_tok
         self.node = node
+        self.is_post = is_post
 
     def __repr__(self):
-        return f'({self.op}, {self.node})'
-    
-class ExpressionNode:
-    def __init__(self, node):
-        self.node = node
-
-    def __repr__(self):
-        return f'{self.node}'
+        if self.is_post:
+            return f'({self.node}{self.op_tok})'
+        else:
+            return f'({self.op_tok}{self.node})'
 
 # Declaration, Assignment, & Access (Local and Global)
 class AccessNode:
     def __init__(self, id_tok):
-        self.id_tok = id_tok 
+        self.id_tok = id_tok
         self.id = id_tok.value
 
     def __repr__(self):
@@ -61,37 +57,70 @@ class AccessNode:
 
 class AssignNode:
     def __init__(self, var_name_tok, id_value):
-        self.var_name = var_name_tok.value 
+        self.var_name = var_name_tok.value
         self.id_value = id_value
 
     def __repr__(self):
         return f'({self.var_name}, {self.id_value})'
 
-    
-class DeclareNode:
-    def __init__(self, var_name_tok, var_type_tok):
-        self.var_name_tok = var_name_tok
-        self.var_type_tok = var_type_tok
+
+class CompoundAssignNode:
+    def __init__(self, var_name_tok, op_tok, id_value):
+        self.var_name = var_name_tok.value
+        self.op_tok = op_tok
+        self.id_value = id_value
 
     def __repr__(self):
-        return f"(VarDecl: {self.var_type_tok} {self.var_name_tok})"
-    
-# Function statement
+        return f'({self.var_name}, {self.op_tok}, {self.id_value})'
 
+class DeclareNode:
+    def __init__(self, var_type_tok, identifiers):
+        self.var_type_tok = var_type_tok
+        self.identifiers = identifiers
+
+    def __repr__(self):
+        id_list = ", ".join(
+            f"({id_tok}, {val})" if val is not None else f"{id_tok}"
+            for id_tok, val in self.identifiers
+        )
+        return f"({self.var_type_tok}, [{id_list}])"
+
+# Function Declaration, Call, & Definition
 class FuncDefNode:
-    pass
+    def __init__(self, id_tok, args, return_type, body):
+        self.id_tok = id_tok
+        self.id = id_tok.value
+        self.args = args
+        self.return_type = return_type
+        self.body = body
+
+    def __repr__(self):
+        return f'({self.id_tok}, {self.args}, {self.return_type}, {self.body})'
 
 class FuncCallNode:
-    pass
-
-class FuncDeclNode:
-    pass
-
-# Block Statements
-
-class BlockNode:
-    def __init__(self, statements):
-        self.statements = statements
+    def __init__(self, id_tok, args):
+        self.id_tok = id_tok
+        self.id = id_tok.value
+        self.args = args
 
     def __repr__(self):
-        return f'({self.statements})'
+        return f'({self.id_tok}, {self.args})'
+
+class FuncDecNode:
+    def __init__(self, id_tok, args, return_type):
+        self.id_tok = id_tok
+        self.id = id_tok.value
+        self.args = args
+        self.return_type = return_type
+
+    def __repr__(self):
+        return f'({self.id_tok}, {self.args}, {self.return_type})'
+
+# Condition Statements
+class ThouNode:
+    def __init__(self, condition, body):
+        self.condition = condition
+        self.body = body
+
+    def __repr__(self):
+        return f'(If: {self.condition} {self.body})'

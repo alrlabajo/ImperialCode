@@ -4,9 +4,9 @@ setuptools.setup(
     name="imperialcode",
     version="0.0.1",
     author="automata",
-    author_email="automa@gmail.com",
-    description=("An object-oriented programming language inspired by Python and C++"),
-    long_description=("An object-oriented programming language inspired by Python and C++"),
+    author_email="alrlabajo@gmail.com",
+    description=("A Victorian era themed programming language based on C language"),
+    long_description=("A Victorian era themed programming language based on C language"),
     long_description_content_type="text/markdown",
     url="https://github.com",
     project_urls={

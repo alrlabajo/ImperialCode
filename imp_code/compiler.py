@@ -16,12 +16,12 @@ def run_lexical(fn, text):
 def run_syntax(fn, text):
     lexer = Lexer(fn, text)
     tokens, errors = lexer.make_tokens()
-    
+
     if errors:
-        return tokens[:-1], None, [errors]
-    
+        return tokens[:-1], None, errors
+
     parser = Parser(tokens)
     ast = parser.parse()
-    
+
     return tokens[:-1], ast.node, [ast.error] if ast.error else None
 

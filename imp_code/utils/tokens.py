@@ -141,7 +141,7 @@ DD_PLUS = [*ALPHA_NUM, " ", "(", "-", ",", "'", "[", ")"]
 DD_MINUS = [*ALPHA_NUM, " ", "(", "-"]
 DD_ASSIGN = [*ALPHA_NUM, " ", "(", "-", ",", "{", "[", "'"]
 DD_OPAR = [*ALPHA_NUM, " ", "(", ")", "-", ",", "[", "{", "(", ")", "\n", "'", '"']
-DD_CPAR = [*ARITH_OP, " ", "\n", ":", "(", ")", ",", "]", "[", "}", "#", ".", "(", ";", "{"]
+DD_CPAR = [*ARITH_OP, " ", "\n", ":", "(", ")", ",", "]", "[", "}", "#", ".", "(", ";", "{" "|", "&&", "!", ":", ";"]
 DD_OBRACE = [*ALPHA_NUM, " ", "\n", "}", ","]
 DD_CBRACE = [" ", "\n", ",", "}", ")", "]", ";"]
 DD_OBRACK = [*ALPHA_NUM, " ", "\n", ",", "-", "{", "[", "(", "]", ")", ","]
@@ -276,11 +276,11 @@ class Tokens:
 
         if pos_end:
             self.pos_end = pos_end
-            
+
     def __repr__(self):
         if self.value:
             return f'{self.type}: {self.value}'
         return f'{self.type}'
-    
+
     def lexeme_str(self):
         return self.value if self.value else self.type
