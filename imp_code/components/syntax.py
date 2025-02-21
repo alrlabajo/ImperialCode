@@ -51,21 +51,40 @@ class Parser:
         while self.current_token.type != TT_EOF:
             if self.current_token.type == TT_MAIN:
                 stmt = res.register(self.main_prog())
-            elif self.current_token.type in (TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_VOID):
-                if self.token_idx + 1 < len(self.tokens) and self.tokens[self.token_idx + 1].type == TT_IDENTIFIER:
-                    stmt = res.register(self.declaration_statement())
-                elif self.token_idx + 2 < len(self.tokens) and self.tokens[self.token_idx + 2].type == TT_EQUAL:
-                    stmt = res.register(self.assignment_statement())
-                elif self.token_idx + 2 < len(self.tokens) and self.tokens[self.token_idx + 2].type == TT_LPAREN:
-                    stmt = res.register(self.func_dec_def())
-                else:
-                    break
 
-            if res.error: return res
+            elif self.current_token.type in (TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_VOID):
+                res.register(self.advance())
+                if self.current_token.type == TT_IDENTIFIER:
+                    res.register(self.advance())
+                    if self.current_token.type == TT_EQUAL:
+                        stmt = res.register(self.assignment_statement())
+                    elif self.current_token.type == TT_LPAREN:
+                        stmt = res.register(self.func_dec_def())
+                    else:
+                        stmt = res.register(self.global_declaration())
+                else:
+                    return res.failure(InvalidSyntaxError(
+                        self.current_token.pos_start, self.current_token.pos_end,
+                        f"Unexpected token"
+                    ))
+
+            elif self.current_token.type == TT_IDENTIFIER:
+                stmt = res.register(self.statement())
+
+            else:
+                return res.failure(InvalidSyntaxError(
+                    self.current_token.pos_start, self.current_token.pos_end,
+                    f"Unexpected token '{self.current_token.value}'"
+                ))
+
+            if res.error:
+                return res
 
             statements.append(stmt)
             res.register(self.advance())
+
         return res.success(statements)
+
 
     def statement(self):
         res = ParseResult()
@@ -115,6 +134,65 @@ class Parser:
 
         return res.success(stmt)
 
+    def global_declaration(self):
+        res = ParseResult()
+
+        while self.current_token.type == TT_NEWLINE:
+            res.register(self.advance())
+
+        type_tok = self.current_token
+
+        if type_tok.type not in (TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL):
+            return res.failure(InvalidSyntaxError(
+                type_tok.pos_start, type_tok.pos_end,
+                "Expected data type (Numeral, Decimal, Letter, Missive, Veracity)"
+            ))
+
+        res.register(self.advance())
+
+        if self.current_token.type != TT_IDENTIFIER:
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                f"Unexpected token '{self.current_token.value}', expected an identifier"
+            ))
+
+        identifiers = []
+
+        while self.current_token.type == TT_IDENTIFIER:
+            id_tok = self.current_token
+            var_value = None
+
+            res.register(self.advance())
+
+            if self.current_token.type == TT_EQUAL:
+                res.register(self.advance())
+                var_value = res.register(self.expr())
+                if res.error:
+                    return res
+
+            identifiers.append((id_tok, var_value))
+
+            if self.current_token.type == TT_COMMA:
+                res.register(self.advance())
+                if self.current_token.type != TT_IDENTIFIER:
+                    return res.failure(InvalidSyntaxError(
+                        self.current_token.pos_start, self.current_token.pos_end,
+                        "Expected an identifier"
+                    ))
+            else:
+                break
+
+        if self.current_token.type != TT_TERMINATE:
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                "Expected ';'"
+            ))
+
+        res.register(self.advance())
+
+        return res.success(DeclareNode(type_tok, identifiers))
+
+
     def declaration_statement(self):
         res = ParseResult()
 
@@ -131,13 +209,13 @@ class Parser:
 
         res.register(self.advance())
 
-        identifiers = []
-
         if self.current_token.type != TT_IDENTIFIER:
             return res.failure(InvalidSyntaxError(
                 self.current_token.pos_start, self.current_token.pos_end,
-                "Expected an identifier"
+                f"Unexpected token '{self.current_token.value}', expected an identifier"
             ))
+
+        identifiers = []
 
         while self.current_token.type == TT_IDENTIFIER:
             id_tok = self.current_token
@@ -247,10 +325,6 @@ class Parser:
             res.register(self.advance())
             return res.success(expr)
 
-        return res.failure(InvalidSyntaxError(
-            self.current_token.pos_start, self.current_token.pos_end,
-            "Expected ';'"
-        ))
 
     def factor(self):
         res = ParseResult()

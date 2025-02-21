@@ -85,6 +85,18 @@ class DeclareNode:
         )
         return f"({self.var_type_tok}, [{id_list}])"
 
+class GlobalDeclareNode:
+    def __init__(self, var_type_tok, identifiers):
+        self.var_type_tok = var_type_tok
+        self.identifiers = identifiers
+
+    def __repr__(self):
+        id_list = ", ".join(
+            f"({id_tok}, {val})" if val is not None else f"{id_tok}"
+            for id_tok, val in self.identifiers
+        )
+        return f"({self.var_type_tok}, [{id_list}])"
+
 # Function Declaration, Call, & Definition
 class FuncDefNode:
     def __init__(self, id_tok, args, return_type, body):
