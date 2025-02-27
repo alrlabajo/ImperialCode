@@ -46,45 +46,58 @@ class Parser:
 
     def program(self):
         res = ParseResult()
-        statements = []
+        global_statements = []
+        embark_node = None
 
         while self.current_token.type != TT_EOF:
-            if self.current_token.type == TT_MAIN:
-                stmt = res.register(self.main_prog())
-
-            elif self.current_token.type in (TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_VOID):
+            if self.current_token.type == TT_NEWLINE:
                 res.register(self.advance())
-                if self.current_token.type == TT_IDENTIFIER:
-                    res.register(self.advance())
-                    if self.current_token.type == TT_EQUAL:
-                        stmt = res.register(self.assignment_statement())
-                    elif self.current_token.type == TT_LPAREN:
+                continue
+
+            if self.current_token.type in (TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_VOID):
+                next_token = self.peek(1)
+
+                if next_token and next_token.type == TT_IDENTIFIER:
+                    next_next_token = self.peek(2)
+
+                    if next_next_token and next_next_token.type == TT_LPAREN:
                         stmt = res.register(self.func_dec_def())
-                    else:
-                        stmt = res.register(self.global_declaration())
-                else:
+                        if res.error:
+                            return res
+                        global_statements.append(stmt)
+                        continue
+
+                stmt = res.register(self.global_declaration())
+                if res.error:
+                    return res
+                global_statements.append(stmt)
+                continue
+
+            if self.current_token.type == TT_MAIN:
+                if embark_node is not None:
                     return res.failure(InvalidSyntaxError(
                         self.current_token.pos_start, self.current_token.pos_end,
-                        f"Unexpected token"
+                        "Multiple 'Embark()' are not allowed"
                     ))
 
-            elif self.current_token.type == TT_IDENTIFIER:
-                stmt = res.register(self.statement())
+                embark_node = res.register(self.main_prog())
+                if res.error:
+                    return res
+                continue
 
-            else:
-                return res.failure(InvalidSyntaxError(
-                    self.current_token.pos_start, self.current_token.pos_end,
-                    f"Unexpected token '{self.current_token.value}'"
-                ))
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                f"Unexpected token '{self.current_token.value}'"
+            ))
 
-            if res.error:
-                return res
 
-            statements.append(stmt)
-            res.register(self.advance())
+        if embark_node is None:
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                "Expected 'Embark()'"
+            ))
 
-        return res.success(statements)
-
+        return res.success(ProgramNode(global_statements, embark_node))
 
     def statement(self):
         res = ParseResult()
@@ -101,7 +114,7 @@ class Parser:
                     "Expected an identifier"
                 ))
         elif self.current_token.type == TT_IDENTIFIER:  # Assignment or Expression
-            if self.token_idx + 1 < len(self.tokens) and self.tokens[self.token_idx + 1].type in (TT_EQUAL, TT_PLUSAND, TT_MINUSAND, TT_MULAND, TT_DIVAND, TT_MODAND):
+            if self.peek(1).type in (TT_EQUAL, TT_PLUSAND, TT_MINUSAND, TT_MULAND, TT_DIVAND, TT_MODAND):
                 stmt = res.register(self.assignment_statement())
             else:
                 stmt = res.register(self.expr_statement())
@@ -109,7 +122,7 @@ class Parser:
             stmt = res.register(self.expr_statement())
         elif self.current_token.type == TT_RETURN: # Return statement
             stmt = res.register(self.return_statement())
-        elif self.current_token.type == TT_IF: # Conditional statement
+        elif self.current_token.type in (TT_IF, TT_ELSE):  # Conditional statement
             stmt = res.register(self.condition_statement())
         elif self.current_token.type in (TT_WHILE, TT_FOR, TT_DO): # Loop statement
             stmt = res.register(self.loop_statement())
@@ -126,7 +139,7 @@ class Parser:
         else:
             return res.failure(InvalidSyntaxError(
                 self.current_token.pos_start, self.current_token.pos_end,
-                "Unexpected token"
+                f"Unexpected token '{self.current_token.value}'"
             ))
 
         if self.current_token.type == TT_TERMINATE:
@@ -153,10 +166,11 @@ class Parser:
         if self.current_token.type != TT_IDENTIFIER:
             return res.failure(InvalidSyntaxError(
                 self.current_token.pos_start, self.current_token.pos_end,
-                f"Unexpected token '{self.current_token.value}', expected an identifier"
+                f"Unexpected token '{self.current_token.value}'"
             ))
 
         identifiers = []
+        pos_start = self.current_token.pos_start
 
         while self.current_token.type == TT_IDENTIFIER:
             id_tok = self.current_token
@@ -166,7 +180,35 @@ class Parser:
 
             if self.current_token.type == TT_EQUAL:
                 res.register(self.advance())
-                var_value = res.register(self.expr())
+
+                if type_tok.type == TT_CHAR:
+                    if self.current_token.type != TT_CHAR_LITERAL:
+                        return res.failure(InvalidSyntaxError(
+                            self.current_token.pos_start, self.current_token.pos_end,
+                            "Expected Letter literal"
+                        ))
+                    var_value = self.current_token
+                    res.register(self.advance())
+
+                elif type_tok.type == TT_STRING:
+                    if self.current_token.type != TT_STRING_LITERAL:
+                        return res.failure(InvalidSyntaxError(
+                            self.current_token.pos_start, self.current_token.pos_end,
+                            "Expected Missive literal"
+                        ))
+                    var_value = self.current_token
+                    res.register(self.advance())
+
+                elif type_tok.type == TT_BOOL:
+                    if self.current_token.type not in (TT_TRUE, TT_FALSE, TT_NULL):
+                        return res.failure(InvalidSyntaxError(
+                            self.current_token.pos_start, self.current_token.pos_end,
+                            "Expected Veracity values"
+                        ))
+                    var_value = self.current_token
+                    res.register(self.advance())
+                else:
+                    var_value = res.register(self.expr())
                 if res.error:
                     return res
 
@@ -185,13 +227,13 @@ class Parser:
         if self.current_token.type != TT_TERMINATE:
             return res.failure(InvalidSyntaxError(
                 self.current_token.pos_start, self.current_token.pos_end,
-                "Expected ';'"
+                "Expected ';' at the end of declaration"
             ))
 
+        pos_end = self.current_token.pos_end
         res.register(self.advance())
 
-        return res.success(DeclareNode(type_tok, identifiers))
-
+        return res.success(GlobalDeclareNode(type_tok, identifiers))
 
     def declaration_statement(self):
         res = ParseResult()
@@ -212,10 +254,11 @@ class Parser:
         if self.current_token.type != TT_IDENTIFIER:
             return res.failure(InvalidSyntaxError(
                 self.current_token.pos_start, self.current_token.pos_end,
-                f"Unexpected token '{self.current_token.value}', expected an identifier"
+                f"Unexpected token '{self.current_token.value}'"
             ))
 
         identifiers = []
+        pos_start = self.current_token.pos_start
 
         while self.current_token.type == TT_IDENTIFIER:
             id_tok = self.current_token
@@ -225,7 +268,35 @@ class Parser:
 
             if self.current_token.type == TT_EQUAL:
                 res.register(self.advance())
-                var_value = res.register(self.expr())
+
+                if type_tok.type == TT_CHAR:
+                    if self.current_token.type != TT_CHAR_LITERAL:
+                        return res.failure(InvalidSyntaxError(
+                            self.current_token.pos_start, self.current_token.pos_end,
+                            "Expected Letter literal"
+                        ))
+                    var_value = self.current_token
+                    res.register(self.advance())
+
+                elif type_tok.type == TT_STRING:
+                    if self.current_token.type != TT_STRING_LITERAL:
+                        return res.failure(InvalidSyntaxError(
+                            self.current_token.pos_start, self.current_token.pos_end,
+                            "Expected Missive literal"
+                        ))
+                    var_value = self.current_token
+                    res.register(self.advance())
+
+                elif type_tok.type == TT_BOOL:
+                    if self.current_token.type not in (TT_TRUE, TT_FALSE, TT_NULL):
+                        return res.failure(InvalidSyntaxError(
+                            self.current_token.pos_start, self.current_token.pos_end,
+                            "Expected Veracity values"
+                        ))
+                    var_value = self.current_token
+                    res.register(self.advance())
+                else:
+                    var_value = res.register(self.expr())
                 if res.error:
                     return res
 
@@ -244,12 +315,13 @@ class Parser:
         if self.current_token.type != TT_TERMINATE:
             return res.failure(InvalidSyntaxError(
                 self.current_token.pos_start, self.current_token.pos_end,
-                "Expected ';'"
+                "Expected ';' at the end of declaration"
             ))
 
+        pos_end = self.current_token.pos_end
         res.register(self.advance())
 
-        return res.success(DeclareNode(type_tok, identifiers))
+        return res.success(DeclareNode(type_tok, identifiers, pos_start, pos_end))
 
     def assignment_statement(self):
         res = ParseResult()
@@ -266,30 +338,36 @@ class Parser:
         id_tok = self.current_token
         res.register(self.advance())
 
-        if self.current_token.type in (TT_PLUSAND, TT_MINUSAND, TT_MULAND, TT_DIVAND, TT_MODAND, TT_EQUAL):
-            assign_op = self.current_token
+        if self.current_token.type not in (TT_PLUSAND, TT_MINUSAND, TT_MULAND, TT_DIVAND, TT_MODAND, TT_EQUAL):
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                "Expected an assignment operator"
+            ))
+
+        assign_op = self.current_token
+        res.register(self.advance())
+
+        expr = None
+        if self.current_token.type in (TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_NULL):
+            expr = self.current_token
             res.register(self.advance())
+        else:
             expr = res.register(self.arith_expr())
             if res.error:
                 return res
-            if self.current_token.type in (TT_IDENTIFIER, TT_INT_LITERAL, TT_FLOAT_LITERAL):
-                return res.failure(InvalidSyntaxError(
-                    self.current_token.pos_start, self.current_token.pos_end,
-                    "Expected an operator"
-                ))
 
-            if self.current_token.type != TT_TERMINATE:
-                return res.failure(InvalidSyntaxError(
-                    self.current_token.pos_start, self.current_token.pos_end,
-                    "Expected ';'"
-                ))
+        if self.current_token.type != TT_TERMINATE:
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                "Expected ';' at the end of assignment"
+            ))
 
-            res.register(self.advance())
+        res.register(self.advance())
 
-            if self.current_token.type == TT_EQUAL:
-                return res.success(AssignNode(id_tok, expr))
-            else:
-                return res.success(CompoundAssignNode(id_tok, assign_op, expr))
+        if assign_op.type == TT_EQUAL:
+            return res.success(AssignNode(id_tok, assign_op, expr))
+        else:
+            return res.success(CompoundAssignNode(id_tok, assign_op, expr))
 
     def expr_statement(self):
         res = ParseResult()
@@ -311,8 +389,8 @@ class Parser:
             if res.error: return res
 
         # Comparison expressions
-        elif self.current_token.type in (TT_EQUALTO, TT_NOTEQUAL, TT_LESSTHAN, TT_GREATERTHAN, TT_LESSTHANEQUAL, TT_GREATERTHANEQUAL) or \
-            self.peek(1).type in (TT_EQUALTO, TT_NOTEQUAL, TT_LESSTHAN, TT_GREATERTHAN, TT_LESSTHANEQUAL, TT_GREATERTHANEQUAL):
+        elif self.current_token.type in (TT_LESSTHAN, TT_GREATERTHAN, TT_LESSTHANEQUAL, TT_GREATERTHANEQUAL) or \
+            self.peek(1).type in (TT_LESSTHAN, TT_GREATERTHAN, TT_LESSTHANEQUAL, TT_GREATERTHANEQUAL):
             expr = res.register(self.comp_expr())
             if res.error: return res
 
@@ -324,7 +402,6 @@ class Parser:
         if self.current_token.type == TT_TERMINATE:
             res.register(self.advance())
             return res.success(expr)
-
 
     def factor(self):
         res = ParseResult()
@@ -371,7 +448,7 @@ class Parser:
 
         return res.failure(InvalidSyntaxError(
 			tok.pos_start, tok.pos_end,
-			"Expected Numeral, Decimal valueS or Identifier"
+			"Expected Numeral, Decimal values or Identifier"
 		))
 
     def arith_expr(self):
@@ -435,6 +512,7 @@ class Parser:
             res.register(self.advance())
             right = res.register(self.arith_expr())
             if res.error: return res
+
             left = BinOpNode(left, op_tok, right)
 
         return res.success(left)
@@ -495,6 +573,7 @@ class Parser:
         res = ParseResult()
         return_type = self.current_token
         res.register(self.advance())
+        pos_start = self.current_token.pos_start
 
         if self.current_token.type != TT_IDENTIFIER:
             return res.failure(InvalidSyntaxError(
@@ -547,7 +626,8 @@ class Parser:
 
         if self.current_token.type == TT_TERMINATE:
             res.register(self.advance())
-            return res.success(FuncDecNode(return_type, id_tok, args))
+            pos_end = self.current_token.pos_end
+            return res.success(FuncDecNode(return_type, id_tok, args, pos_start, pos_end))
         elif self.current_token.type == TT_LBRACE:
             res.register(self.advance())
 
@@ -573,7 +653,8 @@ class Parser:
             if self.current_token.type == TT_NEWLINE:
                 res.register(self.advance())
 
-            return res.success(FuncDefNode(return_type, id_tok, args, statements))
+            pos_end = self.current_token.pos_end
+            return res.success(FuncDefNode(return_type, id_tok, args, statements, pos_start, pos_end))
 
         return res.failure(InvalidSyntaxError(
             self.current_token.pos_start, self.current_token.pos_end,
@@ -582,6 +663,15 @@ class Parser:
 
     def main_prog(self):
         res = ParseResult()
+        embark_tok = self.current_token
+        pos_start = embark_tok.pos_start
+
+        if embark_tok.type != TT_MAIN:
+            return res.failure(InvalidSyntaxError(
+                embark_tok.pos_start, embark_tok.pos_end,
+                "Expected 'Embark()'"
+            ))
+
         res.register(self.advance())
 
         if self.current_token.type != TT_LPAREN:
@@ -615,10 +705,94 @@ class Parser:
 
         while self.current_token.type != TT_RBRACE and self.current_token.type != TT_EOF:
             stmt = res.register(self.statement())
+
+            if res.error:
+                return res
+            statements.append(stmt)
+
+            if self.current_token.type == TT_NEWLINE:
+                res.register(self.advance())
+
+        if self.current_token.type != TT_RBRACE:
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                "Expected '}'"
+            ))
+
+        pos_end = self.current_token.pos_end
+        res.register(self.advance())
+
+        if self.current_token.type == TT_NEWLINE:
+            res.register(self.advance())
+
+        return res.success(EmbarkNode(embark_tok, statements, pos_start, pos_end))
+
+    def return_statement(self):
+        res = ParseResult()
+        return_tok = self.current_token
+        res.register(self.advance())
+
+        expr = res.register(self.expr())
+        if res.error: return res
+
+        if self.current_token.type != TT_TERMINATE:
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                "Expected ';'"
+            ))
+
+        res.register(self.advance())
+
+        return res.success(ReturnNode(return_tok, expr))
+
+    def condition_statement(self):
+        res = ParseResult()
+        thou_tok = self.current_token
+        res.register(self.advance())
+
+        if thou_tok.type == TT_ELSE:
+            if self.current_token.type == TT_IF:
+                thou_tok = self.current_token
+                res.register(self.advance())
+            else:
+                condition = None
+
+        if thou_tok.type == TT_IF:
+            if self.current_token.type != TT_LPAREN:
+                return res.failure(InvalidSyntaxError(
+                    self.current_token.pos_start, self.current_token.pos_end,
+                    "Expected '('"
+                ))
+
+            res.register(self.advance())
+            condition = res.register(self.expr())
+            if res.error: return res
+
+            if self.current_token.type != TT_RPAREN:
+                return res.failure(InvalidSyntaxError(
+                    self.current_token.pos_start, self.current_token.pos_end,
+                    "Expected ')'"
+                ))
+
+            res.register(self.advance())
+        else:
+            condition = None
+
+        if self.current_token.type != TT_LBRACE:
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                "Expected '{'"
+            ))
+
+        res.register(self.advance())
+
+        statements = []
+        while self.current_token.type != TT_RBRACE and self.current_token.type != TT_EOF:
+            stmt = res.register(self.statement())
             if res.error: return res
             statements.append(stmt)
 
-            while self.current_token.type == TT_NEWLINE:
+            if self.current_token.type == TT_NEWLINE:
                 res.register(self.advance())
 
         if self.current_token.type != TT_RBRACE:
@@ -629,10 +803,213 @@ class Parser:
 
         res.register(self.advance())
 
-        if self.current_token.type == TT_NEWLINE:
+        else_stmt = None
+        if self.current_token.type == TT_ELSE:
+            else_stmt = res.register(self.condition_statement())
+
+        return res.success(ThouNode(thou_tok, condition, statements, else_stmt))
+
+    def input_statement(self):
+        res = ParseResult()
+        seek_tok = self.current_token
+        res.register(self.advance())
+
+        if self.current_token.type != TT_LPAREN:
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                "Expected '('"
+            ))
+
+        res.register(self.advance())
+
+        if self.current_token.type != TT_STRING_LITERAL: # Format specifier
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                "Expected format specifier"
+            ))
+
+        format_specifier = self.current_token
+        pos_start = self.current_token.pos_start
+
+        res.register(self.advance())
+
+        if self.current_token.type != TT_COMMA:
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                "Expected ','"
+            ))
+
+        res.register(self.advance())
+
+        addresses =[]
+
+        while self.current_token.type == TT_ADDRESS:
             res.register(self.advance())
 
-        return res.success(ProgramNode(statements))
+            if self.current_token.type != TT_IDENTIFIER:
+                return res.failure(InvalidSyntaxError(
+                    self.current_token.pos_start, self.current_token.pos_end,
+                    "Expected identifier"
+                ))
+
+            addresses.append(self.current_token)
+            res.register(self.advance())
+
+            if self.current_token.type == TT_COMMA:
+                res.register(self.advance())
+            else:
+                break
+
+        if self.current_token.type != TT_RPAREN:
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                "Expected ')'"
+            ))
+
+        res.register(self.advance())
+
+        if self.current_token.type != TT_TERMINATE:
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                "Expected ';'"
+            ))
+
+        return res.success(InputNode(seek_tok, format_specifier, addresses, pos_start, self.current_token.pos_end))
+
+    def output_statement(self):
+        res = ParseResult()
+        emit_tok = self.current_token
+        res.register(self.advance())
+
+        if self.current_token.type != TT_LPAREN:
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                "Expected '('"
+            ))
+
+        res.register(self.advance())
+
+        if self.current_token.type != TT_STRING_LITERAL: # Missive with format specifier
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                "Expected Missive literal"
+            ))
+
+        missive_literal = self.current_token
+        pos_start = self.current_token.pos_start
+
+        res.register(self.advance())
+
+        identifiers_expr = []
+
+        if self.current_token.type == TT_COMMA:
+            res.register(self.advance())
+
+            while self.current_token.type in (TT_IDENTIFIER, TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_PLUS, TT_MINUS, TT_MUL, TT_DIV, TT_LPAREN):
+                expr = res.register(self.expr())
+                if res.error: return res
+                identifiers_expr.append(expr)
+
+                if self.current_token.type == TT_COMMA:
+                    res.register(self.advance())
+                else:
+                    break
+
+        if self.current_token.type != TT_RPAREN:
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                "Expected ')'"
+            ))
+
+        res.register(self.advance())
+
+        if self.current_token.type != TT_TERMINATE:
+                return res.failure(InvalidSyntaxError(
+                    self.current_token.pos_start, self.current_token.pos_end,
+                    "Expected ';'"
+                ))
+
+        return res.success(OutputNode(emit_tok, missive_literal, identifiers_expr, pos_start, self.current_token.pos_end))
+
+    def loop_statement(self):
+        res = ParseResult()
+        type_tok = self.current_token
+
+        if type_tok.type == TT_FOR:
+            res.register(self.advance())
+
+            if self.current_token.type != TT_LPAREN:
+                return res.failure(InvalidSyntaxError(
+                    self.current_token.pos_start, self.current_token.pos_end,
+                    "Expected '('"
+                ))
+
+            res.register(self.advance())
+
+            # Initialization
+            init = None
+            if self.current_token.type != TT_TERMINATE:
+                init = res.register(self.statement())
+                if res.error: return res
+            res.register(self.advance())
+
+            # Condition
+            condition = None
+            if self.current_token.type != TT_TERMINATE:
+                condition = res.register(self.comp_expr())
+                if res.error: return res
+            res.register(self.advance())
+
+            # Update
+            update = None
+            if self.current_token.type != TT_RPAREN:
+                update = res.register(self.statement())
+                if res.error: return res
+            res.register(self.advance())
+
+            if self.current_token.type != TT_LBRACE:
+                return res.failure(InvalidSyntaxError(
+                    self.current_token.pos_start, self.current_token.pos_end,
+                    "Expected '{'"
+                ))
+
+            res.register(self.advance())
+
+            statements = []
+
+            while self.current_token.type != TT_RBRACE and self.current_token.type != TT_EOF:
+                stmt = res.register(self.statement())
+
+                if res.error:
+                    return res
+                statements.append(stmt)
+
+                if self.current_token.type == TT_NEWLINE:
+                    res.register(self.advance())
+
+            if self.current_token.type != TT_RBRACE:
+                return res.failure(InvalidSyntaxError(
+                    self.current_token.pos_start, self.current_token.pos_end,
+                    "Expected '}'"
+                ))
+
+            res.register(self.advance())
+
+            return res.success(PerNode(type_tok, init, condition, update, statements))
+
+        elif type_tok.type == TT_WHILE:
+            res.register(self.advance())
+            pass
+
+        elif type_tok.type == TT_DO:
+            res.register(self.advance())
+            pass
+
+    def switch_statement(self):
+        pass
+
+
+
 
 
 

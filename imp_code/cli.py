@@ -5,7 +5,7 @@ from .compiler import run_lexical, run_syntax
 import time
 
 
-    
+
 def main():
     parser = argparse.ArgumentParser(
         description="Aa programming language inspired by C Language in Victorian Era"
@@ -65,7 +65,7 @@ def _run_lexical(file_path, code):
     tokens, errors = run_lexical(file_path, code)
 
     if errors:
-        if args.verbose: 
+        if args.verbose:
             print("Tokens:", tokens)
             print()
         if errors:

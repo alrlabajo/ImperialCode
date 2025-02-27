@@ -1,1 +1,7 @@
-Decimal +grade;
+Embark() {
+	Numeral i;
+
+	Per (i = 0; i < 5 ; i++) {
+		Emit(i);
+	}
+}

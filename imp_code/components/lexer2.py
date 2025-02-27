@@ -303,7 +303,7 @@ class Lexer:
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
-                token = Tokens(TT_DO, keyword)
+                token = Tokens(TT_DO, keyword, pos_start=self.pos)
                 keyword = ""
                 self.state = '0'
 
@@ -379,7 +379,7 @@ class Lexer:
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
-                token = Tokens(TT_CONST, keyword)
+                token = Tokens(TT_CONST, keyword, pos_start=self.pos)
                 keyword = ""
                 self.state = '0'
 
@@ -520,7 +520,7 @@ class Lexer:
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
-                token = Tokens(TT_MAIN, keyword)
+                token = Tokens(TT_MAIN, keyword, pos_start=self.pos)
                 keyword = ""
                 self.state = '0'
 
@@ -547,7 +547,7 @@ class Lexer:
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
-                token = Tokens(TT_OUTPUT, keyword)
+                token = Tokens(TT_OUTPUT, keyword, pos_start=self.pos)
                 keyword = ""
                 self.state = '0'
 
@@ -622,7 +622,7 @@ class Lexer:
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
-                token = Tokens(TT_ENUM, keyword)
+                token = Tokens(TT_ENUM, keyword, pos_start=self.pos)
                 keyword = ""
                 self.state = '0'
 
@@ -673,7 +673,7 @@ class Lexer:
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
-                token = Tokens(TT_CONTINUE, keyword)
+                token = Tokens(TT_CONTINUE, keyword, pos_start=self.pos)
                 keyword = ""
                 self.state = '0'
 
@@ -716,7 +716,7 @@ class Lexer:
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
-                token = Tokens(TT_BREAK, keyword)
+                token = Tokens(TT_BREAK, keyword, pos_start=self.pos)
                 keyword = ""
                 self.state = '0'
 
@@ -887,7 +887,7 @@ class Lexer:
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
-                token = Tokens(TT_FALSE, keyword)
+                token = Tokens(TT_FALSE, keyword, pos_start=self.pos)
                 keyword = ""
                 self.state = '0'
 
@@ -914,7 +914,7 @@ class Lexer:
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
-                token = Tokens(TT_NULL, keyword)
+                token = Tokens(TT_NULL, keyword, pos_start=self.pos)
                 keyword = ""
                 self.state = '0'
 
@@ -1013,7 +1013,7 @@ class Lexer:
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
-                token = Tokens(TT_CASE, keyword)
+                token = Tokens(TT_CASE, keyword, pos_start=self.pos)
                 keyword = ""
                 self.state = '0'
 
@@ -1032,7 +1032,7 @@ class Lexer:
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
-                token = Tokens(TT_ELSE, keyword)
+                token = Tokens(TT_ELSE, keyword, pos_start=self.pos)
                 keyword = ""
                 self.state = '0'
 
@@ -1072,7 +1072,7 @@ class Lexer:
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
-                token = Tokens(TT_FOR, keyword)
+                token = Tokens(TT_FOR, keyword, pos_start=self.pos)
                 keyword = ""
                 self.state = '0'
 
@@ -1107,7 +1107,7 @@ class Lexer:
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
-                token = Tokens(TT_TRUE, keyword)
+                token = Tokens(TT_TRUE, keyword, pos_start=self.pos)
                 keyword = ""
                 self.state = '0'
 
@@ -1166,7 +1166,7 @@ class Lexer:
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
-                token = Tokens(TT_RETURN, keyword)
+                token = Tokens(TT_RETURN, keyword, pos_start=self.pos)
                 keyword = ""
                 self.state = '0'
 
@@ -1214,7 +1214,7 @@ class Lexer:
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
-                token = Tokens(TT_INPUT, keyword)
+                token = Tokens(TT_INPUT, keyword, pos_start=self.pos)
                 keyword = ""
                 self.state = '0'
 
@@ -1257,7 +1257,7 @@ class Lexer:
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
-                token = Tokens(TT_SWITCH, keyword)
+                token = Tokens(TT_SWITCH, keyword, pos_start=self.pos)
                 keyword = ""
                 self.state = '0'
 
@@ -1301,7 +1301,7 @@ class Lexer:
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
-                token = Tokens(TT_IF, keyword)
+                token = Tokens(TT_IF, keyword, pos_start=self.pos)
                 keyword = ""
                 self.state = '0'
 
@@ -1358,7 +1358,7 @@ class Lexer:
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
-                token = Tokens(TT_WHILE, keyword)
+                token = Tokens(TT_WHILE, keyword, pos_start=self.pos)
                 keyword = ""
                 self.state = '0'
 
@@ -1401,7 +1401,7 @@ class Lexer:
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
-                token = Tokens(TT_DEFAULT, keyword)
+                token = Tokens(TT_DEFAULT, keyword, pos_start=self.pos)
                 keyword = ""
                 self.state = '0'
 
@@ -1523,7 +1523,7 @@ class Lexer:
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
-                token = Tokens(TT_VOID , keyword)
+                token = Tokens(TT_VOID , keyword, pos_start=self.pos)
                 keyword = ""
                 self.state = '0'
 
@@ -1575,7 +1575,7 @@ class Lexer:
                     self.state = '148'
                     self.advance()
                 else:
-                    token = Tokens(TT_PLUS, pos_start=self.pos)
+                    token = Tokens(TT_PLUS, '+', pos_start=self.pos)
                     self.state = '0'
 
                     if token:
@@ -1589,7 +1589,7 @@ class Lexer:
 
             # +=
             elif self.state == '146':
-                token = Tokens(TT_PLUSAND, pos_start=self.pos)
+                token = Tokens(TT_PLUSAND, '+=', pos_start=self.pos)
                 self.state = '0'
 
                 if token:
@@ -1603,7 +1603,7 @@ class Lexer:
 
             # ++
             elif self.state == '148':
-                token = Tokens(TT_INC, pos_start=self.pos)
+                token = Tokens(TT_INC, '++', pos_start=self.pos)
                 self.state = '0'
 
                 if token:
@@ -1624,7 +1624,7 @@ class Lexer:
                     self.state = '154'
                     self.advance()
                 else:
-                    token = Tokens(TT_MINUS, pos_start=self.pos)
+                    token = Tokens(TT_MINUS, '-', pos_start=self.pos)
                     self.state = '0'
 
                     if token:
@@ -1638,7 +1638,7 @@ class Lexer:
 
             # -=
             elif self.state == '152':
-                token = Tokens(TT_MINUSAND, pos_start=self.pos)
+                token = Tokens(TT_MINUSAND, '-=',pos_start=self.pos)
                 self.state = '0'
 
                 if token:
@@ -1652,7 +1652,7 @@ class Lexer:
 
             # --
             elif self.state == '154':
-                token = Tokens(TT_DEC, pos_start=self.pos)
+                token = Tokens(TT_DEC, '--', pos_start=self.pos)
                 self.state = '0'
 
                 if token:
@@ -1670,7 +1670,7 @@ class Lexer:
                     self.state = '158'
                     self.advance()
                 else:
-                    token = Tokens(TT_MUL, pos_start=self.pos)
+                    token = Tokens(TT_MUL, '*', pos_start=self.pos)
                     self.state = '0'
 
                     if token:
@@ -1684,7 +1684,7 @@ class Lexer:
 
             # *=
             elif self.state == '158':
-                token = Tokens(TT_MULAND, pos_start=self.pos)
+                token = Tokens(TT_MULAND, '*=', pos_start=self.pos)
                 self.state = '0'
 
                 if token:
@@ -1725,7 +1725,7 @@ class Lexer:
                         errors.append(error)
 
                 else:
-                    token = Tokens(TT_DIV, pos_start=self.pos)
+                    token = Tokens(TT_DIV, '/', pos_start=self.pos)
                     self.state = '0'
 
                     if token:
@@ -1739,7 +1739,7 @@ class Lexer:
 
             # /=
             elif self.state == '162':
-                token = Tokens(TT_DIVAND, pos_start=self.pos)
+                token = Tokens(TT_DIVAND, '/=', pos_start=self.pos)
                 self.state = '0'
 
                 if token:
@@ -1757,7 +1757,7 @@ class Lexer:
                     self.state = '166'
                     self.advance()
                 else:
-                    token = Tokens(TT_MODULO, pos_start=self.pos)
+                    token = Tokens(TT_MODULO, '%', pos_start=self.pos)
                     self.state = '0'
 
                     if token:
@@ -1770,7 +1770,7 @@ class Lexer:
                         errors.append(error)
             # %=
             elif self.state == '166':
-                token = Tokens(TT_MODAND, pos_start=self.pos)
+                token = Tokens(TT_MODAND, '%=', pos_start=self.pos)
                 self.state = '0'
 
                 if token:
@@ -1787,7 +1787,7 @@ class Lexer:
                     self.state = '170'
                     self.advance()
                 else:
-                    token = Tokens(TT_EQUAL, pos_start=self.pos)
+                    token = Tokens(TT_EQUAL, '=', pos_start=self.pos)
                     self.state = '0'
 
                     if token:
@@ -1801,7 +1801,7 @@ class Lexer:
 
             # ==
             elif self.state == '170':
-                token = Tokens(TT_EQUALTO, pos_start=self.pos)
+                token = Tokens(TT_EQUALTO, '==', pos_start=self.pos)
                 self.state = '0'
 
                 if token:
@@ -1819,7 +1819,7 @@ class Lexer:
                     self.state = '174'
                     self.advance()
                 else:
-                    token = Tokens(TT_NOT, pos_start=self.pos)
+                    token = Tokens(TT_NOT, '!', pos_start=self.pos)
                     self.state = '0'
 
                     if token:
@@ -1833,7 +1833,7 @@ class Lexer:
 
             # !=
             elif self.state == '174':
-                token = Tokens(TT_NOTEQUAL, pos_start=self.pos)
+                token = Tokens(TT_NOTEQUAL, '!=', pos_start=self.pos)
                 self.state = '0'
 
                 if token:
@@ -1851,7 +1851,7 @@ class Lexer:
                     self.state = '178'
                     self.advance()
                 else:
-                    token = Tokens(TT_LESSTHAN, pos_start=self.pos)
+                    token = Tokens(TT_LESSTHAN, '<', pos_start=self.pos)
                     self.state = '0'
 
                     if token:
@@ -1865,7 +1865,7 @@ class Lexer:
 
             # <=
             elif self.state == '178':
-                token = Tokens(TT_LESSTHANEQUAL, pos_start=self.pos)
+                token = Tokens(TT_LESSTHANEQUAL, '<=', pos_start=self.pos)
                 self.state = '0'
 
                 if token:
@@ -1884,7 +1884,7 @@ class Lexer:
                     self.state = '182'
                     self.advance()
                 else:
-                    token = Tokens(TT_GREATERTHAN, pos_start=self.pos)
+                    token = Tokens(TT_GREATERTHAN, '>', pos_start=self.pos)
                     self.state = '0'
 
                     if token:
@@ -1898,7 +1898,7 @@ class Lexer:
 
             # >=
             elif self.state == '182':
-                token = Tokens(TT_GREATERTHANEQUAL, pos_start=self.pos)
+                token = Tokens(TT_GREATERTHANEQUAL, '>=', pos_start=self.pos)
                 self.state = '0'
 
                 if token:
@@ -1919,7 +1919,7 @@ class Lexer:
 
             # ||
             elif self.state == '185':
-                token = Tokens(TT_OR, pos_start=self.pos)
+                token = Tokens(TT_OR, '||', pos_start=self.pos)
                 self.state = '0'
 
                 if token:
@@ -1933,7 +1933,7 @@ class Lexer:
 
             # (
             elif self.state == '187':
-                token = Tokens(TT_LPAREN, pos_start=self.pos)
+                token = Tokens(TT_LPAREN, '(', pos_start=self.pos)
                 self.state = '0'
 
                 if token:
@@ -1948,7 +1948,7 @@ class Lexer:
 
             # )
             elif self.state == '189':
-                token = Tokens(TT_RPAREN, pos_start=self.pos)
+                token = Tokens(TT_RPAREN, ')', pos_start=self.pos)
                 self.state = '0'
 
                 if token:
@@ -1962,7 +1962,7 @@ class Lexer:
 
             # {
             elif self.state == '191':
-                token = Tokens(TT_LBRACE, pos_start=self.pos)
+                token = Tokens(TT_LBRACE, '{', pos_start=self.pos)
                 self.state = '0'
 
                 if token:
@@ -1976,7 +1976,7 @@ class Lexer:
 
             # }
             elif self.state == '193':
-                token = Tokens(TT_RBRACE, pos_start=self.pos)
+                token = Tokens(TT_RBRACE, '}', pos_start=self.pos)
                 self.state = '0'
 
                 if token:
@@ -1990,7 +1990,7 @@ class Lexer:
 
             # [
             elif self.state == '195':
-                token = Tokens(TT_LBRACKET, pos_start=self.pos)
+                token = Tokens(TT_LBRACKET,'[', pos_start=self.pos)
                 self.state = '0'
 
                 if token:
@@ -2005,7 +2005,7 @@ class Lexer:
 
             # ]
             elif self.state == '197':
-                token = Tokens(TT_RBRACKET, pos_start=self.pos)
+                token = Tokens(TT_RBRACKET, ']', pos_start=self.pos)
                 self.state = '0'
 
                 if token:
@@ -2019,7 +2019,7 @@ class Lexer:
 
             # ,
             elif self.state == '199':
-                token = Tokens(TT_COMMA, pos_start=self.pos)
+                token = Tokens(TT_COMMA, ',', pos_start=self.pos)
                 self.state = '0'
 
                 if token:
@@ -2033,7 +2033,7 @@ class Lexer:
 
             # .
             elif self.state == '201':
-                token = Tokens(TT_PERIOD, pos_start=self.pos)
+                token = Tokens(TT_PERIOD, '.', pos_start=self.pos)
                 self.state = '0'
 
                 if token:
@@ -2047,7 +2047,7 @@ class Lexer:
 
             # :
             elif self.state == '203':
-                token = Tokens(TT_COLON, pos_start=self.pos)
+                token = Tokens(TT_COLON, ':', pos_start=self.pos)
                 self.state = '0'
 
                 if token:
@@ -2060,7 +2060,7 @@ class Lexer:
                     errors.append(error)
             # ;
             elif self.state == '205':
-                token = Tokens(TT_TERMINATE, pos_start=self.pos)
+                token = Tokens(TT_TERMINATE, ';', pos_start=self.pos)
                 self.state = '0'
 
                 if token:
@@ -2077,10 +2077,23 @@ class Lexer:
                 if self.current_char == '&':
                     self.state = '208'
                     self.advance()
+                elif self.current_char.isalpha() or self.current_char == '_':
+                    tokens.append(Tokens(TT_ADDRESS, '&', pos_start=self.pos))
+
+                    identifier_token, error = self.make_identifier()
+                    if identifier_token:
+                        tokens.append(identifier_token)
+                    if error:
+                        errors.append(error)
+
+                    self.state = '0'
+                else:
+                    tokens.append(Tokens(TT_ADDRESS, '&', pos_start=self.pos))
+                    self.state = '0'
 
             # &&
             elif self.state == '208':
-                token = Tokens(TT_AND, pos_start=self.pos)
+                token = Tokens(TT_AND, '&&', pos_start=self.pos)
                 self.state = '0'
 
                 if token:
@@ -2091,7 +2104,6 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
-
 
             else:
                 pos_start = self.pos.copy()
@@ -2171,7 +2183,7 @@ class Lexer:
 
         missive_content += '"'
         self.advance()
-        return Tokens(TT_STRING_LITERAL, missive_content), None
+        return Tokens(TT_STRING_LITERAL, missive_content, pos_start, self.pos), None
 
     def make_letter(self):
         pos_start = self.pos
@@ -2187,7 +2199,7 @@ class Lexer:
 
         char += "'"
         self.advance()
-        return Tokens(TT_CHAR_LITERAL, char), None
+        return Tokens(TT_CHAR_LITERAL, char, pos_start, self.pos), None
 
     def make_identifier(self):
         pos_start = self.pos

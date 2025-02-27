@@ -9,7 +9,6 @@ DIGITS = list("0123456789")
 ALPHA_NUM = ALPHABET + DIGITS
 ARITH_OP = ["+", "-", "*", "/"]
 REL_OP = ["==", "!=", "<", ">", "<=", ">="]
-BITWISE_OP = ["&", "|", "^", "~", "<<", ">>"]
 
 INT_LIM =  9
 FLOAT_LIM = 9
@@ -24,13 +23,13 @@ ID_LIM = 20
 TT_MAIN     = 'Embark'
 
 # KEYWORDS AND IDENTIFIERS
-TT_IDENTIFIER = 'Identifier' #Done in variable and w/o delims
+TT_IDENTIFIER = 'Identifier'
 
 # DATA TYPES
-TT_INT		= "Numeral" #Done in variable and w/o delims
-TT_FLOAT    = 'Decimal' #Done in variable and w/o delims
-TT_CHAR     = "Letter" #Done in variable and w/o delims
-TT_STRING   = "Missive" #Done in variable and w/o delims
+TT_INT		= "Numeral"
+TT_FLOAT    = 'Decimal'
+TT_CHAR     = "Letter"
+TT_STRING   = "Missive"
 TT_BOOL     = "Veracity"
 TT_VOID     = "Void"
 TT_CONST    = "Constant"
@@ -69,58 +68,59 @@ TT_FALSE    = "Nay"
 TT_NULL     = "Nil"
 
 # ARITHMETIC OPERATIONS
-TT_PLUS     = '+' #Done w/o delims
-TT_MINUS    = '-' #Done w/o delims
-TT_MUL      = '*' #Done w/o delims
-TT_DIV      = '/' #Done w/o delims
-TT_MODULO   = '%' #Done w/o delims
+TT_PLUS     = '+'
+TT_MINUS    = '-'
+TT_MUL      = '*'
+TT_DIV      = '/'
+TT_MODULO   = '%'
 
 #LOGICAL OPERATOR
-TT_AND = '&&' #Done w/o delims
-TT_OR = '||' #Done w/o delims
-TT_NOT = '!' #Done w/o delims
-
+TT_AND = '&&'
+TT_OR = '||'
+TT_NOT = '!'
 
 #GROUPING SYMBOLS
-TT_LPAREN   = '(' #Done w/o delims
-TT_RPAREN   = ')' #Done w/o delims
-TT_LBRACKET ='[' #Done w/o delims
-TT_RBRACKET = ']' #Done w/o delims
-TT_LBRACE   = '{'#Done w/o delims
-TT_RBRACE   = '}'#Done w/o delims
+TT_LPAREN   = '('
+TT_RPAREN   = ')'
+TT_LBRACKET ='['
+TT_RBRACKET = ']'
+TT_LBRACE   = '{'
+TT_RBRACE   = '}'
 
 #ASSIGNMENT OPERATOR
-TT_EQUAL    = '=' #Done w/o delims
+TT_EQUAL    = '='
 
 #COMPOUND ASSIGNMENT OPERATOR
-TT_PLUSAND = '+=' #Done w/o delims
-TT_MINUSAND = '-='#Done w/o delims
-TT_MULAND   = '*=' #Done w/o delims
-TT_DIVAND   = '/=' #Done w/o delims
-TT_MODAND   = '%=' #Done w/o delims
+TT_PLUSAND = '+='
+TT_MINUSAND = '-='
+TT_MULAND   = '*='
+TT_DIVAND   = '/='
+TT_MODAND   = '%='
 
 #INCREAMENT AND DECREMENT OPERATORS
-TT_INC      = '++' #Done w/o delims
-TT_DEC      = '--' #Done w/o delims
+TT_INC      = '++'
+TT_DEC      = '--'
 
 #COMPARISON OPERATORS
-TT_EQUALTO  = '==' #Done w/o delims
-TT_NOTEQUAL = '!=' #Done w/o delims
-TT_LESSTHAN = '<' #Done w/o delims
-TT_GREATERTHAN = '>' #Done w/o delims
-TT_LESSTHANEQUAL = '<=' #Done w/o delims
-TT_GREATERTHANEQUAL = '>=' #Done w/o delims
+TT_EQUALTO  = '=='
+TT_NOTEQUAL = '!='
+TT_LESSTHAN = '<'
+TT_GREATERTHAN = '>'
+TT_LESSTHANEQUAL = '<='
+TT_GREATERTHANEQUAL = '>='
 
 # OTHERS
-TT_SPACE     = 'SPACE' #Done w/o delims
+TT_SPACE     = 'SPACE'
 TT_NEWLINE   = '\\n'
-TT_TERMINATE = ';' #Done w/o delims
-TT_PERIOD    = '.' #Done w/o delims
-TT_COLON     = ':' #Done w/o delims
-TT_COMMA     = ',' #Done w/o delims
-TT_SLINECOM  = 'SLINE COMMENT' #Done w/o delims
-TT_MLINECOM    = 'MLINE COMMENT' #Done w/o delims
-TT_CLRSCR   = 'Voila' #Done w/o delims
+TT_TERMINATE = ';'
+TT_PERIOD    = '.'
+TT_COLON     = ':'
+TT_COMMA     = ','
+TT_SLINECOM  = 'SLINE COMMENT'
+TT_MLINECOM    = 'MLINE COMMENT'
+TT_CLRSCR   = 'Voila'
+TT_FORMAT_SPECIFIER = "FORMAT SPECIFIER"
+TT_ADDRESS = "ADDRESS"
 TT_EOF      = 'EOF'
 
 ESC_SEQ = {
@@ -146,18 +146,18 @@ DD_OBRACE = [*ALPHA_NUM, " ", "\n", "}", ","]
 DD_CBRACE = [" ", "\n", ",", "}", ")", "]", ";"]
 DD_OBRACK = [*ALPHA_NUM, " ", "\n", ",", "-", "{", "[", "(", "]", ")", ","]
 DD_CBRACK = [" ", "\n", ",", "[", "]", ")", "}", ".", "(", "+", ":", ";"]
-DD_SPACE = [*ALPHA_NUM, *ARITH_OP, *REL_OP, *BITWISE_OP, '"', "#", "$", "&", "(", ")", ",", ".", ":", ";", "?", "@", "[", "\\", "]", "^", "_", "`", "{", "|", "}", "~", "±", "§", "'", "\n", "=", " ", "\t", "%"]
+DD_SPACE = [*ALPHA_NUM, *ARITH_OP, *REL_OP, '"', "#", "$", "&", "(", ")", ",", ".", ":", ";", "?", "@", "[", "\\", "]", "^", "_", "`", "{", "|", "}", "~", "±", "§", "'", "\n", "=", " ", "\t", "%"]
 DD_COMMA = [*ALPHA_NUM, " ", "(", "-", ",", "[", "{", "(", ")", "\n", "'"]
 DD_PERIOD = [*ALPHA_NUM]
 DD_STRING = [" ", "\n", ",", "]", ")", "}", ",", ".", ":", "#", "!", "=", "["]
-DD_NUM_DECI = [*DIGITS, *ARITH_OP, *REL_OP, *BITWISE_OP, " ", ",", "}", "]", ")", ":", "#", "\n", ";", "(", "."]
+DD_NUM_DECI = [*DIGITS, *ARITH_OP, *REL_OP, " ", ",", "}", "]", ")", ":", "#", "\n", ";", "(", "."]
 DD_RESERVE = [" ", ";"]
 DD_COLON = [*ALPHABET, " ", "\n", ":"]
 DD_SEMICOL = [*ALPHA_NUM, " ", "\n", "}", ";"]
 DD_FUNC = ["(", "\n", " "]
 DD_COMMENT = ["\n", " "]
 DD_MAIN = [" ", "("]
-DD_IDENTIFIER = [*ALPHA_NUM, '_', ' ', '\n', ';', *ARITH_OP, *REL_OP, *BITWISE_OP, "(", ")", "[" ,"]", "{", "}", "%", ",", "=", ":"]
+DD_IDENTIFIER = [*ALPHA_NUM, '_', ' ', '\n', ';', *ARITH_OP, *REL_OP, "(", ")", "[" ,"]", "{", "}", "%", ",", "=", ":"]
 
 DELIM_LIST = {
     # MAIN
