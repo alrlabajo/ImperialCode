@@ -21,7 +21,7 @@ class EmbarkNode:
         self.pos_end = pos_end
 
     def __repr__(self):
-        return f"({self.statements})"
+        return f'({self.embark_tok}, {self.statements})'
 
 # Expression nodes
 class NumeralNode:
@@ -32,6 +32,13 @@ class NumeralNode:
 		return f'{self.tok}'
 
 class DecimalNode:
+    def __init__(self, tok):
+        self.tok = tok
+
+    def __repr__(self):
+        return f'{self.tok}'
+
+class VeracityNode:
     def __init__(self, tok):
         self.tok = tok
 
@@ -106,22 +113,24 @@ class DeclareNode:
             f"({id_tok}, {val})" if val is not None else f"{id_tok}"
             for id_tok, val in self.identifiers
         )
-        return f"({self.var_type_tok}, [{id_list}])"
+        return f"({self.var_type_tok}, {id_list})"
 
 class GlobalDeclareNode:
-    def __init__(self, var_type_tok, identifiers):
+    def __init__(self, var_type_tok, identifiers, pos_start=None, pos_end=None):
         self.var_type_tok = var_type_tok
         self.identifiers = identifiers
+        self.pos_start = pos_start
+        self.pos_end = pos_end
 
     def __repr__(self):
         id_list = ", ".join(
             f"({id_tok}, {val})" if val is not None else f"{id_tok}"
             for id_tok, val in self.identifiers
         )
-        return f"({self.var_type_tok}, [{id_list}])"
+        return f"({self.var_type_tok}, {id_list})"
 
 # Input and Output
-class InputNode:
+class InputNode: # Scan statement
     def __init__(self, type_tok, format_specifier, variables, pos_start=None, pos_end=None):
         self.type_tok = type_tok
         self.format_specifier = format_specifier
@@ -132,7 +141,7 @@ class InputNode:
     def __repr__(self):
         return f"{self.type_tok}, {self.format_specifier}, {self.variables}"
 
-class OutputNode:
+class OutputNode: # Print statement
     def __init__(self, type_tok, missive_lit, id_exp, pos_start=None, pos_end=None):
         self.type_tok = type_tok
         self.missive_lit = missive_lit
@@ -142,7 +151,7 @@ class OutputNode:
 
 
     def __repr__(self):
-        return f"{self.type_tok}, {self.missive_lit}, {self.id_exp}"
+        return f'({self.type_tok}: {self.missive_lit}, {self.id_exp})'
 
 # Function Declaration, Call, & Definition
 class FuncDefNode:
@@ -156,8 +165,7 @@ class FuncDefNode:
         self.pos_end = pos_end
 
     def __repr__(self):
-        return f"({self.id}({', '.join(map(str, self.args))}) {self.return_type}, " \
-            f"[{', '.join(map(str, self.body))}])"
+        return f'({self.id_tok}, {self.args}, {self.return_type}, {self.body})'
 
 class FuncCallNode:
     def __init__(self, id_tok, args):
@@ -181,7 +189,7 @@ class FuncDecNode:
         return f'({self.id_tok}, {self.args}, {self.return_type})'
 
 # Condition Statements
-class ThouNode:
+class ThouNode: # If statement
     def __init__(self, type_tok, condition, statements, else_stmt=None):
         self.type_tok = type_tok
         self.condition = condition
@@ -190,13 +198,12 @@ class ThouNode:
 
     def __repr__(self):
         if self.condition:
-            return f'({self.type_tok}: ({self.condition}) {self.statements})' + (f' {self.else_stmt}' if self.else_stmt else '')
+            return f'({self.type_tok}: {self.condition}, {self.statements})' + (f' {self.else_stmt}' if self.else_stmt else '')
         else:
             return f'({self.type_tok}: {self.statements})'
 
 # Loop Statements
-
-class PerNode:
+class PerNode: # For statement
     def __init__(self, type_tok, init, condition, update, statements):
         self.type_tok = type_tok
         self.init = init
@@ -205,4 +212,50 @@ class PerNode:
         self.statements = statements
 
     def __repr__(self):
-        return f'({self.type_tok}: {self.init}, {self.condition}, {self.update}, {self.statements})'
+        return f'({self.type_tok}, {self.init}, {self.condition}, {self.update}, {self.statements})'
+
+class UntilNode: # While statement
+    def __init__(self, type_tok, condition, statements):
+        self.type_tok = type_tok
+        self.condition = condition
+        self.statements = statements
+
+    def __repr__(self):
+        return f'({self.type_tok}, {self.condition}, {self.statements})'
+
+class ActNode: # Do-While statement
+    def __init__(self, type_tok, statements, until_tok, condition):
+        self.type_tok = type_tok
+        self.statements = statements
+        self.until_tok = until_tok
+        self.condition = condition
+
+    def __repr__(self):
+        return f'({self.type_tok}, {self.statements}, {self.until_tok}: {self.condition})'
+
+class ShiftNode: # Switch statement
+    def __init__(self, type_tok, condition, cases_tok, cases, default_tok, default_case):
+        self.type_tok = type_tok
+        self.condition = condition
+        self.cases_tok = cases_tok
+        self.cases = cases
+        self.default_tok = default_tok
+        self.default_case = default_case
+
+    def __repr__(self):
+        return f'({self.type_tok}, {self.condition}, {self.cases_tok}, {self.cases}, {self.default_tok}, {self.default_case})'
+
+# Loop Control Statements
+class HaltNode: # Break
+    def __init__(self, type_tok):
+        self.type_tok = type_tok
+
+    def __repr__(self):
+        return f'({self.type_tok})'
+
+class ExtendNode: # Continue
+    def __init__(self, type_tok):
+        self.type_tok = type_tok
+
+    def __repr__(self):
+        return f'({self.type_tok})'

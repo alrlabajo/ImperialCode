@@ -1,7 +1,7 @@
-Embark() {
-	Numeral i;
+Numeral sum (Numeral num1, Numeral num2) {
+	Recede num1+num2;
+}
 
-	Per (i = 0; i < 5 ; i++) {
-		Emit(i);
-	}
+Embark() {
+	Recede 0;
 }

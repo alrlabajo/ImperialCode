@@ -158,6 +158,7 @@ DD_FUNC = ["(", "\n", " "]
 DD_COMMENT = ["\n", " "]
 DD_MAIN = [" ", "("]
 DD_IDENTIFIER = [*ALPHA_NUM, '_', ' ', '\n', ';', *ARITH_OP, *REL_OP, "(", ")", "[" ,"]", "{", "}", "%", ",", "=", ":"]
+DD_VALUES = [" ", "\n", ";", ")"]
 
 DELIM_LIST = {
     # MAIN
@@ -211,9 +212,9 @@ DELIM_LIST = {
     TT_RETURN: DD_RESERVE,
 
     # VALUES
-    TT_TRUE: DD_RESERVE,
-    TT_FALSE: DD_RESERVE,
-    TT_NULL: DD_RESERVE,
+    TT_TRUE: DD_VALUES,
+    TT_FALSE: DD_VALUES,
+    TT_NULL: DD_VALUES,
 
     # LOGICAL OPERATORS
     TT_AND: DD_SPACE,
@@ -259,8 +260,6 @@ DELIM_LIST = {
     TT_COLON: DD_COLON,
     TT_SLINECOM: DD_COMMENT,
     TT_MLINECOM: DD_COMMENT,
-    TT_CLRSCR: DD_FUNC,
-
 }
 
 
