@@ -1,0 +1,7 @@
+Embark() {
+    Numeral myNumeral = 21;
+    Decimal myDeci = 21.1;
+    Missive myMissive = "This is Missive";
+    Letter myLetter = 'B';
+    Recede 0;
+}

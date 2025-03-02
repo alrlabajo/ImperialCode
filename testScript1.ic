@@ -1,0 +1,4 @@
+Embark() {
+    Emit("Hello!");
+    Recede 0;
+}
