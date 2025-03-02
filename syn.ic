@@ -1,7 +1,4 @@
-Numeral sum (Numeral num1, Numeral num2) {
-	Recede num1+num2;
-}
-
+Constant Decimal pi = 3.14;
 Embark() {
 	Recede 0;
 }

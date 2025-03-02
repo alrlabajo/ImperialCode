@@ -54,6 +54,12 @@ class Parser:
                 res.register(self.advance())
                 continue
 
+            is_constant = False
+            if self.current_token.type == TT_CONST:
+                is_constant = True
+                constant_tok = self.current_token
+                res.register(self.advance())
+
             if self.current_token.type in (TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_VOID):
                 next_token = self.peek(1)
 
@@ -67,7 +73,7 @@ class Parser:
                         global_statements.append(stmt)
                         continue
 
-                stmt = res.register(self.global_declaration())
+                stmt = res.register(self.global_declaration(is_constant, constant_tok))
                 if res.error:
                     return res
                 global_statements.append(stmt)
@@ -90,7 +96,6 @@ class Parser:
                 f"Unexpected token '{self.current_token.value}'"
             ))
 
-
         if embark_node is None:
             return res.failure(InvalidSyntaxError(
                 self.current_token.pos_start, self.current_token.pos_end,
@@ -105,9 +110,15 @@ class Parser:
         while self.current_token.type == TT_NEWLINE:
             res.register(self.advance())
 
+        is_constant = False
+        if self.current_token.type == TT_CONST:
+            is_constant = True
+            constant_tok = self.current_token
+            res.register(self.advance())
+
         if self.current_token.type in (TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL):  # Declaration
             if self.token_idx + 1 < len(self.tokens) and self.tokens[self.token_idx + 1].type == TT_IDENTIFIER:
-                    stmt = res.register(self.declaration_statement())
+                    stmt = res.register(self.declaration_statement(is_constant, constant_tok))
             else:
                 return res.failure(InvalidSyntaxError(
                     self.current_token.pos_start, self.current_token.pos_end,
@@ -147,7 +158,7 @@ class Parser:
 
         return res.success(stmt)
 
-    def global_declaration(self):
+    def global_declaration(self, is_constant=False, constant_tok=None):
         res = ParseResult()
 
         while self.current_token.type == TT_NEWLINE:
@@ -211,6 +222,12 @@ class Parser:
                     var_value = res.register(self.expr())
                 if res.error:
                     return res
+            else:
+                if is_constant:
+                    return res.failure(InvalidSyntaxError(
+                        self.current_token.pos_start, self.current_token.pos_end,
+                        "Constants must be initialized"
+                    ))
 
             identifiers.append((id_tok, var_value))
 
@@ -233,9 +250,9 @@ class Parser:
         pos_end = self.current_token.pos_end
         res.register(self.advance())
 
-        return res.success(GlobalDeclareNode(type_tok, identifiers, pos_start, pos_end))
+        return res.success(GlobalDeclareNode(constant_tok, type_tok, identifiers, pos_start, pos_end))
 
-    def declaration_statement(self):
+    def declaration_statement(self, is_constant=False, constant_tok=None):
         res = ParseResult()
 
         while self.current_token.type == TT_NEWLINE:
@@ -299,6 +316,12 @@ class Parser:
                     var_value = res.register(self.expr())
                 if res.error:
                     return res
+            else:
+                if is_constant:
+                    return res.failure(InvalidSyntaxError(
+                        self.current_token.pos_start, self.current_token.pos_end,
+                        "Constants must be initialized"
+                    ))
 
             identifiers.append((id_tok, var_value))
 
@@ -321,7 +344,7 @@ class Parser:
         pos_end = self.current_token.pos_end
         res.register(self.advance())
 
-        return res.success(DeclareNode(type_tok, identifiers, pos_start, pos_end))
+        return res.success(DeclareNode(type_tok, identifiers, pos_start, pos_end, is_constant))
 
     def assignment_statement(self):
         res = ParseResult()
