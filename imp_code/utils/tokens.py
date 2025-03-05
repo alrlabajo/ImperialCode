@@ -33,7 +33,6 @@ TT_STRING   = "Missive"
 TT_BOOL     = "Veracity"
 TT_VOID     = "Void"
 TT_CONST    = "Constant"
-TT_ENUM     = "Enumerate"
 
 #LITERALS
 TT_INT_LITERAL = 'Numeral_Lit'
@@ -118,7 +117,6 @@ TT_COLON     = ':'
 TT_COMMA     = ','
 TT_SLINECOM  = 'SLINE COMMENT'
 TT_MLINECOM    = 'MLINE COMMENT'
-TT_CLRSCR   = 'Voila'
 TT_FORMAT_SPECIFIER = "FORMAT SPECIFIER"
 TT_ADDRESS = "ADDRESS"
 TT_EOF      = 'EOF'
@@ -181,7 +179,6 @@ DELIM_LIST = {
 
     TT_VOID: DD_DTYPE,
     TT_CONST: DD_DTYPE,
-    TT_ENUM: DD_DTYPE,
 
     # INPUT/OUTPUT
     TT_INPUT: DD_FUNC,

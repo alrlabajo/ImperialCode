@@ -25,15 +25,19 @@ class EmbarkNode:
 
 # Expression nodes
 class NumeralNode:
-	def __init__(self, tok):
-		self.tok = tok
+    def __init__(self, tok, pos_start=None, pos_end=None):
+        self.tok = tok
+        self.pos_start = tok.pos_start
+        self.pos_end = tok.pos_end
 
-	def __repr__(self):
-		return f'{self.tok}'
+    def __repr__(self):
+        return f'{self.tok}'
 
 class DecimalNode:
     def __init__(self, tok):
         self.tok = tok
+        self.pos_start = tok.pos_start
+        self.pos_end = tok.pos_end
 
     def __repr__(self):
         return f'{self.tok}'
@@ -41,6 +45,8 @@ class DecimalNode:
 class VeracityNode:
     def __init__(self, tok):
         self.tok = tok
+        self.pos_start = tok.pos_start
+        self.pos_end = tok.pos_end
 
     def __repr__(self):
         return f'{self.tok}'
@@ -102,33 +108,41 @@ class CompoundAssignNode:
         return f'({self.var_name_tok.type}: {self.var_name_tok.value}, {self.op_tok.type}: {self.op_tok.value}, {self.id_value})'
 
 class DeclareNode:
-    def __init__(self, var_type_tok, identifiers, pos_start=None, pos_end=None, is_constant=False):
-        self.var_type_tok = var_type_tok
-        self.identifiers = identifiers
-        self.pos_start = pos_start
-        self.pos_end = pos_end
-        self.is_constant = is_constant
-
-    def __repr__(self):
-        id_list = ", ".join(
-            f"({id_tok}, {val})" if val is not None else f"{id_tok}"
-            for id_tok, val in self.identifiers
-        )
-        return f"({self.var_type_tok}, {id_list})"
-
-class GlobalDeclareNode:
-    def __init__(self, var_type_tok, identifiers, pos_start=None, pos_end=None, is_constant=False, constant_tok=None):
+    def __init__(self, var_type_tok, identifiers, pos_start=None, pos_end=None, is_constant=False, constant_tok=None, array_size=None, is_array=False):
         self.constant_tok = constant_tok
         self.var_type_tok = var_type_tok
         self.identifiers = identifiers
         self.pos_start = pos_start
         self.pos_end = pos_end
         self.is_constant = is_constant
+        self.array_size = array_size
+        self.is_array = is_array
 
     def __repr__(self):
         id_list = ", ".join(
             f"({id_tok}, {val})" if val is not None else f"{id_tok}"
-            for id_tok, val in self.identifiers
+            for id_tok, val, is_array, array_size in self.identifiers
+        )
+        if self.is_constant:
+            return f"({self.constant_tok}, {self.var_type_tok.value}, {id_list})"
+        else:
+            return f"({self.var_type_tok.value}, {id_list})"
+
+class GlobalDeclareNode:
+    def __init__(self, var_type_tok, identifiers, pos_start=None, pos_end=None, is_constant=False, constant_tok=None, array_size=None, is_array=False):
+        self.constant_tok = constant_tok
+        self.var_type_tok = var_type_tok
+        self.identifiers = identifiers
+        self.pos_start = pos_start
+        self.pos_end = pos_end
+        self.is_constant = is_constant
+        self.array_size = array_size
+        self.is_array = is_array
+
+    def __repr__(self):
+        id_list = ", ".join(
+            f"({id_tok}, {val})" if val is not None else f"{id_tok}"
+            for id_tok, val, is_array, array_size in self.identifiers
         )
         if self.is_constant:
             return f"({self.constant_tok}, {self.var_type_tok.value}, {id_list})"

@@ -16,6 +16,7 @@ class Parser:
             if token.type not in (TT_SPACE, TT_SLINECOM, TT_MLINECOM)
         ]
         self.token_idx = -1
+        self.symbol_table = {}
         self.advance()
 
     def advance(self):
@@ -55,6 +56,7 @@ class Parser:
                 continue
 
             is_constant = False
+            constant_tok = None
             if self.current_token.type == TT_CONST:
                 is_constant = True
                 constant_tok = self.current_token
@@ -111,6 +113,7 @@ class Parser:
             res.register(self.advance())
 
         is_constant = False
+        constant_tok = None
         if self.current_token.type == TT_CONST:
             is_constant = True
             constant_tok = self.current_token
@@ -186,57 +189,104 @@ class Parser:
         while self.current_token.type == TT_IDENTIFIER:
             id_tok = self.current_token
             var_value = None
+            is_array = False
+            array_size = None
+            array_values = []
 
             res.register(self.advance())
+
+            self.symbol_table[id_tok.value] = type_tok.type
+
+            if self.current_token.type == TT_LBRACKET:
+                is_array = True
+                res.register(self.advance())
+
+                if self.current_token.type != TT_INT_LITERAL:
+                    return res.failure(InvalidSyntaxError(
+                        self.current_token.pos_start, self.current_token.pos_end,
+                        "Expected an Numeral literal for Ledger size"
+                    ))
+
+                array_size = self.current_token
+                res.register(self.advance())
+
+                if self.current_token.type != TT_RBRACKET:
+                    return res.failure(InvalidSyntaxError(
+                        self.current_token.pos_start, self.current_token.pos_end,
+                        "Expected ']' after array size"
+                    ))
+
+                res.register(self.advance())
 
             if self.current_token.type == TT_EQUAL:
                 res.register(self.advance())
 
-                if type_tok.type == TT_CHAR:
-                    if self.current_token.type != TT_CHAR_LITERAL:
+                if is_array:
+                    if self.current_token.type != TT_LBRACE:
                         return res.failure(InvalidSyntaxError(
                             self.current_token.pos_start, self.current_token.pos_end,
-                            "Expected Letter literal"
+                            "Expected '{' to initialize array"
                         ))
-                    var_value = self.current_token
+
                     res.register(self.advance())
 
-                elif type_tok.type == TT_STRING:
-                    if self.current_token.type != TT_STRING_LITERAL:
-                        return res.failure(InvalidSyntaxError(
-                            self.current_token.pos_start, self.current_token.pos_end,
-                            "Expected Missive literal"
-                        ))
-                    var_value = self.current_token
+                    while self.current_token.type != TT_RBRACE:
+                        if (type_tok.type == TT_INT and self.current_token.type != TT_INT_LITERAL) or \
+                        (type_tok.type == TT_FLOAT and self.current_token.type != TT_FLOAT_LITERAL) or \
+                        (type_tok.type == TT_CHAR and self.current_token.type != TT_CHAR_LITERAL):
+                            return res.failure(InvalidSyntaxError(
+                                self.current_token.pos_start, self.current_token.pos_end,
+                                f"Type mismatch in Ledger '{id_tok.value}', expected {type_tok.value}"
+                            ))
+                        array_values.append(self.current_token)
+                        res.register(self.advance())
+
+                        if self.current_token.type == TT_COMMA:
+                            res.register(self.advance())
+                        elif self.current_token.type != TT_RBRACE:
+                            return res.failure(InvalidSyntaxError(
+                                self.current_token.pos_start, self.current_token.pos_end,
+                                "Expected ',' or '}'"
+                            ))
+
                     res.register(self.advance())
 
-                elif type_tok.type == TT_BOOL:
-                    if self.current_token.type not in (TT_TRUE, TT_FALSE, TT_NULL):
+                    if array_size and len(array_values) > int(array_size.value):
                         return res.failure(InvalidSyntaxError(
-                            self.current_token.pos_start, self.current_token.pos_end,
-                            "Expected Veracity values"
+                            pos_start, self.current_token.pos_end,
+                            f"Ledger '{id_tok.value}' has too many elements (expected {array_size.value}, got {len(array_values)})"
                         ))
-                    var_value = self.current_token
-                    res.register(self.advance())
+
+                    var_value = array_values
                 else:
-                    var_value = res.register(self.expr())
-                if res.error:
-                    return res
-            else:
-                if is_constant:
-                    return res.failure(InvalidSyntaxError(
-                        self.current_token.pos_start, self.current_token.pos_end,
-                        "Constants must be initialized"
-                    ))
+                    var_value = self.current_token
 
-            identifiers.append((id_tok, var_value))
+                    if (type_tok.type == TT_INT and var_value.type != TT_INT_LITERAL) or \
+                    (type_tok.type == TT_FLOAT and var_value.type != TT_FLOAT_LITERAL) or \
+                    (type_tok.type == TT_CHAR and var_value.type != TT_CHAR_LITERAL) or \
+                    (type_tok.type == TT_STRING and var_value.type != TT_STRING_LITERAL) or \
+                    (type_tok.type == TT_BOOL and var_value.type not in (TT_TRUE, TT_FALSE, TT_NULL)):
+                        return res.failure(InvalidSyntaxError(
+                            var_value.pos_start, var_value.pos_end,
+                            f"Type mismatch: '{id_tok.value}' is {type_tok.value}, but got {var_value.type}"
+                        ))
+
+                    res.register(self.advance())
+
+            if is_constant and var_value is None:
+                return res.failure(InvalidSyntaxError(
+                    id_tok.pos_start, id_tok.pos_end,
+                    "Constants must be initialized"
+                ))
+
+            identifiers.append((id_tok, var_value, is_array, array_size))
 
             if self.current_token.type == TT_COMMA:
                 res.register(self.advance())
                 if self.current_token.type != TT_IDENTIFIER:
                     return res.failure(InvalidSyntaxError(
                         self.current_token.pos_start, self.current_token.pos_end,
-                        "Expected an identifier"
+                        "Expected an identifier after ','"
                     ))
             else:
                 break
@@ -250,7 +300,7 @@ class Parser:
         pos_end = self.current_token.pos_end
         res.register(self.advance())
 
-        return res.success(GlobalDeclareNode(constant_tok, type_tok, identifiers, pos_start, pos_end))
+        return res.success(GlobalDeclareNode(type_tok, identifiers, pos_start, pos_end, is_constant, constant_tok))
 
     def declaration_statement(self, is_constant=False, constant_tok=None):
         res = ParseResult()
@@ -280,57 +330,104 @@ class Parser:
         while self.current_token.type == TT_IDENTIFIER:
             id_tok = self.current_token
             var_value = None
+            is_array = False
+            array_size = None
+            array_values = []
 
             res.register(self.advance())
+
+            self.symbol_table[id_tok.value] = type_tok.type
+
+            if self.current_token.type == TT_LBRACKET:
+                is_array = True
+                res.register(self.advance())
+
+                if self.current_token.type != TT_INT_LITERAL:
+                    return res.failure(InvalidSyntaxError(
+                        self.current_token.pos_start, self.current_token.pos_end,
+                        "Expected an Numeral literal for Ledger size"
+                    ))
+
+                array_size = self.current_token
+                res.register(self.advance())
+
+                if self.current_token.type != TT_RBRACKET:
+                    return res.failure(InvalidSyntaxError(
+                        self.current_token.pos_start, self.current_token.pos_end,
+                        "Expected ']' after array size"
+                    ))
+
+                res.register(self.advance())
 
             if self.current_token.type == TT_EQUAL:
                 res.register(self.advance())
 
-                if type_tok.type == TT_CHAR:
-                    if self.current_token.type != TT_CHAR_LITERAL:
+                if is_array:
+                    if self.current_token.type != TT_LBRACE:
                         return res.failure(InvalidSyntaxError(
                             self.current_token.pos_start, self.current_token.pos_end,
-                            "Expected Letter literal"
+                            "Expected '{' to initialize array"
                         ))
-                    var_value = self.current_token
+
                     res.register(self.advance())
 
-                elif type_tok.type == TT_STRING:
-                    if self.current_token.type != TT_STRING_LITERAL:
-                        return res.failure(InvalidSyntaxError(
-                            self.current_token.pos_start, self.current_token.pos_end,
-                            "Expected Missive literal"
-                        ))
-                    var_value = self.current_token
+                    while self.current_token.type != TT_RBRACE:
+                        if (type_tok.type == TT_INT and self.current_token.type != TT_INT_LITERAL) or \
+                        (type_tok.type == TT_FLOAT and self.current_token.type != TT_FLOAT_LITERAL) or \
+                        (type_tok.type == TT_CHAR and self.current_token.type != TT_CHAR_LITERAL):
+                            return res.failure(InvalidSyntaxError(
+                                self.current_token.pos_start, self.current_token.pos_end,
+                                f"Type mismatch in Ledger '{id_tok.value}', expected {type_tok.value}"
+                            ))
+                        array_values.append(self.current_token)
+                        res.register(self.advance())
+
+                        if self.current_token.type == TT_COMMA:
+                            res.register(self.advance())
+                        elif self.current_token.type != TT_RBRACE:
+                            return res.failure(InvalidSyntaxError(
+                                self.current_token.pos_start, self.current_token.pos_end,
+                                "Expected ',' or '}'"
+                            ))
+
                     res.register(self.advance())
 
-                elif type_tok.type == TT_BOOL:
-                    if self.current_token.type not in (TT_TRUE, TT_FALSE, TT_NULL):
+                    if array_size and len(array_values) > int(array_size.value):
                         return res.failure(InvalidSyntaxError(
-                            self.current_token.pos_start, self.current_token.pos_end,
-                            "Expected Veracity values"
+                            pos_start, self.current_token.pos_end,
+                            f"Ledger '{id_tok.value}' has too many elements (expected {array_size.value}, got {len(array_values)})"
                         ))
-                    var_value = self.current_token
-                    res.register(self.advance())
+
+                    var_value = array_values
                 else:
-                    var_value = res.register(self.expr())
-                if res.error:
-                    return res
-            else:
-                if is_constant:
-                    return res.failure(InvalidSyntaxError(
-                        self.current_token.pos_start, self.current_token.pos_end,
-                        "Constants must be initialized"
-                    ))
+                    var_value = self.current_token
 
-            identifiers.append((id_tok, var_value))
+                    if (type_tok.type == TT_INT and var_value.type != TT_INT_LITERAL) or \
+                    (type_tok.type == TT_FLOAT and var_value.type != TT_FLOAT_LITERAL) or \
+                    (type_tok.type == TT_CHAR and var_value.type != TT_CHAR_LITERAL) or \
+                    (type_tok.type == TT_STRING and var_value.type != TT_STRING_LITERAL) or \
+                    (type_tok.type == TT_BOOL and var_value.type not in (TT_TRUE, TT_FALSE, TT_NULL)):
+                        return res.failure(InvalidSyntaxError(
+                            var_value.pos_start, var_value.pos_end,
+                            f"Type mismatch: '{id_tok.value}' is {type_tok.value}, but got {var_value.type}"
+                        ))
+
+                    res.register(self.advance())
+
+            if is_constant and var_value is None:
+                return res.failure(InvalidSyntaxError(
+                    id_tok.pos_start, id_tok.pos_end,
+                    "Constants must be initialized"
+                ))
+
+            identifiers.append((id_tok, var_value, is_array, array_size))
 
             if self.current_token.type == TT_COMMA:
                 res.register(self.advance())
                 if self.current_token.type != TT_IDENTIFIER:
                     return res.failure(InvalidSyntaxError(
                         self.current_token.pos_start, self.current_token.pos_end,
-                        "Expected an identifier"
+                        "Expected an identifier after ','"
                     ))
             else:
                 break
@@ -344,7 +441,7 @@ class Parser:
         pos_end = self.current_token.pos_end
         res.register(self.advance())
 
-        return res.success(DeclareNode(type_tok, identifiers, pos_start, pos_end, is_constant))
+        return res.success(DeclareNode(type_tok, identifiers, pos_start, pos_end, is_constant, constant_tok))
 
     def assignment_statement(self):
         res = ParseResult()
@@ -359,6 +456,15 @@ class Parser:
             ))
 
         id_tok = self.current_token
+
+        if id_tok.value not in self.symbol_table:
+            return res.failure(InvalidSyntaxError(
+                id_tok.pos_start, id_tok.pos_end,
+                f"Undeclared variable '{id_tok.value}'"
+            ))
+
+        declared_type = self.symbol_table[id_tok.value]
+
         res.register(self.advance())
 
         if self.current_token.type not in (TT_PLUSAND, TT_MINUSAND, TT_MULAND, TT_DIVAND, TT_MODAND, TT_EQUAL):
@@ -374,10 +480,47 @@ class Parser:
         if self.current_token.type in (TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_NULL):
             expr = self.current_token
             res.register(self.advance())
+
+            if (declared_type == TT_INT or declared_type == TT_FLOAT):
+                return res.failure(InvalidSyntaxError(
+                    expr.pos_start, expr.pos_end,
+                    f"Type mismatch: '{id_tok.value}' is {declared_type}, but got {expr.type}"
+                ))
+
+            if (declared_type == TT_CHAR and expr.type != TT_CHAR_LITERAL) or \
+            (declared_type == TT_STRING and expr.type != TT_STRING_LITERAL) or \
+            (declared_type == TT_BOOL and expr.type not in (TT_TRUE, TT_FALSE, TT_NULL)):
+                return res.failure(InvalidSyntaxError(
+                    expr.pos_start, expr.pos_end,
+                    f"Type mismatch: '{id_tok.value}' is {declared_type}, but got {expr.type}"
+                ))
+
+        elif self.current_token.type in (TT_INT_LITERAL, TT_FLOAT_LITERAL):
+            expr = self.current_token
+            res.register(self.advance())
+
+            if (declared_type == TT_INT and expr.type == TT_FLOAT_LITERAL):
+                return res.failure(InvalidSyntaxError(
+                    expr.pos_start, expr.pos_end,
+                    f"Type mismatch: '{id_tok.value}' is {declared_type}, but got {expr.type}"
+                ))
+
+            if (declared_type == TT_FLOAT and expr.type != TT_FLOAT_LITERAL):
+                return res.failure(InvalidSyntaxError(
+                    expr.pos_start, expr.pos_end,
+                    f"Type mismatch: '{id_tok.value}' is {declared_type}, but got {expr.type}"
+                ))
+
         else:
             expr = res.register(self.arith_expr())
             if res.error:
                 return res
+
+            if declared_type not in (TT_INT, TT_FLOAT):
+                return res.failure(InvalidSyntaxError(
+                    expr.pos_start, expr.pos_end,
+                    f"Type mismatch: Cannot assign a numerical expression to '{id_tok.value}' of type {declared_type}"
+                ))
 
         if self.current_token.type != TT_TERMINATE:
             return res.failure(InvalidSyntaxError(
@@ -447,13 +590,20 @@ class Parser:
             res.register(self.advance())
             factor = res.register(self.factor())
             if res.error: return res
+
+            if not isinstance(factor, (NumeralNode, DecimalNode)):
+                return res.failure(InvalidSyntaxError(
+                    factor.pos_start, factor.pos_end,
+                    "+ and - can only be applied to Numeral or Decimal types"
+                ))
+
             return res.success(UnaryOpNode(tok, factor))
 
-        elif tok.type in (TT_INT_LITERAL):
+        elif tok.type == TT_INT_LITERAL:
             res.register(self.advance())
             return res.success(NumeralNode(tok))
 
-        elif tok.type in (TT_FLOAT_LITERAL):
+        elif tok.type == TT_FLOAT_LITERAL:
             res.register(self.advance())
             return res.success(DecimalNode(tok))
 
@@ -465,6 +615,13 @@ class Parser:
                 op_tok = self.current_token
                 res.register(self.advance())
                 return res.success(UnaryOpNode(op_tok, var_access, is_post=True))
+
+            var_type = self.symbol_table.get(tok.value)
+            if var_type not in (TT_INT, TT_FLOAT):
+                return res.failure(InvalidSyntaxError(
+                    tok.pos_start, tok.pos_end,
+                    f"Invalid operand '{tok.value}': Expected Numeral or Decimal"
+                ))
 
             return res.success(var_access)
 
@@ -480,13 +637,13 @@ class Parser:
 
             return res.failure(InvalidSyntaxError(
                 self.current_token.pos_start, self.current_token.pos_end,
-                "Expected ')'"
+                "Expected closing ')'"
             ))
 
         return res.failure(InvalidSyntaxError(
-			tok.pos_start, tok.pos_end,
-			"Expected Numeral, Decimal values or Identifier"
-		))
+            tok.pos_start, tok.pos_end,
+            "Expected Numeral, Decimal values, or a valid Identifier"
+        ))
 
     def arith_expr(self):
         return self.bin_op(self.term, (TT_PLUS, TT_MINUS))
@@ -504,6 +661,13 @@ class Parser:
             res.register(self.advance())
             right = res.register(func())
             if res.error: return res
+
+            if not isinstance(left, (NumeralNode, DecimalNode)) or not isinstance(right, (NumeralNode, DecimalNode)):
+                return res.failure(InvalidSyntaxError(
+                    left.pos_start, right.pos_end,
+                    f"Type mismatch: Cannot perform '{op_tok.value}' between {type(left).__name__} and {type(right).__name__}"
+                ))
+
             left = BinOpNode(left, op_tok, right)
 
         return res.success(left)
@@ -533,7 +697,7 @@ class Parser:
         while self.current_token.type == TT_AND:
             op_tok = self.current_token
             res.register(self.advance())
-            right = res.register(self.comp_expr())  # Process the right-hand side
+            right = res.register(self.comp_expr())
             if res.error: return res
             left = BinOpNode(left, op_tok, right)
 
@@ -1303,10 +1467,3 @@ class Parser:
             return res.success(HaltNode(jump_tok))
         elif jump_tok.type == TT_CONTINUE:
             return res.success(ExtendNode(jump_tok))
-
-
-
-
-
-
-

@@ -558,7 +558,7 @@ class Lexer:
                 continue
 
             #Enumerate (REMOVED)
-           
+
 
             # Extend
             elif self.state == '32':
@@ -1801,7 +1801,6 @@ class Lexer:
                 else:
                     errors.append(error)
 
-
             # |
             elif self.state == '172':
                 if self.current_char == '|':
@@ -1892,7 +1891,6 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
-                self.advance()
 
             # ]
             elif self.state == '185':
