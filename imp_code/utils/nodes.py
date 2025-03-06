@@ -52,13 +52,15 @@ class VeracityNode:
         return f'{self.tok}'
 
 class BinOpNode:
-	def __init__(self, left_node, op_tok, right_node):
-		self.left_node = left_node
-		self.op_tok = op_tok
-		self.right_node = right_node
+    def __init__(self, left_node, op_tok, right_node, pos_start=None, pos_end=None):
+        self.left_node = left_node
+        self.op_tok = op_tok
+        self.right_node = right_node
+        self.pos_start = pos_start
+        self.pos_end = pos_end
 
-	def __repr__(self):
-		return f'({self.left_node}, {self.op_tok}, {self.right_node})'
+    def __repr__(self):
+        return f'({self.left_node}, {self.op_tok}, {self.right_node})'
 
 class UnaryOpNode:
     def __init__(self, op_tok, node, is_post=False):
@@ -72,6 +74,16 @@ class UnaryOpNode:
         else:
             return f'({self.op_tok}, {self.node})'
 
+class LiteralNode:
+    def __init__(self, token):
+        self.token = token
+        self.value = token.value
+        self.pos_start = token.pos_start
+        self.pos_end = token.pos_end
+
+    def __repr__(self):
+        return f"{self.value}"
+
 class ReturnNode:
     def __init__(self, return_tok, node):
         self.return_tok = return_tok
@@ -82,9 +94,11 @@ class ReturnNode:
 
 # Declaration, Assignment, & Access (Local and Global)
 class AccessNode:
-    def __init__(self, id_tok):
+    def __init__(self, id_tok, pos_start=None, pos_end=None):
         self.id_tok = id_tok
         self.id = id_tok.value
+        self.pos_start = pos_start
+        self.pos_end = pos_end
 
     def __repr__(self):
         return f'{self.id_tok}'

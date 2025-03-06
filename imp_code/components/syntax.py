@@ -95,7 +95,7 @@ class Parser:
 
             return res.failure(InvalidSyntaxError(
                 self.current_token.pos_start, self.current_token.pos_end,
-                f"Unexpected token '{self.current_token.value}'"
+                f"Program must start with Embark(), Global declaration, or Function declaration"
             ))
 
         if embark_node is None:
@@ -150,6 +150,11 @@ class Parser:
             stmt = res.register(self.jump_statement())
         elif self.current_token.type == TT_LPAREN:
             stmt = res.register(self.expr_statement())
+        elif self.current_token.type == TT_MAIN:
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                "Unexpected 'Embark()' in statement"
+            ))
         else:
             return res.failure(InvalidSyntaxError(
                 self.current_token.pos_start, self.current_token.pos_end,
@@ -204,7 +209,7 @@ class Parser:
                 if self.current_token.type != TT_INT_LITERAL:
                     return res.failure(InvalidSyntaxError(
                         self.current_token.pos_start, self.current_token.pos_end,
-                        "Expected an Numeral literal for Ledger size"
+                        "Expected a Numeral literal for Ledger size"
                     ))
 
                 array_size = self.current_token
@@ -259,19 +264,29 @@ class Parser:
 
                     var_value = array_values
                 else:
-                    var_value = self.current_token
-
-                    if (type_tok.type == TT_INT and var_value.type != TT_INT_LITERAL) or \
-                    (type_tok.type == TT_FLOAT and var_value.type != TT_FLOAT_LITERAL) or \
-                    (type_tok.type == TT_CHAR and var_value.type != TT_CHAR_LITERAL) or \
-                    (type_tok.type == TT_STRING and var_value.type != TT_STRING_LITERAL) or \
-                    (type_tok.type == TT_BOOL and var_value.type not in (TT_TRUE, TT_FALSE, TT_NULL)):
+                    if type_tok.type == TT_STRING and self.current_token.type == TT_STRING_LITERAL:
+                        var_value = self.current_token
+                        res.register(self.advance())
+                    elif type_tok.type == TT_CHAR and self.current_token.type == TT_CHAR_LITERAL:
+                        var_value = self.current_token
+                        res.register(self.advance())
+                    else:
+                        var_value = res.register(self.expr())
+                    if var_value is None:
                         return res.failure(InvalidSyntaxError(
-                            var_value.pos_start, var_value.pos_end,
-                            f"Type mismatch: '{id_tok.value}' is {type_tok.value}, but got {var_value.type}"
+                            self.current_token.pos_start, self.current_token.pos_end,
+                            "Invalid assignment: Expected a value but got nothing."
                         ))
 
-                    res.register(self.advance())
+                    if (type_tok.type == TT_INT and not isinstance(var_value, (NumeralNode, BinOpNode))) or \
+                    (type_tok.type == TT_FLOAT and not isinstance(var_value, (DecimalNode, BinOpNode))) or \
+                    (type_tok.type == TT_BOOL and not isinstance(var_value, VeracityNode)) or \
+                    (type_tok.type == TT_STRING and var_value.type != TT_STRING_LITERAL) or \
+                    (type_tok.type == TT_CHAR and var_value.type != TT_CHAR_LITERAL):
+                        return res.failure(InvalidSyntaxError(
+                            var_value.pos_start, var_value.pos_end,
+                            f"Type mismatch: '{id_tok.value}' is {type_tok.value}, but got {var_value}"
+                        ))
 
             if is_constant and var_value is None:
                 return res.failure(InvalidSyntaxError(
@@ -299,6 +314,7 @@ class Parser:
 
         pos_end = self.current_token.pos_end
         res.register(self.advance())
+
 
         return res.success(GlobalDeclareNode(type_tok, identifiers, pos_start, pos_end, is_constant, constant_tok))
 
@@ -345,7 +361,7 @@ class Parser:
                 if self.current_token.type != TT_INT_LITERAL:
                     return res.failure(InvalidSyntaxError(
                         self.current_token.pos_start, self.current_token.pos_end,
-                        "Expected an Numeral literal for Ledger size"
+                        "Expected a Numeral literal for Ledger size"
                     ))
 
                 array_size = self.current_token
@@ -400,19 +416,29 @@ class Parser:
 
                     var_value = array_values
                 else:
-                    var_value = self.current_token
-
-                    if (type_tok.type == TT_INT and var_value.type != TT_INT_LITERAL) or \
-                    (type_tok.type == TT_FLOAT and var_value.type != TT_FLOAT_LITERAL) or \
-                    (type_tok.type == TT_CHAR and var_value.type != TT_CHAR_LITERAL) or \
-                    (type_tok.type == TT_STRING and var_value.type != TT_STRING_LITERAL) or \
-                    (type_tok.type == TT_BOOL and var_value.type not in (TT_TRUE, TT_FALSE, TT_NULL)):
+                    if type_tok.type == TT_STRING and self.current_token.type == TT_STRING_LITERAL:
+                        var_value = self.current_token
+                        res.register(self.advance())
+                    elif type_tok.type == TT_CHAR and self.current_token.type == TT_CHAR_LITERAL:
+                        var_value = self.current_token
+                        res.register(self.advance())
+                    else:
+                        var_value = res.register(self.expr())
+                    if var_value is None:
                         return res.failure(InvalidSyntaxError(
-                            var_value.pos_start, var_value.pos_end,
-                            f"Type mismatch: '{id_tok.value}' is {type_tok.value}, but got {var_value.type}"
+                            self.current_token.pos_start, self.current_token.pos_end,
+                            "Invalid assignment: Expected a value but got nothing."
                         ))
 
-                    res.register(self.advance())
+                    if (type_tok.type == TT_INT and not isinstance(var_value, (NumeralNode, BinOpNode))) or \
+                    (type_tok.type == TT_FLOAT and not isinstance(var_value, (DecimalNode, BinOpNode))) or \
+                    (type_tok.type == TT_BOOL and not isinstance(var_value, VeracityNode)) or \
+                    (type_tok.type == TT_STRING and var_value.type != TT_STRING_LITERAL) or \
+                    (type_tok.type == TT_CHAR and var_value.type != TT_CHAR_LITERAL):
+                        return res.failure(InvalidSyntaxError(
+                            var_value.pos_start, var_value.pos_end,
+                            f"Type mismatch: '{id_tok.value}' is {type_tok.value}, but got {var_value}"
+                        ))
 
             if is_constant and var_value is None:
                 return res.failure(InvalidSyntaxError(
@@ -608,20 +634,32 @@ class Parser:
             return res.success(DecimalNode(tok))
 
         elif tok.type == TT_IDENTIFIER:
+            if tok.value not in self.symbol_table:
+                return res.failure(InvalidSyntaxError(
+                    tok.pos_start, tok.pos_end,
+                    f"Undeclared variable '{tok.value}'"
+                ))
+
             var_access = AccessNode(tok)
             res.register(self.advance())
 
-            if self.current_token.type in (TT_INC, TT_DEC):
-                op_tok = self.current_token
-                res.register(self.advance())
-                return res.success(UnaryOpNode(op_tok, var_access, is_post=True))
+            if tok.value not in self.symbol_table:
+                return res.failure(InvalidSyntaxError(
+                    tok.pos_start, tok.pos_end,
+                    f"Undeclared variable '{tok.value}'"
+                ))
 
             var_type = self.symbol_table.get(tok.value)
+
             if var_type not in (TT_INT, TT_FLOAT):
                 return res.failure(InvalidSyntaxError(
                     tok.pos_start, tok.pos_end,
-                    f"Invalid operand '{tok.value}': Expected Numeral or Decimal"
+                    f"Invalid operand '{tok.value}': Expected Numeral or Decimal but got {var_type}"
                 ))
+
+            var_value = self.symbol_table.get(tok.value)
+            if var_value is not None:
+                return res.success(NumeralNode(tok) if var_type == TT_INT else DecimalNode(tok))
 
             return res.success(var_access)
 
@@ -722,6 +760,21 @@ class Parser:
 
         if self.current_token.type == TT_IDENTIFIER:
             id_tok = self.current_token
+
+            if id_tok.value not in self.symbol_table:
+                return res.failure(InvalidSyntaxError(
+                    id_tok.pos_start, id_tok.pos_end,
+                    f"Undeclared variable '{id_tok.value}'"
+                ))
+
+            var_type = self.symbol_table[id_tok.value]
+
+            if var_type not in (TT_INT, TT_FLOAT):
+                return res.failure(InvalidSyntaxError(
+                    id_tok.pos_start, id_tok.pos_end,
+                    f"Invalid operation on '{id_tok.value}': Only Numeral and Decimal types can be updated"
+                ))
+
             res.register(self.advance())
 
             if self.current_token.type in (TT_INC, TT_DEC):
@@ -740,34 +793,42 @@ class Parser:
 
     def func_call(self):
         res = ParseResult()
-        id_tok = self.current_token
+        func_name = self.current_token
         res.register(self.advance())
 
-        while self.current_token.type == TT_LPAREN:
-            res.register(self.advance())
-            args = []
+        if self.current_token.type != TT_LPAREN:
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                "Expected '(' after function name"
+            ))
 
-            while self.current_token.type != TT_RPAREN:
-                arg = res.register(self.expr())
-                if res.error: return res
-                args.append(arg)
+        res.register(self.advance())
 
-                if self.current_token.type == TT_COMMA:
-                    res.register(self.advance())
-                elif self.current_token.type != TT_RPAREN:
-                    return res.failure(InvalidSyntaxError(
-                        self.current_token.pos_start, self.current_token.pos_end,
-                        "Expected ',' or ')'"
-                    ))
+        args = []
 
-            res.register(self.advance())
+        while self.current_token.type != TT_RPAREN:
+            arg = self.current_token
 
-            return res.success(FuncCallNode(id_tok, args))
+            if arg.type in (TT_IDENTIFIER, TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_STRING_LITERAL, TT_CHAR_LITERAL, TT_TRUE, TT_FALSE):
+                args.append(AccessNode(arg) if arg.type == TT_IDENTIFIER else LiteralNode(arg))
+                res.register(self.advance())
+            else:
+                return res.failure(InvalidSyntaxError(
+                    self.current_token.pos_start, self.current_token.pos_end,
+                    f"Invalid function argument '{arg.value}': Expected Numeral, Decimal, Missive, Letter, or Veracity but got {arg.type}"
+                ))
 
-        return res.failure(InvalidSyntaxError(
-            id_tok.pos_start, id_tok.pos_end,
-            "Expected '('"
-        ))
+            if self.current_token.type == TT_COMMA:
+                res.register(self.advance())
+            elif self.current_token.type != TT_RPAREN:
+                return res.failure(InvalidSyntaxError(
+                    self.current_token.pos_start, self.current_token.pos_end,
+                    "Expected ',' or ')'"
+                ))
+
+        res.register(self.advance())
+
+        return res.success(FuncCallNode(func_name, args))
 
     def func_dec_def(self):
         res = ParseResult()
@@ -806,6 +867,8 @@ class Parser:
             param_id = self.current_token
             res.register(self.advance())
 
+            self.symbol_table[param_id.value] = type_tok.type
+
             args.append((type_tok, param_id))
 
             if self.current_token.type == TT_COMMA:
@@ -828,6 +891,7 @@ class Parser:
             res.register(self.advance())
             pos_end = self.current_token.pos_end
             return res.success(FuncDecNode(return_type, id_tok, args, pos_start, pos_end))
+
         elif self.current_token.type == TT_LBRACE:
             res.register(self.advance())
 
@@ -1106,10 +1170,28 @@ class Parser:
         if self.current_token.type == TT_COMMA:
             res.register(self.advance())
 
-            while self.current_token.type in (TT_IDENTIFIER, TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_PLUS, TT_MINUS, TT_MUL, TT_DIV, TT_LPAREN):
-                expr = res.register(self.expr())
-                if res.error: return res
-                identifiers_expr.append(expr)
+            while self.current_token.type in (TT_IDENTIFIER, TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_PLUS, TT_MINUS, TT_MUL, TT_DIV, TT_LPAREN, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_NULL):
+                if self.current_token.type == TT_IDENTIFIER:
+                    var_name = self.current_token.value
+                    res.register(self.advance())
+
+                    if var_name not in self.symbol_table:
+                        return res.failure(InvalidSyntaxError(
+                            self.current_token.pos_start, self.current_token.pos_end,
+                            f"Undeclared variable '{var_name}'"
+                        ))
+
+                    if self.symbol_table[var_name] not in (TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL):
+                        return res.failure(InvalidSyntaxError(
+                            self.current_token.pos_start, self.current_token.pos_end,
+                            f"Invalid operand '{var_name}': Expected Numeral, Decimal, Letter, Missive, or Veracity"
+                        ))
+
+                    identifiers_expr.append(AccessNode(self.current_token))
+                else:
+                    expr = res.register(self.expr())
+                    if res.error: return res
+                    identifiers_expr.append(expr)
 
                 if self.current_token.type == TT_COMMA:
                     res.register(self.advance())
@@ -1355,7 +1437,25 @@ class Parser:
 
         res.register(self.advance())
 
-        expression = res.register(self.expr_statement())
+        if self.current_token.type == TT_IDENTIFIER:
+            if self.current_token.value not in self.symbol_table:
+                return res.failure(InvalidSyntaxError(
+                    self.current_token.pos_start, self.current_token.pos_end,
+                    f"Undeclared variable '{self.current_token.value}'"
+                ))
+
+            var_type = self.symbol_table[self.current_token.value]
+
+            if var_type not in (TT_INT, TT_FLOAT, TT_CHAR, TT_BOOL):
+                return res.failure(InvalidSyntaxError(
+                    self.current_token.pos_start, self.current_token.pos_end,
+                    f"Invalid Shift argument: Expected Numeral, Decimal, Veracity, or Letter but got {var_type}"
+                ))
+
+            expression = AccessNode(self.current_token)
+            res.register(self.advance())
+
+
         if res.error: return res
 
         if self.current_token.type != TT_RPAREN:
@@ -1387,10 +1487,10 @@ class Parser:
                 cases_tok.append(case_tok)
                 res.register(self.advance())
 
-                if self.current_token.type not in (TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE):
+                if self.current_token.type not in (TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_TRUE, TT_FALSE):
                     return res.failure(InvalidSyntaxError(
                         self.current_token.pos_start, self.current_token.pos_end,
-                        "Expected literal"
+                        f"Expected {var_type} literal"
                     ))
 
                 case_expr = self.current_token
