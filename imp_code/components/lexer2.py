@@ -2047,47 +2047,78 @@ class Lexer:
                 return Tokens(TT_FLOAT_LITERAL, str(float(num_str)), pos_start, self.pos), None
 
     def make_missive(self):
-        pos_start = self.pos
+        pos_start = self.pos.copy()
+        string = self.current_char
         self.advance()
-        missive_content = '"'
+        missive_content = ""
+        esc_line = False
 
-        while self.current_char is not None and self.current_char != '"':
-            if self.current_char == ";":
-                return None, IllegalCharError(pos_start, self.pos, "Unclosed Missive")
+        while self.current_char is not None:
+            if self.current_char == '"' and not esc_line:
+                break
 
-            if self.current_char == '\\':
-                self.advance()
+            if esc_line:
                 if self.current_char in ESC_SEQ:
                     missive_content += ESC_SEQ[self.current_char]
                 elif self.current_char is not None:
-                    missive_content += '\\' + self.current_char
+                    missive_content += self.current_char
                 else:
-                    missive_content += '\\' + self.current_char
+                    return None, IllegalCharError(pos_start, self.pos, "Invalid escape sequence")
+                esc_line = False
+            elif self.current_char == '\\':
+                esc_line = True
             else:
                 missive_content += self.current_char
+
             self.advance()
 
-        if self.current_char != '"' or self.current_char == ";":
-            return None, IllegalCharError(pos_start, self.pos, "Unclosed Missive")
+        if self.current_char != '"':
+            return None, IllegalCharError(pos_start, self.pos, "Unclosed String")
 
-        missive_content += '"'
         self.advance()
+
         return Tokens(TT_STRING_LITERAL, missive_content, pos_start, self.pos), None
 
     def make_letter(self):
-        pos_start = self.pos
+        pos_start = self.pos.copy()
+        char = self.current_char
         self.advance()
-        char = "'"
 
-        if self.current_char is not None:
-            char += self.current_char
-
-        self.advance()
-        if self.current_char != "'":
+        if self.current_char is None:
             return None, IllegalCharError(pos_start, self.pos, "Unclosed Letter")
 
-        char += "'"
+        char_content = ""
+
+        if self.current_char == '\\':
+            self.advance()
+            if self.current_char in ESC_SEQ:
+                char_content += ESC_SEQ[self.current_char]
+            elif self.current_char is not None:
+                char_content += self.current_char
+            else:
+                return None, IllegalCharError(pos_start, self.pos, "Invalid escape sequence")
+        else:
+            char_content += self.current_char
+
         self.advance()
+
+        if self.current_char != "'":
+            if self.current_char is None:
+                return None, IllegalCharError(pos_start, self.pos, "Unclosed Letter")
+
+            error_pos = self.pos.copy()
+            while self.current_char is not None and self.current_char != "'":
+                self.advance()
+
+            if self.current_char == "'":
+                self.advance()
+                return None, IllegalCharError(pos_start, error_pos, "Letter must only have 1 character")
+            else:
+                return None, IllegalCharError(pos_start, self.pos, "Unclosed Letter")
+
+        self.advance()
+
+        char += char_content + "'"
         return Tokens(TT_CHAR_LITERAL, char, pos_start, self.pos), None
 
     def make_identifier(self):
