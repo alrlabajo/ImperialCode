@@ -589,11 +589,22 @@ class Parser:
             if res.error: return res
 
         # Comparison expressions
-        elif self.current_token.type in (TT_LESSTHAN, TT_GREATERTHAN, TT_LESSTHANEQUAL, TT_GREATERTHANEQUAL) or \
-            self.peek(1).type in (TT_LESSTHAN, TT_GREATERTHAN, TT_LESSTHANEQUAL, TT_GREATERTHANEQUAL):
+        elif self.current_token.type in (TT_IDENTIFIER, TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_LPAREN) or \
+            self.peek(1).type in (TT_EQUALTO, TT_NOTEQUAL, TT_LESSTHAN, TT_GREATERTHAN, TT_LESSTHANEQUAL, TT_GREATERTHANEQUAL):
             expr = res.register(self.comp_expr())
+        elif self.current_token.type == TT_LPAREN:
+            res.register(self.advance())
+            expr = res.register(self.expr())
             if res.error: return res
 
+            if self.current_token.type != TT_RPAREN:
+                return res.failure(InvalidSyntaxError(
+                    self.current_token.pos_start, self.current_token.pos_end,
+                    "Expected closing ')'"
+                ))
+
+            res.register(self.advance())
+            return res.success(expr)
         # Arithmetic expressions
         else:
             expr = res.register(self.arith_expr())
@@ -687,7 +698,7 @@ class Parser:
         return self.bin_op(self.term, (TT_PLUS, TT_MINUS))
 
     def term(self):
-        return self.bin_op(self.factor, (TT_MUL, TT_DIV))
+        return self.bin_op(self.factor, (TT_MUL, TT_DIV, TT_MODULO))
 
     def bin_op(self, func, ops):
         res = ParseResult()
@@ -700,10 +711,10 @@ class Parser:
             right = res.register(func())
             if res.error: return res
 
-            if not isinstance(left, (NumeralNode, DecimalNode)) or not isinstance(right, (NumeralNode, DecimalNode)):
+            if not isinstance(left, (NumeralNode, DecimalNode, BinOpNode)) or not isinstance(right, (NumeralNode, DecimalNode, BinOpNode)):
                 return res.failure(InvalidSyntaxError(
                     left.pos_start, right.pos_end,
-                    f"Type mismatch: Cannot perform '{op_tok.value}' between {type(left).__name__} and {type(right).__name__}"
+                    f"Type mismatch: Cannot perform '{op_tok.value}' between {left} and {right}"
                 ))
 
             left = BinOpNode(left, op_tok, right)
@@ -1030,7 +1041,8 @@ class Parser:
                 ))
 
             res.register(self.advance())
-            condition = res.register(self.expr())
+
+            condition = res.register(self.expr_statement())
             if res.error: return res
 
             if self.current_token.type != TT_RPAREN:
@@ -1040,6 +1052,7 @@ class Parser:
                 ))
 
             res.register(self.advance())
+
         else:
             condition = None
 

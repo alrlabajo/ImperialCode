@@ -1,0 +1,15 @@
+Void odd_or_even(Numeral number) {
+	Thou(number % 2 == 0) {
+		Emit("%d is an even number", number);
+	} Or {
+		Emit("%d is an odd number", number);
+	}
+}
+
+Embark() {
+	Numeral num =22;
+	odd_or_even(num);
+
+	Recede 0;
+}
+

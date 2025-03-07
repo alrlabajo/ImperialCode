@@ -1,0 +1,19 @@
+Void cubeIteration(Numeral num, Numeral iterations) {
+	Per(Numeral i = 1; i <= iterations; i++) {
+		num = num * num * num;
+		Emit("Iterations %d: %d\n", i, num);
+	}
+}
+
+Embark() {
+	Numeral number, iterations;
+
+	Emit("Enter a number: ");
+	Seek("%d", &number);
+	Emit("Enter the number of iterations: ");
+	Seek("%d", &iterations);
+
+	cubeIterations(number, iterations);
+
+	Recede 0;
+}
