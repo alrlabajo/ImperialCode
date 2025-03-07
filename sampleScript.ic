@@ -1,0 +1,5 @@
+Embark() { 
+	Numeral num = 12;
+	Decimal deci1 = 12.00;
+	Emit("Hello World!");
+}

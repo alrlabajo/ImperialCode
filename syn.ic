@@ -1,0 +1,3 @@
+Embark() {
+	Letter greet = 'a';
+}

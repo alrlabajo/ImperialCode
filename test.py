@@ -1,12 +1,15 @@
-from imp_code.compiler import run_lexical
+from imp_code.compiler import run_syntax
 
-filename = "sample.ic"
+filename = "syn.ic"
 
 with open(filename, "r") as file:
     text = file.read()
-    tokens, errors = run_lexical(filename, text)
+    tokens, ast, errors = run_syntax(filename, text)
 
     print(tokens)
     if errors:
         for error in errors:
-            print(error)
+            print(error.as_string())
+    else:
+        print("AST:", ast)
+        print()
