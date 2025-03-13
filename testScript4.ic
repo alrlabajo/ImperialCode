@@ -1,6 +1,6 @@
 Embark() {
-    Numeral age;
-    Emit("Enter your age: ");
+	Numeral age;
+	Emit("Enter your age: ");
     Emit("You are ");
     Emit("%d", age);
     Emit(" years old.");

@@ -360,19 +360,29 @@ if __name__ == "__main__":
 
         tokens, _ = ic.run_lexical(current_file_name, code)
         print(f"DEBUG: {tokens}")
+
         for token in tokens:
             row_pos = token_table.rowCount()
-            token_table.insertRow(row_pos)
-
-            token_table.setItem(row_pos, 0, QTableWidgetItem(token.value if token.value else token.type))
-            token_table.setItem(row_pos, 1, QTableWidgetItem(token.type))
+            
+            if isinstance(token, list): 
+                for sub_token in token:
+                    token_table.insertRow(row_pos)
+                    token_table.setItem(row_pos, 0, QTableWidgetItem(sub_token.value if sub_token.value else sub_token.type))
+                    token_table.setItem(row_pos, 1, QTableWidgetItem(sub_token.type))
+                    row_pos += 1 
+            else:
+                token_table.insertRow(row_pos)
+                token_table.setItem(row_pos, 0, QTableWidgetItem(token.value if token.value else token.type))
+                token_table.setItem(row_pos, 1, QTableWidgetItem(token.type))
 
         # Pass and run a command to the terminal
-        # clear terminal output
+        # Clear terminal output
         global clear_command
         terminalIO.write(clear_command)
         terminalIO.write(f"ic {current_file_name} -m lexical -v\r".encode("utf-8"))
 
+
+    
     def analyze_syntax():
         global current_file_name
 
@@ -391,11 +401,18 @@ if __name__ == "__main__":
         tokens, _ = ic.run_lexical(current_file_name, code)
         for token in tokens:
             row_pos = token_table.rowCount()
-            token_table.insertRow(row_pos)
-
-            token_table.setItem(row_pos, 0, QTableWidgetItem(token.value if token.value else token.type))
-            token_table.setItem(row_pos, 1, QTableWidgetItem(token.type))
-
+            
+            if isinstance(token, list): 
+                for sub_token in token:
+                    token_table.insertRow(row_pos)
+                    token_table.setItem(row_pos, 0, QTableWidgetItem(sub_token.value if sub_token.value else sub_token.type))
+                    token_table.setItem(row_pos, 1, QTableWidgetItem(sub_token.type))
+                    row_pos += 1 
+            else:
+                token_table.insertRow(row_pos)
+                token_table.setItem(row_pos, 0, QTableWidgetItem(token.value if token.value else token.type))
+                token_table.setItem(row_pos, 1, QTableWidgetItem(token.type))
+                
         # Pass and run a command to the terminal
         # clear terminal output
         global clear_command

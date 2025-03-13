@@ -1,0 +1,18 @@
+Embark() {
+	Letter greetings = 'a';
+
+	Shift(greetings) {
+		Opt 'm':
+			Emit("Good morning");
+			Halt;
+		Opt 'a':
+			Emit("Good afternoon");
+		Opt 'e':
+			Emit("Good evening");
+		Opt 'd':
+			Emit("Invalid greetings");
+	}
+	
+	Recede 0;
+}
+		

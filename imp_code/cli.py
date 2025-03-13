@@ -65,27 +65,25 @@ def _run_lexical(file_path, code):
     tokens, errors = run_lexical(file_path, code)
 
     if errors:
-        if args.verbose:
-            print("Tokens:", tokens)
-            print()
-        if errors:
-            for error in errors:
-                if error is not None:
-                    print(error.as_string())
-    elif args.verbose:
-        print("Tokens:", tokens)
+        for error in errors:
+            if error is not None:
+                print(error.as_string())
+    else:
+        print("No lexical errors detected.")
 
 @log_runtime
 def _run_syntax(file_path, code):
     start_time = time.time()
     tokens, ast, errors = run_syntax(file_path, code)
 
-    if errors:
-        for error in errors:
+    flattened_errors = [err for sublist in errors for err in (sublist if isinstance(sublist, list) else [sublist])]
+
+    if flattened_errors:
+        for error in flattened_errors:
             print(error.as_string())
     else:
-        if args.verbose:
-            print("AST:", ast)
+        print("No syntax errors found.")
+
 
 
 # @log_runtime

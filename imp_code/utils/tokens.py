@@ -9,11 +9,12 @@ DIGITS = list("0123456789")
 ALPHA_NUM = ALPHABET + DIGITS
 ARITH_OP = ["+", "-", "*", "/"]
 REL_OP = ["==", "!=", "<", ">", "<=", ">="]
-
+FORMAT_SPECIFIERS = ["%d", "%f", "%s", "%v", "%c"]
 INT_LIM =  9
 FLOAT_LIM = 9
 FLOAT_PRECISION_LIM = 6
 ID_LIM = 20
+
 
 #######################################
 # TOKENS
@@ -21,6 +22,9 @@ ID_LIM = 20
 
 # MAIN
 TT_MAIN     = 'Embark'
+
+# FUNCTION
+TT_FUNCTION = 'Method'
 
 # KEYWORDS AND IDENTIFIERS
 TT_IDENTIFIER = 'Identifier'
@@ -117,7 +121,7 @@ TT_COLON     = ':'
 TT_COMMA     = ','
 TT_SLINECOM  = 'SLINE COMMENT'
 TT_MLINECOM    = 'MLINE COMMENT'
-TT_FORMAT_SPECIFIER = "FORMAT SPECIFIER"
+TT_FORMATSPEC = "FORMAT SPECIFIER"
 TT_ADDRESS = "ADDRESS"
 TT_EOF      = 'EOF'
 
@@ -157,6 +161,8 @@ DD_COMMENT = ["\n", " "]
 DD_MAIN = [" ", "("]
 DD_IDENTIFIER = [*ALPHA_NUM, '_', ' ', '\n', ';', *ARITH_OP, *REL_OP, "(", ")", "[" ,"]", "{", "}", "%", ",", "=", ":"]
 DD_VALUES = [" ", "\n", ";", ")"]
+DD_FORMAT_SPECIFIER = [' ', '\t', '\n', ',', '.', ')', ']', '}', '"', "'", ';', '+', '-', '*', '/']
+DD_ADDRESS = [*ALPHABET]
 
 DELIM_LIST = {
     # MAIN
@@ -257,6 +263,8 @@ DELIM_LIST = {
     TT_COLON: DD_COLON,
     TT_SLINECOM: DD_COMMENT,
     TT_MLINECOM: DD_COMMENT,
+    TT_FORMATSPEC: DD_FORMAT_SPECIFIER,
+    TT_ADDRESS: DD_ADDRESS
 }
 
 
@@ -277,6 +285,7 @@ class Tokens:
         if self.value:
             return f'{self.type}: {self.value}'
         return f'{self.type}'
+
 
     def lexeme_str(self):
         return self.value if self.value else self.type

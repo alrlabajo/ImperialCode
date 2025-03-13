@@ -1,0 +1,8 @@
+Embark() {
+	Numeral i=0;
+
+	Act {
+		Emit("%d", i);
+		i++;
+	} Until(i==5);
+}
