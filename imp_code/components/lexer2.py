@@ -83,18 +83,17 @@ class Lexer:
             if self.state == '0':
                 if self.current_char in "\t \n ":
                     self.advance()
-                elif self.current_char in '"':
-                    token, error = self.make_missive()
+                elif self.current_char == '"':
+                    tokens_list, error = self.make_missive()  # ✅ Expecting a list
 
-                    if token:
-                        error = self.check_delim(token)
-                        if error:
-                            errors.append(error)
-                        else:
-                            tokens.append(token)
+                    if error:
+                        errors.append(error)  
                     else:
-                        errors.append(error)
-
+                        for token in tokens_list:  # ✅ Iterate through the list
+                            tokens.append(token)  
+                            error = self.check_delim(token)
+                            if error:
+                                errors.append(error)
 
                 elif self.current_char in "'":
                     token, error = self.make_letter()
@@ -1485,7 +1484,7 @@ class Lexer:
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
-                token = Tokens(TT_BOOL, keyword, pos_start=self.pos)
+                token = Tokens(TT_VOID, keyword, pos_start=self.pos)
                 keyword = ""
                 self.state = '0'
 
@@ -2091,40 +2090,46 @@ class Lexer:
                 return Tokens(TT_FLOAT_LITERAL, str(float(num_str)), pos_start, self.pos), None
 
     def make_missive(self):
-        pos_start = self.pos.copy()
-        self.advance()
-        missive_content = "" 
+        self.advance()  # Move past opening quote
+        missive_content = ""
+        tokens = []
+        pos_start = self.pos.copy()  # Store start position
 
-        while self.current_char is not None and self.current_char != '"':
-            if self.current_char == '\\':
-                self.advance()
-                if self.current_char in ESC_SEQ:
+        while self.current_char is not None:
+            if self.current_char == '"':  
+                self.advance()  # Move past closing quote
+                break  # String is complete
+            
+            if self.current_char == '\\':  # ✅ Handle escape sequences
+                self.advance()  # Move past '\'
+                if self.current_char in ESC_SEQ:  
                     missive_content += ESC_SEQ[self.current_char]
                 else:
-                    missive_content += '\\' + (self.current_char if self.current_char else '')
-
-            elif self.current_char == '%':
+                    return None, IllegalCharError(self.pos, self.pos, f"Invalid escape sequence \\{self.current_char}")
+            
+            elif self.current_char == '%':  # ✅ Handle format specifiers
                 potential_spec = "%" + (self.peek() or "")
                 if potential_spec in FORMAT_SPECIFIERS:
-                    missive_content += potential_spec  # Keep format specifier inside the string
+                    if missive_content:
+                        tokens.append(Tokens(TT_STRING_LITERAL, missive_content, pos_start, self.pos))
+                        missive_content = ""
+                    tokens.append(Tokens(TT_FORMATSPEC, potential_spec, self.pos.copy(), self.pos.copy()))
                     self.advance()  # Move past '%'
-                    self.advance()  # Move past specifier character
-                    continue  
-                else:
-                    missive_content += self.current_char
+                    self.advance()  # Move past format character
+                    continue
 
             else:
                 missive_content += self.current_char
 
             self.advance()
         
-        if self.current_char is None:
+        if self.current_char is None:  # 🔴 If we exit the loop without closing `"`
             return None, IllegalCharError(pos_start, self.pos, "Unclosed Missive")
-        
-        self.advance()  # Move past closing quote
-        
-        return Tokens(TT_STRING_LITERAL, '"' + missive_content + '"', pos_start, self.pos), None
 
+        if missive_content:  
+            tokens.append(Tokens(TT_STRING_LITERAL, missive_content, pos_start, self.pos))  # Add remaining string content
+        
+        return tokens, None
 
     def make_letter(self):
         pos_start = self.pos.copy()

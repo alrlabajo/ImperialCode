@@ -1,5 +1,5 @@
 Embark() {
-	Numeral i=0;
+	Numeral i;
 
 	Act {
 		Emit("%d", i);

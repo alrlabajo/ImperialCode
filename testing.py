@@ -1,261 +1,630 @@
-import pandas as pd
-from collections import defaultdict
-import re
+from imp_code.utils.tokens import *
+from imp_code.components.lexer2 import *
 
-class LL1Parser:
-    def __init__(self, grammar):
-        self.grammar = grammar
-        self.first_sets = defaultdict(set)
-        self.follow_sets = defaultdict(set)
-        self.parse_table = {}
-        self.non_terminals = set(grammar.keys())
-        self.terminals = self.get_terminals()
+class CFGParser:
+    def __init__(self, tokens):
+        self.tokens = [token for token in tokens if token.type not in (TT_NEWLINE, TT_SPACE, TT_SLINECOM, TT_MLINECOM)]
+        self.current_token_index = 0
+        self.grammar_rules = {
+            '<program>': [['<global>', TT_MAIN, TT_LPAREN, TT_RPAREN, TT_LBRACE, '<statement>', TT_RBRACE, '<global>']],
+            '<global>': [
+                ['<declare>', TT_TERMINATE, '<global>'],
+                ['<function>', '<global>'],
+                ['lambda']  # Empty production (λ)
+            ],
+            '<declare>': [
+                ['<var_declaration>', '<declare_tail>'],
+                ['<const_declaration>']
+            ],
+            '<var_declaration>': [['<data_type>', TT_IDENTIFIER]],
+            '<declare_tail>': [
+                ['<var_declaration_assign>'],
+                ['<ledger_element>', '<ledger_declaration_row>'],
+                ['<var_declaration_tail>'],
+                ['lambda']  # Empty production (λ)
+            ],
+            '<var_declaration_assign>': [
+                [TT_EQUAL, '<value>', '<var_declaration_tail>'],
+                ['lambda']  # Empty production (λ)
+            ],
+            '<var_declaration_tail>': [
+                [TT_COMMA, TT_IDENTIFIER, '<var_declaration_assign>'],
+                ['lambda']  # Empty production (λ)
+            ],
+            '<ledger_element>': [[TT_LBRACKET, TT_INT_LITERAL, TT_RBRACKET, '<ledger_element_tail>']],
+            '<ledger_element_tail>': [
+                ['[', TT_INT_LITERAL, TT_RBRACKET],
+                ['lambda']
+            ],
+            '<ledger_declaration_row>': [[TT_EQUAL, TT_LBRACE, '<ledger_content>', TT_RBRACE]],
+            '<ledger_content>': [
+                ['<ledger_value>'],
+                ['<ledger_matrix>']
+            ],
+            '<ledger_value>': [
+                ['<numeral_ledger>'],
+                ['<decimal_ledger>'],
+                ['<letter_ledger>'],
+                ['<missive_ledger>'],
+                ['<veracity_ledger>']
+            ],
+            '<numeral_ledger>': [[TT_INT_LITERAL, '<numeral_ledger_tail>']],
+            '<numeral_ledger_tail>': [
+                [TT_COMMA, '<numeral_ledger>'],
+                ['lambda']
+            ],
+            '<decimal_ledger>': [[TT_FLOAT_LITERAL, '<decimal_ledger_tail>']],
+            '<decimal_ledger_tail>': [
+                [TT_COMMA, '<decimal_ledger>'],
+                ['lambda']
+            ],
+            '<letter_ledger>': [[TT_CHAR_LITERAL, '<letter_ledger_tail>']],
+            '<letter_ledger_tail>': [
+                [TT_COMMA, '<letter_ledger>'],
+                ['lambda']
+            ],
+            '<missive_ledger>': [[TT_STRING_LITERAL, '<missive_ledger_tail>']],
+            '<missive_ledger_tail>': [
+                [TT_COMMA, '<missive_ledger>'],
+                ['lambda']
+            ],
+            '<veracity_ledger>': [['<veracity_lit>', '<veracity_lit_tail>']],
+            '<veracity_lit_tail>': [
+                [TT_COMMA, '<veracity_ledger>'],
+                ['lambda']
+            ],
+            '<ledger_matrix>': [[TT_LBRACE, '<ledger_value>', TT_RBRACE, '<ledger_matrix_continue>']],
+            '<ledger_matrix_continue>': [[TT_COMMA, TT_LBRACE, '<ledger_value>', TT_RBRACE, '<ledger_matrix_tail>']],
+            '<ledger_matrix_tail>': [
+                ['<ledger_matrix_continue>'],
+                ['lambda']
+            ],
+            '<const_declaration>': [[TT_CONST, '<var_declaration>', TT_EQUAL, '<value>', '<var_declaration_tail>']],
+            '<data_type>': [
+                [TT_INT],
+                [TT_FLOAT],
+                [TT_CHAR],
+                [TT_STRING],
+                [TT_BOOL]
+            ],
+            '<value>': [
+                ['<var_name>', '<value_tail>'],
+                ['<literal>'],
+                ['<expression>']
+            ],
+            '<value_tail>': [
+                ['<function_call_statement>'],
+                ['<ledger_element>'],
+                ['<expression_tail>'],
+                ['lambda']
+            ],
+            '<var_name>': [[TT_IDENTIFIER]],
+            '<primary_value>': [['<value>']],
+            '<expression>': [
+                ['<primary_value>', '<expression_tail>'],
+                ['<not_op>', '<expression_tail>'],
+                [TT_LPAREN, '<expression>', TT_RPAREN]
+            ],
+            '<expression_tail>': [
+                ['<op>', '<primary_value>', '<expression_tail>'],
+                ['lambda']
+            ],
+            '<literal>': [
+                [TT_INT_LITERAL],
+                [TT_FLOAT_LITERAL],
+                [TT_CHAR_LITERAL],
+                [TT_STRING_LITERAL],
+                ['<veracity_lit>']
+            ],
+            '<veracity_lit>': [
+                [TT_TRUE],
+                [TT_FALSE]
+            ],
+            '<not_op>': [[TT_NOT, '<primary_value>']],
+            '<op>': [
+                ['<arith_op>'],
+                ['<logic_op>'],
+                ['<compare_op>'],
+                ['<equality_op>']
+            ],
+            '<arith_op>': [
+                [TT_PLUS],
+                [TT_MINUS],
+                [TT_MUL],
+                [TT_DIV],
+                [TT_MODULO]
+            ],
+            '<logic_op>': [
+                [TT_AND],
+                [TT_OR]
+            ],
+            '<compare_op>': [
+                [TT_LESSTHAN],
+                [TT_GREATERTHAN],
+                [TT_LESSTHANEQUAL],
+                [TT_GREATERTHANEQUAL]
+            ],
+            '<equality_op>': [
+                [TT_EQUALTO],
+                [TT_NOTEQUAL]
+            ],
+            '<update_exp>': [[TT_IDENTIFIER, '<update_exp_op>', '<update_exp_tail>'], ['lambda']],
+            '<update_exp_op>': [
+                [TT_INC],
+                [TT_DEC]
+            ],
+            '<update_exp_tail>': [
+                [TT_COMMA, '<update_exp>'],
+                ['lambda']
+            ],
+            '<function_call_statement>': [[TT_LPAREN, '<argument>', TT_RPAREN]],
+            '<argument>': [
+                ['<value>', '<argument_tail>'],
+                ['lambda']
+            ],
+            '<argument_tail>': [
+                [TT_COMMA, '<value>'],
+                ['lambda']
+            ],
+            '<function>': [[TT_FUNCTION, '<return_type>', TT_IDENTIFIER, TT_LPAREN, '<parameter>', TT_RPAREN, TT_LBRACE, '<statement>', TT_RBRACE]],
+            '<return_type>': [
+                [TT_VOID],
+                [TT_INT],
+                [TT_FLOAT],
+                [TT_CHAR],
+                [TT_BOOL]
+            ],
+            '<parameter>': [
+                ['<data_type>', TT_IDENTIFIER, '<parameter_tail>'],
+                ['lambda']
+            ],
+            '<parameter_tail>': [
+                [TT_COMMA, '<parameter>'],
+                ['lambda']
+            ],
+            '<statement>': [
+                ['<declaration_statement>', TT_TERMINATE, '<statement>'],
+                ['<assign_or_call_statement>', '<statement>'],
+                ['<conditional_statement>', '<statement>'],
+                ['<shift_statement>', '<statement>'],
+                ['<loop_statement>', '<statement>'],
+                ['<emit_statement>', TT_TERMINATE, '<statement>'],
+                ['<seek_statement>', TT_TERMINATE, '<statement>'],
+                ['<recede_statement>', TT_TERMINATE, '<statement>'],
+                ['<update_exp>', TT_TERMINATE, '<statement>'],
+                ['lambda']
+            ],
+            '<declaration_statement>': [['<declare>']],
+            '<assign_or_call_statement>': [[TT_IDENTIFIER, '<tail>']],
+            '<tail>': [
+                ['<function_call_statement>', TT_TERMINATE],
+                ['<value_assign>'],
+                ['<ledger_assign>'],
+                ['<update_exp_op>', TT_TERMINATE]
+            ],
+            '<value_assign>': [['<assignment_op>', '<value>', '<value_assign_tail>', TT_TERMINATE]],
+            '<value_assign_tail>': [
+                [TT_COMMA, TT_IDENTIFIER, '<value_assign>'],
+                ['lambda']
+            ],
+            '<ledger_assign>': [['<ledger_element>', '<assignment_op>', '<value>', TT_TERMINATE, '<ledger_assign_tail>']],
+            '<ledger_assign_tail>': [
+                [TT_NEWLINE, TT_IDENTIFIER, '<ledger_assign>'],
+                ['lambda']
+            ],
+            '<assignment_op>': [
+                [TT_EQUAL],
+                [TT_PLUSAND],
+                [TT_MINUSAND],
+                [TT_MULAND],
+                [TT_DIVAND],
+                [TT_MODAND]
+            ],
+            '<conditional_statement>': [
+                [TT_IF, TT_LPAREN, '<condition>', TT_RPAREN, TT_LBRACE, '<statement>', TT_RBRACE, '<or-opt>']
+            ],
+            '<condition>': [['<expression>']],
+            '<or-opt>': [
+                [TT_ELSE, '<or-tail>'],
+                ['lambda']
+            ],
+            '<or-tail>': [
+                [TT_LBRACE, '<statement>', TT_RBRACE],  # Handles `Or { statements }`
+                [TT_IF, TT_LPAREN, '<condition>', TT_RPAREN, TT_LBRACE, '<statement>', TT_RBRACE, '<or-opt>']  # Handles `Or Thou (...) { statements }`
+            ],
+            '<shift_statement>': [[TT_SWITCH, TT_LPAREN, TT_IDENTIFIER, TT_RPAREN, TT_LBRACE, '<opt_value>', '<usual_value>', TT_RBRACE]],
+            '<opt_value>': [[TT_CASE, '<value>', TT_COLON, '<statement>', '<halt_value>', '<opt_tail>']],
+            '<opt_tail>': [
+                ['<opt_value>'],
+                ['lambda']
+            ],
+            '<halt_value>': [
+                ['<halt_control>'],
+                ['lambda']
+            ],
+            '<usual_value>': [
+                [TT_DEFAULT, TT_COLON, '<statement>'],
+                ['lambda']
+            ],
+            '<loop_statement>': [
+                ['<per_loop>'],
+                ['<until_loop>'],
+                ['<act-until_loop>']
+            ],
+            '<per_loop>': [[TT_FOR, TT_LPAREN, '<initialization_statement>', TT_TERMINATE, '<condition>', TT_TERMINATE, '<update_exp>', TT_RPAREN, TT_LBRACE, '<statement>', '<loop_control>', TT_RBRACE]],
+            '<initialization_statement>': [['<var_declaration>', TT_EQUAL, '<value>']],
+            '<until_loop>': [[TT_WHILE, TT_LPAREN, '<condition>', TT_RPAREN, TT_LBRACE, '<statement>', '<update_exp>', TT_TERMINATE, '<loop_control>', TT_RBRACE]],
+            '<act-until_loop>': [[TT_DO, TT_LBRACE, '<statement>', '<update_exp>', '<loop_control>', TT_RBRACE, TT_WHILE, TT_LPAREN, '<condition>', TT_RPAREN, TT_TERMINATE]],
+            '<loop_control>': [
+                ['<halt_control>'],
+                ['<extend_control>'],
+                ['lambda']
+            ],
+            '<halt_control>': [[TT_BREAK, TT_TERMINATE]],
+            '<extend_control>': [[TT_CONTINUE, TT_TERMINATE]],
+            '<emit_statement>': [[TT_OUTPUT, TT_LPAREN, '"', '<emit_value>', '"','<data_storage>', TT_RPAREN]],
+            '<emit_value>': [
+                ['<value>', '<emit_tail>'],
+                ['<format_specifier>', '<emit_tail>']
+            ],
+            '<emit_tail>': [
+                ['<emit_value>', '<emit_tail>'],
+                ['lambda']
+            ],
+            '<format_specifier>': [
+                [TT_FORMATSPEC, '<format_specifier_tail>'],
+            ],
+            '<format_specifier_tail>': [
+                ['<value>', '<format_specifier_tail>'],
+                ['<format_specifier>', '<format_specifier_tail>'],
+                ['lambda']
+            ],
+            '<data_storage>': [
+                [TT_COMMA, TT_IDENTIFIER, '<data_storage_tail>'],
+                ['lambda']
+            ],
+            '<data_storage_tail>': [
+                ['<data_storage>'],
+                ['<ledger_element>', '<data_storage>'],
+                ['<function_call_statement>', '<data_storage>'],
+                ['lambda']
+            ],
+            '<seek_statement>': [[TT_INPUT, TT_LPAREN,'<format_specifier>', '<memory_address>', TT_RPAREN]],
+            '<memory_address>': [[TT_COMMA, '<memory_address_continue>']],
+            '<memory_address_continue>': [
+                [TT_ADDRESS, TT_IDENTIFIER, '<ledger_element_value>', '<memory_address_tail>'],
+                [TT_IDENTIFIER, '<function_call_statement>', '<memory_address_tail>'],
+                ['lambda']
+            ],
+            '<ledger_element_value>': [
+                ['<ledger_element>'],
+                ['lambda']
+            ],
+            '<memory_address_tail>': [
+                ['<memory_address>'],
+                ['lambda']
+            ],
+            '<recede_statement>': [[TT_RETURN, '<recede_value>']],
+            '<recede_value>': [['<value>']]
+        }
         
-        self.compute_first_sets()
-        self.compute_follow_sets()
-        self.construct_parse_table()
-    
-    def get_terminals(self):
-        terminals = set()
-        for productions in self.grammar.values():
+        # Define terminals
+        self.terminals = {
+            TT_MAIN, TT_LPAREN, TT_RPAREN, TT_LBRACE, TT_RBRACE, TT_TERMINATE, TT_IDENTIFIER, TT_EQUAL, TT_COMMA, TT_CONST,
+            TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL,
+            TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL,TT_STRING_LITERAL,
+            TT_TRUE, TT_FALSE, TT_NOT, TT_PLUS, TT_MINUS, TT_MUL, TT_DIV, TT_MODULO,
+            TT_AND, TT_OR, TT_LESSTHAN, TT_GREATERTHAN, TT_LESSTHANEQUAL, TT_GREATERTHANEQUAL,
+            TT_EQUALTO, TT_NOTEQUAL, TT_INC, TT_DEC, TT_PLUSAND, TT_MINUSAND, TT_MULAND, TT_DIVAND, TT_MODAND,
+            TT_IF, TT_ELSE, TT_SWITCH, TT_CASE, TT_DEFAULT, TT_FOR, TT_WHILE, TT_DO, TT_BREAK, TT_CONTINUE, TT_RETURN,
+            TT_OUTPUT, TT_INPUT, TT_FORMATSPEC, TT_ADDRESS, TT_COLON, TT_NEWLINE, TT_COMMA, TT_LBRACKET, TT_RBRACKET,
+            TT_INC, TT_DEC, TT_EQUAL, TT_PLUSAND, TT_MINUSAND, TT_MULAND, TT_DIVAND, TT_MODAND, TT_FUNCTION, TT_VOID
+        }
+
+        self.non_terminals = set(self.grammar_rules.keys())
+        self.first_sets = {
+            "<program>": {TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_CONST, TT_FUNCTION, 'lambda'},
+            "<global>": {TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_CONST, TT_FUNCTION, 'lambda'},
+            "<declare>": {TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_CONST},
+            "<var_declaration>": {TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL},
+            "<declare_tail>": {TT_EQUAL, TT_LBRACKET, TT_COMMA, 'lambda'},
+            "<var_declaration_assign>": {TT_EQUAL, 'lambda'},
+            "<var_declaration_tail>": {TT_COMMA, 'lambda'},
+            "<ledger_element>": {TT_LBRACKET},
+            "<ledger_element_tail>": {TT_LBRACKET, 'lambda'},
+            "<ledger_declaration_row>": {TT_EQUAL},
+            "<ledger_content>": {TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_LBRACE},
+            "<ledger_value>": {TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE},
+            "<numeral_ledger>": {TT_INT_LITERAL},
+            "<numeral_ledger_tail>": {TT_COMMA, 'lambda'},
+            "<decimal_ledger>": {TT_FLOAT_LITERAL},
+            "<decimal_ledger_tail>": {TT_COMMA, 'lambda'},
+            "<letter_ledger>": {TT_CHAR_LITERAL},
+            "<letter_ledger_tail>": {TT_COMMA, 'lambda'},
+            "<missive_ledger>": {TT_STRING_LITERAL},
+            "<missive_ledger_tail>": {TT_COMMA, 'lambda'},
+            "<veracity_ledger>": {TT_TRUE, TT_FALSE},
+            "<veracity_lit_tail>": {TT_COMMA, 'lambda'},
+            "<ledger_matrix>": {TT_LBRACE},
+            "<ledger_matrix_continue>": {TT_COMMA},
+            "<ledger_matrix_tail>": {TT_COMMA, 'lambda'},
+            "<const_declaration>": {TT_CONST},
+            "<data_type>": {TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL},
+            "<value>": {TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_IDENTIFIER, TT_LPAREN, TT_NOT},
+            "<value_tail>": {TT_LPAREN, TT_LBRACKET, 'lambda'},
+            "<var_name>": {TT_IDENTIFIER},
+            "<primary_value>": {TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_IDENTIFIER, TT_LPAREN, TT_NOT},
+            "<expression>": {TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_IDENTIFIER, TT_LPAREN, TT_NOT},
+            "<expression_tail>": {TT_PLUS, TT_MINUS, TT_MUL, TT_DIV, TT_MODULO, TT_AND, TT_OR, TT_LESSTHAN, TT_GREATERTHAN, TT_LESSTHANEQUAL, TT_GREATERTHANEQUAL, TT_EQUALTO, TT_NOTEQUAL, 'lambda'},
+            "<literal>": {TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE},
+            "<veracity_lit>": {TT_TRUE, TT_FALSE},
+            "<not_op>": {TT_NOT},
+            "<op>": {TT_PLUS, TT_MINUS, TT_MUL, TT_DIV, TT_MODULO, TT_AND, TT_OR, TT_LESSTHAN, TT_GREATERTHAN, TT_LESSTHANEQUAL, TT_GREATERTHANEQUAL, TT_EQUALTO, TT_NOTEQUAL},
+            "<arith_op>": {TT_PLUS, TT_MINUS, TT_MUL, TT_DIV, TT_MODULO},
+            "<logic_op>": {TT_AND, TT_OR},
+            "<compare_op>": {TT_LESSTHAN, TT_GREATERTHAN, TT_LESSTHANEQUAL, TT_GREATERTHANEQUAL},
+            "<equality_op>": {TT_EQUALTO, TT_NOTEQUAL},
+            "<update_exp>": {TT_IDENTIFIER},
+            "<update_exp_op>": {TT_INC, TT_DEC},
+            "<update_exp_tail>": {TT_COMMA, 'lambda'},
+            "<function_call_statement>": {TT_LPAREN},
+            "<argument>": {TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_IDENTIFIER, TT_LPAREN, TT_NOT, 'lambda'},
+            "<argument_tail>": {TT_COMMA, 'lambda'},
+            "<function>": {TT_FUNCTION},
+            "<return_type>": {TT_VOID, TT_INT, TT_FLOAT, TT_CHAR, TT_BOOL},
+            "<parameter>": {TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL},
+            "<parameter_tail>": {TT_COMMA, 'lambda'},
+            "<statement>": {TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_CONST, TT_FUNCTION, TT_IDENTIFIER, TT_IF, TT_SWITCH, TT_FOR, TT_WHILE, TT_DO, TT_BREAK, TT_CONTINUE, TT_RETURN, TT_OUTPUT, TT_INPUT, 'lambda'},
+            "<declaration_statement>": {TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_CONST},
+            "<assign_or_call_statement>": {TT_IDENTIFIER},
+            "<tail>": {TT_LPAREN, TT_EQUAL, TT_PLUSAND, TT_MINUSAND, TT_MULAND, TT_DIVAND, TT_MODAND, TT_LBRACKET},
+            "<value_assign>": {TT_EQUAL, TT_PLUSAND, TT_MINUSAND, TT_MULAND, TT_DIVAND, TT_MODAND},
+            "<value_assign_tail>": {TT_COMMA, 'lambda'},
+            "<ledger_assign>": {TT_LBRACKET},
+            "<ledger_assign_tail>": {TT_NEWLINE},
+            "<assignment_op>": {TT_EQUAL, TT_PLUSAND, TT_MINUSAND, TT_MULAND, TT_DIVAND, TT_MODAND},
+            "<conditional_statement>": {TT_IF},
+            "<condition>": {TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_IDENTIFIER, TT_LPAREN, TT_NOT},
+            "<or-opt>": {TT_ELSE, 'lambda'},
+            "<or-tail>": {TT_LBRACE, TT_IF},
+            "<shift_statement>": {TT_SWITCH},
+            "<opt_value>": {TT_CASE},
+            "<opt_tail>": {TT_CASE, 'lambda'},
+            "<halt_value>": {TT_BREAK, 'lambda'},
+            "<usual_value>": {TT_DEFAULT, 'lambda'},
+            "<loop_statement>": {TT_FOR, TT_WHILE, TT_DO},
+            "<per_loop>": {TT_FOR},
+            "<initialization_statement>": {TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL},
+            "<until_loop>": {TT_WHILE},
+            "<act-until_loop>": {TT_DO},
+            "<loop_control>": {TT_BREAK, TT_CONTINUE, 'lambda'},
+            "<halt_control>": {TT_BREAK},
+            "<extend_control>": {TT_CONTINUE},
+            "<emit_statement>": {TT_OUTPUT},
+            "<emit_value>": {TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_IDENTIFIER, TT_LPAREN, TT_FORMATSPEC},
+            "<emit_tail>": {TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_IDENTIFIER, TT_LPAREN, TT_FORMATSPEC, 'lambda'},
+            "<format_specifier>": {TT_FORMATSPEC},
+            "<format_specifier_tail>": {TT_COMMA, 'lambda'},
+            "<data_storage>": {TT_COMMA, 'lambda'},
+            "<data_storage_tail>": {TT_COMMA, TT_LBRACKET, TT_LPAREN, 'lambda'},
+            "<seek_statement>": {TT_INPUT},
+            "<memory_address>": {TT_COMMA},
+            "<memory_address_continue>": {TT_ADDRESS, TT_IDENTIFIER, 'lambda'},
+            "<ledger_element_value>": {TT_LBRACKET, 'lambda'},
+            "<memory_address_tail>": {TT_COMMA, 'lambda'},
+            "<recede_statement>": {TT_RETURN},
+            "<recede_value>": {TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_IDENTIFIER, TT_LPAREN, TT_NOT}
+        }
+        self.follow_sets ={
+            "<program>": {TT_EOF},
+            "<global>": {TT_EOF, TT_MAIN},
+            "<declare>": {TT_TERMINATE},
+            "<var_declaration>": {TT_EQUAL, TT_LBRACKET},
+            "<declare_tail>": {TT_TERMINATE},
+            "<var_declaration_assign>": {TT_TERMINATE},
+            "<var_declaration_tail>": {TT_TERMINATE},
+            "<ledger_element>": {TT_EQUAL, TT_COMMA, TT_TERMINATE, TT_PLUS, TT_MINUS, TT_MUL, TT_DIV, TT_MODULO, TT_AND, TT_OR, TT_LESSTHAN, TT_GREATERTHAN, TT_LESSTHANEQUAL, TT_GREATERTHANEQUAL, TT_EQUALTO, TT_NOTEQUAL, TT_RPAREN, TT_COLON, TT_IDENTIFIER, TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_NOT, TT_INC, TT_DEC, TT_PLUSAND, TT_MINUSAND, TT_MULAND, TT_DIVAND, TT_MODAND},
+            "<ledger_element_tail>": {TT_EQUAL, TT_COMMA, TT_TERMINATE, TT_PLUS, TT_MINUS, TT_MUL, TT_DIV, TT_MODULO, TT_AND, TT_OR, TT_LESSTHAN, TT_GREATERTHAN, TT_LESSTHANEQUAL, TT_GREATERTHANEQUAL, TT_EQUALTO, TT_NOTEQUAL, TT_RPAREN, TT_COLON, TT_IDENTIFIER, TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_NOT, TT_INC, TT_DEC, TT_PLUSAND, TT_MINUSAND, TT_MULAND, TT_DIVAND, TT_MODAND},
+            "<ledger_declaration_row>": {TT_TERMINATE},
+            "<ledger_content>": {TT_RBRACE},
+            "<ledger_value>": {TT_RBRACE},
+            "<numeral_ledger>": {TT_RBRACE},
+            "<numeral_ledger_tail>": {TT_RBRACE},
+            "<decimal_ledger>": {TT_RBRACE},
+            "<decimal_ledger_tail>": {TT_RBRACE},
+            "<letter_ledger>": {TT_RBRACE},
+            "<letter_ledger_tail>": {TT_RBRACE},
+            "<missive_ledger>": {TT_RBRACE},
+            "<missive_ledger_tail>": {TT_RBRACE},
+            "<veracity_ledger>": {TT_RBRACE},
+            "<veracity_lit_tail>": {TT_RBRACE},
+            "<ledger_matrix>": {TT_RBRACE},
+            "<ledger_matrix_continue>": {TT_RBRACE},
+            "<ledger_matrix_tail>": {TT_RBRACE},
+            "<const_declaration>": {TT_TERMINATE},
+            "<data_type>": {TT_IDENTIFIER},
+            "<value>": {TT_TERMINATE, TT_COMMA, TT_PLUS, TT_MINUS, TT_MUL, TT_DIV, TT_MODULO, TT_AND, TT_OR, TT_LESSTHAN, TT_GREATERTHAN, TT_LESSTHANEQUAL, TT_GREATERTHANEQUAL, TT_EQUALTO, TT_NOTEQUAL, TT_RPAREN, TT_COLON, TT_IDENTIFIER, TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_NOT, TT_INC, TT_DEC, TT_PLUSAND, TT_MINUSAND, TT_MULAND, TT_DIVAND, TT_MODAND},
+            "<value_tail>": {TT_TERMINATE, TT_COMMA, TT_PLUS, TT_MINUS, TT_MUL, TT_DIV, TT_MODULO, TT_AND, TT_OR, TT_LESSTHAN, TT_GREATERTHAN, TT_LESSTHANEQUAL, TT_GREATERTHANEQUAL, TT_EQUALTO, TT_NOTEQUAL, TT_RPAREN, TT_COLON, TT_IDENTIFIER, TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_NOT, TT_INC, TT_DEC, TT_PLUSAND, TT_MINUSAND, TT_MULAND, TT_DIVAND, TT_MODAND},
+            "<var_name>": {TT_LPAREN, TT_LBRACKET, TT_TERMINATE, TT_COMMA, TT_PLUS, TT_MINUS, TT_MUL, TT_DIV, TT_MODULO, TT_AND, TT_OR, TT_LESSTHAN, TT_GREATERTHAN, TT_LESSTHANEQUAL, TT_GREATERTHANEQUAL, TT_EQUALTO, TT_NOTEQUAL, TT_RPAREN, TT_COLON, TT_IDENTIFIER, TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_NOT, TT_INC, TT_DEC, TT_PLUSAND, TT_MINUSAND, TT_MULAND, TT_DIVAND, TT_MODAND},
+            "<primary_value>": {TT_TERMINATE, TT_COMMA, TT_PLUS, TT_MINUS, TT_MUL, TT_DIV, TT_MODULO, TT_AND, TT_OR, TT_LESSTHAN, TT_GREATERTHAN, TT_LESSTHANEQUAL, TT_GREATERTHANEQUAL, TT_EQUALTO, TT_NOTEQUAL, TT_RPAREN, TT_COLON, TT_IDENTIFIER, TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_NOT, TT_INC, TT_DEC, TT_PLUSAND, TT_MINUSAND, TT_MULAND, TT_DIVAND, TT_MODAND},
+            "<expression>": {TT_COMMA, TT_TERMINATE, TT_RPAREN, TT_COLON, TT_IDENTIFIER, TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_NOT, TT_PLUS, TT_MINUS, TT_MUL, TT_DIV, TT_MODULO, TT_AND, TT_OR, TT_LESSTHAN, TT_GREATERTHAN, TT_LESSTHANEQUAL, TT_GREATERTHANEQUAL, TT_EQUALTO, TT_NOTEQUAL},
+            "<expression_tail>": {TT_COMMA, TT_TERMINATE, TT_RPAREN, TT_COLON, TT_IDENTIFIER, TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_NOT, TT_PLUS, TT_MINUS, TT_MUL, TT_DIV, TT_MODULO, TT_AND, TT_OR, TT_LESSTHAN, TT_GREATERTHAN, TT_LESSTHANEQUAL, TT_GREATERTHANEQUAL, TT_EQUALTO, TT_NOTEQUAL},
+            "<literal>": {TT_COMMA, TT_TERMINATE, TT_PLUS, TT_MINUS, TT_MUL, TT_DIV, TT_MODULO, TT_AND, TT_OR, TT_LESSTHAN, TT_GREATERTHAN, TT_LESSTHANEQUAL, TT_GREATERTHANEQUAL, TT_EQUALTO, TT_NOTEQUAL, TT_RPAREN, TT_COLON, TT_IDENTIFIER, TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_NOT, TT_LPAREN, TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_CONST, TT_FUNCTION, TT_MAIN},
+            "<veracity_lit>": {TT_COMMA, TT_TERMINATE, TT_PLUS, TT_MINUS, TT_MUL, TT_DIV, TT_MODULO, TT_AND, TT_OR, TT_LESSTHAN, TT_GREATERTHAN, TT_LESSTHANEQUAL, TT_GREATERTHANEQUAL, TT_EQUALTO, TT_NOTEQUAL, TT_RPAREN, TT_COLON, TT_IDENTIFIER, TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_NOT, TT_LPAREN, TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_CONST, TT_FUNCTION, TT_MAIN},
+            "<not_op>": {TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_IDENTIFIER, TT_LPAREN, TT_NOT},
+            "<op>": {TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_IDENTIFIER, TT_LPAREN, TT_NOT},
+            "<arith_op>": {TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_IDENTIFIER, TT_LPAREN, TT_NOT},
+            "<logic_op>": {TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_IDENTIFIER, TT_LPAREN, TT_NOT},
+            "<compare_op>": {TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_IDENTIFIER, TT_LPAREN, TT_NOT},
+            "<equality_op>": {TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_IDENTIFIER, TT_LPAREN, TT_NOT},
+            "<update_exp>": {TT_TERMINATE, TT_RPAREN, TT_BREAK, TT_CONTINUE, TT_RBRACE},
+            "<update_exp_op>": {TT_COMMA, TT_RPAREN, TT_TERMINATE, TT_BREAK, TT_CONTINUE, TT_RBRACE},
+            "<update_exp_tail>": {TT_COMMA, TT_RPAREN, TT_TERMINATE, TT_BREAK, TT_CONTINUE, TT_RBRACE},
+            "<function_call_statement>": {TT_TERMINATE, TT_COMMA, TT_PLUS, TT_MINUS, TT_MUL, TT_DIV, TT_MODULO, TT_AND, TT_OR, TT_LESSTHAN, TT_GREATERTHAN, TT_LESSTHANEQUAL, TT_GREATERTHANEQUAL, TT_EQUALTO, TT_NOTEQUAL, TT_RPAREN, TT_COLON, TT_IDENTIFIER, TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_NOT, TT_RPAREN},
+            "<argument>": {TT_RPAREN},
+            "<argument_tail>": {TT_RPAREN},
+            "<function>": {TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_CONST, TT_FUNCTION, TT_MAIN},
+            "<return_type>": {TT_IDENTIFIER},
+            "<parameter>": {TT_RPAREN},
+            "<parameter_tail>": {TT_RPAREN},
+            "<statement>": {TT_TERMINATE, TT_BREAK, TT_CONTINUE, TT_DEFAULT, TT_CASE, TT_ELSE, TT_IF, TT_SWITCH, TT_FOR, TT_WHILE, TT_DO, TT_RETURN, TT_OUTPUT, TT_INPUT, TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_CONST, TT_IDENTIFIER, TT_RBRACE},
+            "<declaration_statement>": {TT_TERMINATE},
+            "<assign_or_call_statement>": {TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_CONST, TT_IDENTIFIER, TT_IF, TT_SWITCH, TT_FOR, TT_WHILE, TT_DO, TT_BREAK, TT_CONTINUE, TT_RETURN, TT_OUTPUT, TT_INPUT, TT_RBRACE, TT_CASE, TT_DEFAULT},
+            "<tail>": {TT_TERMINATE, TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_CONST, TT_IDENTIFIER, TT_IF, TT_SWITCH, TT_FOR, TT_WHILE, TT_DO, TT_BREAK, TT_CONTINUE, TT_RETURN, TT_OUTPUT, TT_INPUT, TT_RBRACE, TT_CASE, TT_DEFAULT, TT_INC, TT_DEC},
+            "<value_assign>": {TT_TERMINATE, TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_CONST, TT_IDENTIFIER, TT_IF, TT_SWITCH, TT_FOR, TT_WHILE, TT_DO, TT_BREAK, TT_CONTINUE, TT_RETURN, TT_OUTPUT, TT_INPUT, TT_RBRACE, TT_CASE, TT_DEFAULT},
+            "<value_assign_tail>": {TT_TERMINATE},
+            "<ledger_assign>": {TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_CONST, TT_IDENTIFIER, TT_IF, TT_SWITCH, TT_FOR, TT_WHILE, TT_DO, TT_BREAK, TT_CONTINUE, TT_RETURN, TT_OUTPUT, TT_INPUT, TT_RBRACE, TT_CASE, TT_DEFAULT},
+            "<ledger_assign_tail>": {TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_CONST, TT_IDENTIFIER, TT_IF, TT_SWITCH, TT_FOR, TT_WHILE, TT_DO, TT_BREAK, TT_CONTINUE, TT_RETURN, TT_OUTPUT, TT_INPUT, TT_RBRACE, TT_CASE, TT_DEFAULT},
+            "<assignment_op>": {TT_IDENTIFIER, TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_LPAREN, TT_NOT, TT_RBRACE, TT_TERMINATE},
+            "<conditional_statement>": {TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_CONST, TT_IDENTIFIER, TT_IF, TT_SWITCH, TT_FOR, TT_WHILE, TT_DO, TT_BREAK, TT_CONTINUE, TT_RETURN, TT_OUTPUT, TT_INPUT, TT_RBRACE, TT_CASE, TT_DEFAULT},
+            "<condition>": {TT_RPAREN, TT_TERMINATE},
+            "<or-opt>":{TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_CONST, TT_IDENTIFIER, TT_IF, TT_SWITCH, TT_FOR, TT_WHILE, TT_DO, TT_BREAK, TT_CONTINUE, TT_RETURN, TT_OUTPUT, TT_INPUT, TT_RBRACE, TT_CASE, TT_DEFAULT},
+            "<or-tail>": {TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_CONST, TT_IDENTIFIER, TT_IF, TT_SWITCH, TT_FOR, TT_WHILE, TT_DO, TT_BREAK, TT_CONTINUE, TT_RETURN, TT_OUTPUT, TT_INPUT, TT_RBRACE, TT_CASE, TT_DEFAULT},
+            "<shift_statement>": {TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_CONST, TT_IDENTIFIER, TT_IF, TT_SWITCH, TT_FOR, TT_WHILE, TT_DO, TT_BREAK, TT_CONTINUE, TT_RETURN, TT_OUTPUT, TT_INPUT, TT_RBRACE, TT_CASE, TT_DEFAULT},
+            "<opt_value>": {TT_DEFAULT, TT_RBRACE},
+            "<opt_tail>": {TT_DEFAULT, TT_RBRACE},
+            "<halt_value>": {TT_CASE, TT_DEFAULT, TT_RBRACE},
+            "<usual_value>": {TT_RBRACE},
+            "<loop_statement>": {TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_CONST, TT_IDENTIFIER, TT_IF, TT_SWITCH, TT_FOR, TT_WHILE, TT_DO, TT_BREAK, TT_CONTINUE, TT_RETURN, TT_OUTPUT, TT_INPUT, TT_RBRACE, TT_CASE, TT_DEFAULT},
+            "<per_loop>":  {TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_CONST, TT_IDENTIFIER, TT_IF, TT_SWITCH, TT_FOR, TT_WHILE, TT_DO, TT_BREAK, TT_CONTINUE, TT_RETURN, TT_OUTPUT, TT_INPUT, TT_RBRACE, TT_CASE, TT_DEFAULT},
+            "<initialization_statement>": {TT_TERMINATE},
+            "<until_loop>": {TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_CONST, TT_IDENTIFIER, TT_IF, TT_SWITCH, TT_FOR, TT_WHILE, TT_DO, TT_BREAK, TT_CONTINUE, TT_RETURN, TT_OUTPUT, TT_INPUT, TT_RBRACE, TT_CASE, TT_DEFAULT},
+            "<act-until_loop>": {TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_CONST, TT_IDENTIFIER, TT_IF, TT_SWITCH, TT_FOR, TT_WHILE, TT_DO, TT_BREAK, TT_CONTINUE, TT_RETURN, TT_OUTPUT, TT_INPUT, TT_RBRACE, TT_CASE, TT_DEFAULT},
+            "<loop_control>": {TT_RBRACE},
+            "<halt_control>": {TT_CASE, TT_DEFAULT, TT_RBRACE},
+            "<extend_control>": {TT_RBRACE},
+            "<emit_statement>": {TT_TERMINATE},
+            "<emit_value>": {TT_COMMA},
+            "<emit_tail>": {TT_COMMA, TT_RPAREN},
+            "<format_specifier>": {TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE, TT_IDENTIFIER, TT_LPAREN, TT_NOT},
+            "<format_specifier_tail>": {TT_COMMA, TT_RPAREN},
+            "<data_storage>": {TT_RPAREN},
+            "<data_storage_tail>": {TT_RPAREN},
+            "<seek_statement>": {TT_TERMINATE},
+            "<memory_address>": {TT_RPAREN},
+            "<memory_address_continue>": {TT_RPAREN},
+            "<ledger_element_value>": {TT_RPAREN},
+            "<memory_address_tail>": {TT_RPAREN},
+            "<recede_statement>": {TT_TERMINATE},
+            "<recede_value>": {TT_TERMINATE}
+        }
+        self.predict_sets = {}
+        self.compute_predict_sets()
+
+    def compute_predict_sets(self):
+        """Compute Predict sets using manually defined First and Follow sets."""
+        self.predict_sets = {}
+
+        for nt, productions in self.grammar_rules.items():
             for production in productions:
+                prod_id = f"{nt} -> {' '.join(production)}"
+                first_of_prod = set()
+
+                # ✅ Step 1: Compute First(α) - {λ}
                 for symbol in production:
-                    if symbol not in self.grammar and symbol != "λ":
-                        terminals.add(symbol)
-        return terminals
-    
-    def compute_first_sets(self):
-        for non_terminal in self.grammar:
-            self.first(non_terminal, set())
-    
-    def first(self, symbol, visited):
-        if symbol in self.first_sets and self.first_sets[symbol]:
-            return self.first_sets[symbol]
-        
-        if symbol in visited:
-            return set()
-        
-        visited.add(symbol)
-        first_set = set()
-        
-        if symbol in self.terminals:
-            first_set.add(symbol)
-        elif symbol in self.grammar:
-            for production in self.grammar[symbol]:
-                if production[0] == "λ":
-                    first_set.add("\u03bb")
-                else:
-                    for item in production:
-                        first_item_set = self.first(item, visited.copy())
-                        first_set.update(first_item_set - {"\u03bb"})
-                        if "\u03bb" not in first_item_set:
-                            break
-                    else:
-                        first_set.add("\u03bb")
-        
-        self.first_sets[symbol] = first_set
-        return first_set
-    
-    def compute_follow_sets(self):
-        self.follow_sets["^program^"] = {"$"}
-        for non_terminal in self.grammar:
-            self.follow(non_terminal, set())
-    
-    def follow(self, symbol, visited):
-        if symbol in visited:
-            return self.follow_sets[symbol]
-        
-        visited.add(symbol)
-        follow_set = set()
-        
-        for nt, productions in self.grammar.items():
-            for production in productions:
-                for i, item in enumerate(production):
-                    if item == symbol:
-                        if i + 1 < len(production):
-                            next_first_set = self.first(production[i + 1], set())
-                            follow_set.update(next_first_set - {"\u03bb"})
-                            if "\u03bb" in next_first_set:
-                                follow_set.update(self.follow(nt, visited.copy()))
-                        else:
-                            follow_set.update(self.follow(nt, visited.copy()))
-        
-        self.follow_sets[symbol].update(follow_set)
-        return follow_set
-    
-    def construct_parse_table(self):
-        self.parse_table = {nt: {t: None for t in self.terminals | {"$"}} for nt in self.grammar}
-        for nt, productions in self.grammar.items():
-            for production in productions:
-                first_set = set()
-                for item in production:
-                    item_first = self.first(item, set())
-                    first_set.update(item_first - {"\u03bb"})
-                    if "\u03bb" not in item_first:
+                    if symbol in self.first_sets:  # If it's a non-terminal
+                        first_of_prod |= (self.first_sets[symbol] - {'lambda'})
+                        if 'lambda' not in self.first_sets[symbol]:  
+                            break  # Stop if λ is not in First
+                    else:  
+                        first_of_prod.add(symbol)  # Terminal: Add directly
                         break
-                else:
-                    first_set.update(self.follow(nt, set()))
                 
-                for terminal in first_set:
-                    self.parse_table[nt][terminal] = production
-    
+                # ✅ Step 2: If First(α) contains λ, add Follow(A)
+                if 'lambda' in first_of_prod or production == ['lambda']:
+                    first_of_prod |= self.follow_sets[nt]  
+
+                # ✅ Store the Predict Set
+                self.predict_sets[prod_id] = first_of_prod
+
     def parse(self, tokens):
-    # Make a copy of tokens and append the EOF marker "$"
-        tokens = tokens[:]  # copy so as not to modify original list
-        tokens.append("$")
-        stack = ["$", "^program^"]
-        index = 0
+        """LL(1) Table-Driven Parser with debug prints"""
+        self.tokens = tokens
+        self.current_token_index = 0
+        stack = ["EOF", "<program>"]
 
         while stack:
-            top = stack[-1]         # Peek at top of stack without popping yet
-            current_token = tokens[index]
-            print(f"Stack: {stack}, Current Token: {current_token}")  # Debug output
+            current_token = self.tokens[self.current_token_index].type if self.current_token_index < len(self.tokens) else "EOF"
+            
+            top = stack[-1]
 
-            if top == current_token.type:
-                # Terminal matches—pop and advance
-                stack.pop()
-                index += 1
-            elif top in self.terminals or top == "$":
-                # Terminal mismatch: expected terminal on stack did not match input.
-                print(f"Error: terminal mismatch. Expected '{top}', got '{current_token.type}'")
-                return False
-            elif top in self.parse_table:
-                # Nonterminal: look for production based on current_token.type.
-                production = self.parse_table[top].get(current_token.type)
-                if production is None:
-                    print(f"Error: no production for nonterminal '{top}' with lookahead '{current_token.type}'")
-                    return False
-                # Production found: pop nonterminal and push production symbols in reverse order,
-                # unless it's the lambda production.
-                stack.pop()
-                if production != ["λ"]:
+            # If top is a non-terminal (or lambda)
+            if top in self.first_sets or top == "lambda":
+                matched_production = None
+                for prod, preds in self.predict_sets.items():
+                    if prod.startswith(f"{top} ->") and current_token in preds:
+                        matched_production = prod
+                        break
+
+                if matched_production:
+                    production = matched_production.split("->")[1].strip().split(" ")
+                    stack.pop()
+
+                    if production == ['lambda']:  # Handle lambda (ε)
+                        continue  # Skip processing and move to the next token
+
+                    # Push production symbols in reverse order onto the stack
                     stack.extend(reversed(production))
+                else:
+                    expected_tokens = set()
+                    for prod, preds in self.predict_sets.items():
+                        if prod.startswith(f"{top} ->"):
+                            expected_tokens |= preds
+                    return f"Error: Unexpected token '{current_token}' at position {self.current_token_index}. Expected one of: {expected_tokens}"
+
+            elif top == current_token:  # Terminal match
+
+                stack.pop()
+                self.current_token_index += 1
+            elif top == "EOF" and current_token == "EOF": 
+                stack.pop()
             else:
-                print(f"Error: no rule for symbol '{top}' with lookahead '{current_token.type}'")
-                return False
+                return f"Error: Expected '{top}', but got '{current_token}' at position {self.current_token_index}"
 
-        # Successful parse if all tokens were consumed. (index should be at the last token "$")
-        return index == len(tokens)
+        return "Parsing completed successfully!" if not stack else "Error: Incomplete parsing."
+
     
-    def display_parse_table(self):
-        df = pd.DataFrame(self.parse_table).T
-        print(df.fillna("-"))
-
-# Tokenizer
-def tokenize(code):
-    tokens = re.findall(r'\w+|[{}(),;+=<>"]', code)
-    return tokens
-
-grammar = {
-    "^program^": [["^global^", "Embark", "(", ")", "{", "^statement^", "}"]],
-    "^global^": [["^global_dec^", "^global^"], ["λ"]],
-    "^global_dec^": [["^declare^"], ["^function^"], ["^comment^"]],
-    "^declare^": [["^var_declaration^", ";", "^variable_declaration^"], ["λ"]],
-    "^declare_tail^": [["^var_declaration_assign^", "^declare_tail^"], ["^ledger_declaration^"], ["λ"]],  # ✅ Fixed recursion issue
-    "^ledger_declaration^": [["^ledger_element^", "^ledger_declaration_assign^"]],
-    "^var_declaration^": [["^data_type^", "Identifier"]],
-    "^var_declaration_assign^": [["=", "^value^", "^var_declaration_tail^"]],
-    "^var_declaration_tail^": [[",", "Identifier", "^var_declaration_assign^"], ["λ"]],
-    "^const_declaration^": [["Constant", "^var_declaration^", "=", "^value^", "^var_declaration_tail^"]],
-    "^ledger_declaration_assign^": [["=", "{", "^ledger_value^","}"], ["λ"]],
-    "^ledger_value^": [["^numeral_ledger^"], ["^decimal_ledger^"], ["^letter_ledger^"]],
-    "^numeral_ledger^": [["TT_INT_LITERAL", "^numeral_ledger_tail^"]],
-    "^numeral_ledger_tail^": [[",","^numeral_ledger_tail^"], ["λ"]],
-    "^decimal_ledger^": [["TT_FLOAT_LITERAL", "^decimal_ledger_tail^"]],
-    "^decimal_ledger_tail^": [[",","^decimal_ledger_tail^"], ["λ"]],
-    "^letter_ledger^": [["TT_CHAR_LITERAL", "^letter_ledger_tail^"]],
-    "^letter_ledger_tail^": [[",","^letter_ledger_tail^"], ["λ"]],
-    "^ledger_element^": [["[", "TT_INT_LITERAL", "]"]],
-    "^ledger_assign^": [["[", "TT_INT_LITERAL", "]", "^assignment_op^", "^value^", ";", "^ledger_assign_tail^"]], # <ledger_assign> -> [NUMERAL_LIT] <assignment_op> <value>; <ledger_assign_tail>
-    "^ledger_assign_tail^": [["^ledger_assign^"], ["λ"]],
-    "^data_type^": [["Numeral"], ["Decimal"], ["Letter"], ["Missive"], ["Veracity"]],
-    "^value^": [["^expression^"]],
-    "^name^": [["Identifier"]],
-    "^primary_value^": [["^literals^"], ["^name^", "^value_tail^"]],
-    "^value_tail^": [["^ledger_element^"], ["^function_call_statement^"], ["^update_exp_op^"], ["λ"]],
-    "^literals^": [["TT_INT_LITERAL"], ["TT_FLOAT_LITERAL"], ["TT_CHAR_LITERAL"], ["TT_STRING_LITERAL"], ["Pure"], ["Nay"], ["Nil"]],
-    "^primary_value>": [["^literals^"], ["Identifier"]],
-    "^expression^": [["^primary_value^", "^expression_tail^"], ["^not_op^"]],
-    "^expression_tail>": [["^op^", "^primary_value^", "^expression_tail^"], ["λ"]],
-    "^op^": [["^arith_op^"], ["^compare_op^"], ["^logic_op^"], ["^equality_op^"]],
-    "^arith_op^": [["+"], ["-"], ["*"], ["/"], ["%"]],
-    "^compare_op^": [["<"], [">"], ["<="], [">="]],
-    "^logic_op^": [["&&"], ["||"]],
-    "^equality_op^": [["=="], ["!="]],
-    "^not_op^": [["!", "^value^"]],
-    "^update_exp^": [["Identifier", "^update_exp_op^", "^update_exp_tail^"]],
-    "^update_exp_tail^": [[",", "^update_exp^"], ["λ"]],
-    "^update_exp_op^": [["++"], ["--"]],
-    "^function_call_statement^": [["(", "^argument^", ")"]],
-    "^argument^": [["^value^", "^argument_tail^"], ["λ"]],
-    "^argument_tail^": [[",", "^value^"], ["λ"]],
-    "^function^": [["Method", "^return_type^", "Identifier", "(", "^parameter^", ")", "{", "^statement^", "}"]],
-    "^return_type^": [["Void"], ["Numeral"], ["Decimal"]],
-    "^parameter^": [["^data_type^", "Identifier", "^parameter_tail^"], ["λ"]],
-    "^parameter_tail^": [[",", "^parameter_tail^"], ["λ"]],
-    "^comment^": [["TT_SLINECOM"], ["TT_MLINECOM"]],
-    "^body^": [["^statement^", "^body^"], ["λ"]],
-    "^statement^": [["^declaration_statement^", "^statement^"], ["^assignment_statement^", "^statement^"],["^conditional_statement^", "^statement^"],
-                    ["^shift_statement^", "^statement^"], ["^loop_statement^", ";", "^statement^"], ["^emit_statement^", "^statement^"],
-                    ["^seek_statement^", ";", "^statement^"], ["^recede_statement^", ";", "^statement^"], ["λ"]],
-    "^declaration_statement^": [["^declare^"]],
-    "^assignment_statement^": [["Identifier", "^assignment_tail^"]], # <assignment_statement> -> Identifier <assignment_tail>
-    "^assignment_tail^": [["^ledger_assign^"], ["^value_assign^"]], # <assignment_tail> -> <ledger_assign> | <value_assign>
-    "^value_assign^": [["^assignment_op^", "^value^", "^value_assign_tail^"]], # <value_assign> -> <assignment_op> <value> <value_assign_tail>
-    "^value_assign_tail^": [[",", "^value_assign^"], ["λ"]],
-    "^assignment_op^": [["="], ["+="], ["-="], ["*="], ["/="], ["%="]],
-    "^conditional_statement^": [["Thou", "(", "^condition^", ")", "{", "^statement^", "}", "^optional_or^"]],
-    "^optional_or^": [["λ"], ["Or", "^or_body^"]],
-    "^or_body^": [["Thou", "(", "^condition^", ")", "{", "^statement^", "}", "^optional_or^"],
-                ["{", "^statement^", "}"]],
-    "^condition^": [["^expression^"]],
-    "^shift_statement^": [["Shift", "(", "Identifier", ")", "{", "^opt_value^","^usual_value^", "}"]],
-    "^opt_value^": [["Opt", "^value^", ":", "^statement^", "^halt_value^", "^opt_value^"]],
-    "^halt_value^": [["^halt_control^", "^opt_value^"], ["λ"]],
-    "^usual_value^": [["Usual", ":", "^statement^"], ["λ"]],
-    "^halt_control^": [["Halt", ";"]],
-    "^extend_control^": [["Extend", ";"]],
-    "^loop_statement^": [["^per_loop^"], ["^until_loop^"], ["^act-until_loop^"]],
-    "^per_loop^": [["Per", "(", "^initialization_statement^", ";", "^condition^", ";", "^update_exp^", ")", "{", "^statement^", "}"]],
-    "^initialization_statement^": [["^var_declaration^", "=", "^value^"]],
-    "^until_loop^":[["Until", "(", "^condition^", ")", "{", "^statement^", "^update_exp^", "^loop_control^", "}"]],
-    "^act-until_loop^":[["Act", "{", "^statement^", "^update_exp^", "^loop_control^", "}", "Until", "(", "^condition^", ")", ";"]],
-    "^loop_control^": [["^halt_control^"], ["^extend_control^"]],
-    "^emit_statement^": [["Emit", "(", "^emit_value^", "^data_storage^", ")", ";"]],
-    "^emit_value^": [["^value^", "^emit_tail^"], ["^format_specifier^", "^emit_tail^"]],
-    "^emit_tail^": [["^emit_value^"], ["λ"]],
-    "^format_specifier^": [["TT_FORMATSPEC", "^format_specifier_tail^"]],
-    "^format_specifier_tail^": [[",", "^format_specifier^", "^format_specifier_tail^"]],
-    "^data_storage^": [[",", "Identifier", "^data_storage_tail^"], ["λ"]],
-    "^data_storage_tail^": [["^data_storage^"]],
-    "^seek_statement^": [["Seek", "(", "^format_specifier^","^memory_address^", ")"]],
-    "^memory_address^": [[",", "&", "Identifier", "^memory_address^"], ["λ"]],
-    "^recede_statement^": [["Recede", "^value^"]]
-} 
-
-
-parser = LL1Parser(grammar)
-parser.display_parse_table()
-
-# Test parsing
-sample_program = """
-Embark() {
-    Numeral sum;
-    sum = 5;
-    Emit("Hello, %d", sum);
-    
-    Thou (sum > 0) {
-        Emit("Positive Number");
-    } Or {
-        Emit("Non-positive Number");
-    }
-    
-    Numeral i;
-    Per (i = 0; i < 10; i++) {
-        Emit("Counting: %d", i);
-    }
+def main():
+    # Sample program
+    sample_program = """
+    Method Void cubeIteration(Numeral num, Numeral iterations) {
+	Per(Numeral i=1 ; i<=iterations; i++) {
+		num = num*num*num;
+		Emit("Iteration %d: %d\n", i, num);
+	}
 }
-"""
 
-test_tokens = tokenize(sample_program)
-print("Parsing result:", parser.parse(test_tokens))
+Embark() {
+	Numeral number, iterations;
+
+	Emit("Enter a number :");
+	Seek("%d", &number);
+	Emit("Enter number of iterations: ");
+	Seek("%d", &iterations);
+
+	cubeIteration(number, iterations);
+
+	Recede 0;
+}
+    """
+
+    # Step 1: Tokenize the input
+    lexer = Lexer("example.ic", sample_program)
+    tokens, errors = lexer.make_tokens()
+
+    if errors:
+        print("Lexing Errors:")
+        for error in errors:
+            print(error.as_string())
+    else:
+        print("Lexing successful!")
+
+    # Step 2: Parse the tokens
+    parser = CFGParser(tokens)
+    result = parser.parse(tokens)
+
+    # Display Parsing Result
+    print(result)
+
+if __name__ == "__main__":
+    main()

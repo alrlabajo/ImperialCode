@@ -73,16 +73,24 @@ def _run_lexical(file_path, code):
 
 @log_runtime
 def _run_syntax(file_path, code):
-    start_time = time.time()
     tokens, ast, errors = run_syntax(file_path, code)
-
-    flattened_errors = [err for sublist in errors for err in (sublist if isinstance(sublist, list) else [sublist])]
-
+    
+    flattened_errors = []
+    for err in errors:
+        if isinstance(err, list):
+            flattened_errors.extend(err)
+        else:
+            flattened_errors.append(err)
+    
     if flattened_errors:
         for error in flattened_errors:
-            print(error.as_string())
+            if hasattr(error, "as_string"):
+                print(error.as_string())
+            else:
+                print(error)
     else:
         print("No syntax errors found.")
+
 
 
 

@@ -1,7 +1,7 @@
 Method Void cubeIteration(Numeral num, Numeral iterations) {
 	Per(Numeral i=1 ; i<=iterations; i++) {
 		num = num*num*num;
-		Emit("Iteration %d: %d\n", i, num);
+		Emit("Iteration %v: %d\n", i, num);
 	}
 }
 

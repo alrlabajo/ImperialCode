@@ -17,13 +17,19 @@ def run_lexical(fn, text):
 def run_syntax(filename, text):
     lexer = Lexer(filename, text)
     tokens, lexer_errors = lexer.make_tokens()
+    
+    if not isinstance(lexer_errors, list):
+        lexer_errors = [lexer_errors]
+    
+    parser = CFGParser(tokens)
+    parser_errors = parser.parse(tokens) 
+    
+    if not isinstance(parser_errors, list):
+        parser_errors = [parser_errors]
+    
+    all_errors = lexer_errors + parser_errors
+    return tokens, None, all_errors
 
-    parser = Parser(tokens)
-    ast, parser_errors = parser.parse() 
-
-    all_errors = lexer_errors + parser_errors 
-
-    return tokens, ast, all_errors
 
 def run_semantic(ast):
     analyzer = Interpreter() 
