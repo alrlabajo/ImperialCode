@@ -1,3 +1,9 @@
 Embark() {
-	count ++;
+	Thou(grade > 98) {
+		Emit("With Highest Honors");
+	} Or Thou  (grade >95) {
+		Emit("With High Honors");
+	} Or Thou (grade <75) {
+		Emit(" Failed");
+	}
 }

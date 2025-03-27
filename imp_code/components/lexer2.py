@@ -37,7 +37,6 @@ class Lexer:
         return self._check_single_token_delim(token)
 
     def _check_single_token_delim(self, token):
-        
         if not hasattr(token, "type"): 
             return None  
         
@@ -83,17 +82,17 @@ class Lexer:
             if self.state == '0':
                 if self.current_char in "\t \n ":
                     self.advance()
-                elif self.current_char == '"':
-                    tokens_list, error = self.make_missive()  # ✅ Expecting a list
+                elif self.current_char in '"':
+                    token, error = self.make_missive()
 
-                    if error:
-                        errors.append(error)  
+                    if token:
+                        error = self.check_delim(token) 
+                        if error:
+                            errors.append(error)
+                        else:
+                            tokens.append(token)
                     else:
-                        for token in tokens_list:  # ✅ Iterate through the list
-                            tokens.append(token)  
-                            error = self.check_delim(token)
-                            if error:
-                                errors.append(error)
+                        errors.append(error)
 
                 elif self.current_char in "'":
                     token, error = self.make_letter()
@@ -2090,47 +2089,33 @@ class Lexer:
                 return Tokens(TT_FLOAT_LITERAL, str(float(num_str)), pos_start, self.pos), None
 
     def make_missive(self):
-        self.advance()  # Move past opening quote
-        missive_content = ""
-        tokens = []
-        pos_start = self.pos.copy()  # Store start position
+        pos_start = self.pos
+        self.advance()
+        missive_content = '"'
 
-        while self.current_char is not None:
-            if self.current_char == '"':  
-                self.advance()  # Move past closing quote
-                break  # String is complete
-            
-            if self.current_char == '\\':  # ✅ Handle escape sequences
-                self.advance()  # Move past '\'
-                if self.current_char in ESC_SEQ:  
+        while self.current_char is not None and self.current_char != '"':
+            if self.current_char == ";":
+                return None, IllegalCharError(pos_start, self.pos, "Unclosed Missive")
+        
+            if self.current_char == '\\':
+                self.advance()
+                if self.current_char in ESC_SEQ:
                     missive_content += ESC_SEQ[self.current_char]
+                elif self.current_char is not None:
+                    missive_content += '\\' + self.current_char
                 else:
-                    return None, IllegalCharError(self.pos, self.pos, f"Invalid escape sequence \\{self.current_char}")
-            
-            elif self.current_char == '%':  # ✅ Handle format specifiers
-                potential_spec = "%" + (self.peek() or "")
-                if potential_spec in FORMAT_SPECIFIERS:
-                    if missive_content:
-                        tokens.append(Tokens(TT_STRING_LITERAL, missive_content, pos_start, self.pos))
-                        missive_content = ""
-                    tokens.append(Tokens(TT_FORMATSPEC, potential_spec, self.pos.copy(), self.pos.copy()))
-                    self.advance()  # Move past '%'
-                    self.advance()  # Move past format character
-                    continue
-
+                    missive_content += '\\' + self.current_char
             else:
                 missive_content += self.current_char
-
             self.advance()
-        
-        if self.current_char is None:  # 🔴 If we exit the loop without closing `"`
+
+        if self.current_char != '"' or self.current_char == ";":
             return None, IllegalCharError(pos_start, self.pos, "Unclosed Missive")
-
-        if missive_content:  
-            tokens.append(Tokens(TT_STRING_LITERAL, missive_content, pos_start, self.pos))  # Add remaining string content
         
-        return tokens, None
-
+        missive_content += '"'
+        self.advance()
+        return Tokens(TT_STRING_LITERAL, missive_content, pos_start, self.pos), None
+    
     def make_letter(self):
         pos_start = self.pos.copy()
         self.advance()

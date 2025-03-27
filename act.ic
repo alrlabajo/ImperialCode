@@ -1,8 +1,5 @@
 Embark() {
-	Numeral i;
 
-	Act {
-		Emit("%d", i);
-		i++;
-	} Until(i==5);
+		Emit("hello" "hi");
+
 }

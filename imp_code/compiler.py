@@ -22,7 +22,7 @@ def run_syntax(filename, text):
         lexer_errors = [lexer_errors]
     
     parser = CFGParser(tokens)
-    parser_errors = parser.parse(tokens) 
+    parser_errors = parser.parse() 
     
     if not isinstance(parser_errors, list):
         parser_errors = [parser_errors]
