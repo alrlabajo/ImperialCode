@@ -27,24 +27,24 @@ class Lexer:
         return self.text[peek_pos] if peek_pos < len(self.text) else None
 
     def check_delim(self, token):
-        if isinstance(token, list):  
+        if isinstance(token, list):
             for t in token:
                 error = self._check_single_token_delim(t)
                 if error:
                     return error
-            return None 
-        
+            return None
+
         return self._check_single_token_delim(token)
 
     def _check_single_token_delim(self, token):
-        if not hasattr(token, "type"): 
-            return None  
-        
+        if not hasattr(token, "type"):
+            return None
+
         delimiters = DELIM_LIST.get(token.type, None)
-        
+
         if delimiters is None:
-            return None 
-        
+            return None
+
         if self.current_char not in delimiters and self.current_char is not None:
             pos_start = self.pos.copy()
             pos_end = pos_start.copy().advance()
@@ -54,7 +54,7 @@ class Lexer:
                 f"Unexpected delimiter {repr(self.current_char)} after {token}",
             )
 
-        return None 
+        return None
 
     def keyword_error(self, keyword, errors):
         pos_start = self.pos.copy()
@@ -86,7 +86,7 @@ class Lexer:
                     token, error = self.make_missive()
 
                     if token:
-                        error = self.check_delim(token) 
+                        error = self.check_delim(token)
                         if error:
                             errors.append(error)
                         else:
@@ -129,7 +129,6 @@ class Lexer:
                             tokens.append(token)
                     else:
                         errors.append(error)
-
 
                 elif self.current_char == 'A': # Act
                     self.state = '1'
@@ -821,7 +820,7 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
-                continue    
+                continue
 
             elif self.state == '64':
                 if self.current_char == 'a':  # Nay
@@ -876,7 +875,7 @@ class Lexer:
                 else:
                     keyword = self.keyword_error(keyword, errors)
                     continue
-            elif self.state == '70':
+            elif self.state == '69':
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
@@ -1281,7 +1280,6 @@ class Lexer:
                     errors.append(error)
                 continue
 
-
             # Until, Usual
             elif self.state == '114':
                 if self.current_char == 'n': # Until
@@ -1381,13 +1379,13 @@ class Lexer:
                     errors.append(error)
                 continue
 
-            # Veracity, Void, 
+            # Veracity, Void,
             elif self.state == '125':
                 if self.current_char == 'e': # Veracity
                     self.state = '126'
                     keyword += self.current_char
                     self.advance()
-                elif self.current_char == 'o': # Void 
+                elif self.current_char == 'o': # Void
                     self.state = '134'
                     keyword += self.current_char
                     self.advance()
@@ -2023,7 +2021,7 @@ class Lexer:
                     self.state = '0'
 
             # &&
-            elif self.state == '201':
+            elif self.state == '202':
                 token = Tokens(TT_AND, '&&', pos_start=self.pos)
                 self.state = '0'
 
@@ -2052,7 +2050,7 @@ class Lexer:
         tokens.append(Tokens(TT_EOF, pos_start=self.pos))
 
         return tokens, errors
-    
+
     def make_numeral_decimal(self):
         pos_start = self.pos
         num_str = ''
@@ -2096,7 +2094,7 @@ class Lexer:
         while self.current_char is not None and self.current_char != '"':
             if self.current_char == ";":
                 return None, IllegalCharError(pos_start, self.pos, "Unclosed Missive")
-        
+
             if self.current_char == '\\':
                 self.advance()
                 if self.current_char in ESC_SEQ:
@@ -2111,11 +2109,11 @@ class Lexer:
 
         if self.current_char != '"' or self.current_char == ";":
             return None, IllegalCharError(pos_start, self.pos, "Unclosed Missive")
-        
+
         missive_content += '"'
         self.advance()
         return Tokens(TT_STRING_LITERAL, missive_content, pos_start, self.pos), None
-    
+
     def make_letter(self):
         pos_start = self.pos.copy()
         self.advance()

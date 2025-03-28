@@ -1,0 +1,9 @@
+Embark() {
+	Numeral x=10;
+
+	Thou(x>7 && x<5) {
+		Emit("x is greater than 7");
+	} Or {
+		Emit("x is less than 7");
+	}
+}
