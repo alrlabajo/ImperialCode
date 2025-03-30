@@ -58,7 +58,7 @@ class Lexer:
 
     def keyword_error(self, keyword, errors):
         pos_start = self.pos.copy()
-        while self.current_char is not None and (self.current_char.isalnum() or self.current_char == '_'):
+        while self.current_char is not None and (self.current_char.isalnum() or self.current_char == '_'): 
 
             keyword += self.current_char
             self.advance()

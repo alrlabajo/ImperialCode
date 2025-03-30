@@ -4,7 +4,7 @@ Embark() {
 	Thou (x > 7 && x < 15) {
 		Emit("x is good");
 	} Or {
-		Emit("x is not good");
+		Emit("x is not not good");
 	}
 	
 }
