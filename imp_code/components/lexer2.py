@@ -27,24 +27,24 @@ class Lexer:
         return self.text[peek_pos] if peek_pos < len(self.text) else None
 
     def check_delim(self, token):
-        if isinstance(token, list):
+        if isinstance(token, list):  
             for t in token:
                 error = self._check_single_token_delim(t)
                 if error:
                     return error
-            return None
-
+            return None 
+        
         return self._check_single_token_delim(token)
 
     def _check_single_token_delim(self, token):
-        if not hasattr(token, "type"):
-            return None
-
+        if not hasattr(token, "type"): 
+            return None  
+        
         delimiters = DELIM_LIST.get(token.type, None)
-
+        
         if delimiters is None:
-            return None
-
+            return None 
+        
         if self.current_char not in delimiters and self.current_char is not None:
             pos_start = self.pos.copy()
             pos_end = pos_start.copy().advance()
@@ -54,11 +54,12 @@ class Lexer:
                 f"Unexpected delimiter {repr(self.current_char)} after {token}",
             )
 
-        return None
+        return None 
 
     def keyword_error(self, keyword, errors):
         pos_start = self.pos.copy()
-        while self.current_char is not None and self.current_char.isalpha():
+        while self.current_char is not None and (self.current_char.isalnum() or self.current_char == '_'):
+
             keyword += self.current_char
             self.advance()
         error = IllegalKeyword(pos_start, self.pos, f"{keyword}")
@@ -86,7 +87,7 @@ class Lexer:
                     token, error = self.make_missive()
 
                     if token:
-                        error = self.check_delim(token)
+                        error = self.check_delim(token) 
                         if error:
                             errors.append(error)
                         else:
@@ -106,16 +107,17 @@ class Lexer:
                     else:
                         errors.append(error)
 
-                elif self.current_char.isdigit():
+                elif self.current_char and (self.current_char.isdigit() or self.current_char == '.'):
+                    # Now we handle digits or a leading '.'
                     token, error = self.make_numeral_decimal()
 
                     if token:
-                        error = self.check_delim(token)
-                        if error:
-                            errors.append(error)
+                        delim_error = self.check_delim(token)
+                        if delim_error:
+                            errors.append(delim_error)
                         else:
                             tokens.append(token)
-                    else:
+                    if error:
                         errors.append(error)
 
                 elif self.current_char.islower():
@@ -129,6 +131,7 @@ class Lexer:
                             tokens.append(token)
                     else:
                         errors.append(error)
+
 
                 elif self.current_char == 'A': # Act
                     self.state = '1'
@@ -820,7 +823,7 @@ class Lexer:
                         tokens.append(token)
                 else:
                     errors.append(error)
-                continue
+                continue    
 
             elif self.state == '64':
                 if self.current_char == 'a':  # Nay
@@ -875,7 +878,7 @@ class Lexer:
                 else:
                     keyword = self.keyword_error(keyword, errors)
                     continue
-            elif self.state == '69':
+            elif self.state == '70':
                 if self.current_char is not None and self.current_char.isalpha():
                     keyword = self.keyword_error(keyword, errors)
                     continue
@@ -1280,6 +1283,7 @@ class Lexer:
                     errors.append(error)
                 continue
 
+
             # Until, Usual
             elif self.state == '114':
                 if self.current_char == 'n': # Until
@@ -1379,13 +1383,13 @@ class Lexer:
                     errors.append(error)
                 continue
 
-            # Veracity, Void,
+            # Veracity, Void, 
             elif self.state == '125':
                 if self.current_char == 'e': # Veracity
                     self.state = '126'
                     keyword += self.current_char
                     self.advance()
-                elif self.current_char == 'o': # Void
+                elif self.current_char == 'o': # Void 
                     self.state = '134'
                     keyword += self.current_char
                     self.advance()
@@ -2021,7 +2025,7 @@ class Lexer:
                     self.state = '0'
 
             # &&
-            elif self.state == '202':
+            elif self.state == '201':
                 token = Tokens(TT_AND, '&&', pos_start=self.pos)
                 self.state = '0'
 
@@ -2050,22 +2054,25 @@ class Lexer:
         tokens.append(Tokens(TT_EOF, pos_start=self.pos))
 
         return tokens, errors
-
+    
     def make_numeral_decimal(self):
-        pos_start = self.pos
+        pos_start = self.pos.copy()
         num_str = ''
         dot_count = 0
         left_digits = 0
         right_digits = 0
         is_left = True
-        pos_start = self.pos.copy()
 
         while self.current_char is not None and (self.current_char.isdigit() or self.current_char == '.'):
             if self.current_char == '.':
                 if dot_count == 1:
-                    break
+                    return None, ExceedDecimalError(
+                        pos_start,
+                        self.pos,
+                        f"Multiple decimal points in numeric literal: '{num_str + self.current_char}'"
+                    )
                 dot_count += 1
-                is_left = False
+                is_left = False  # From now on, count digits as right_digits
             else:
                 if is_left:
                     left_digits += 1
@@ -2077,14 +2084,25 @@ class Lexer:
 
         if dot_count == 0:
             if len(num_str) > INT_LIM:
-                return None, ExceedNumeralError(pos_start, self.pos, f'{num_str}')
+                return None, ExceedNumeralError(pos_start, self.pos, f"{num_str}")
             else:
                 return Tokens(TT_INT_LITERAL, str(int(num_str)), pos_start, self.pos), None
         else:
+            # Disallow literals that both start and end with a decimal point.
+            # For example: ".1234." is not allowed.
+            if num_str[0] == '.' and num_str[-1] == '.':
+                return None, ExceedDecimalError(
+                    pos_start,
+                    self.pos,
+                    f"Numeric literal cannot both start and end with a decimal point: '{num_str}'"
+                )
+            # Allow trailing decimal, so if right_digits == 0, it's acceptable.
             if left_digits > FLOAT_LIM or right_digits > FLOAT_PRECISION_LIM:
-                return None, ExceedDecimalError(pos_start, self.pos, f'{num_str}')
+                return None, ExceedDecimalError(pos_start, self.pos, f"{num_str}")
             else:
                 return Tokens(TT_FLOAT_LITERAL, str(float(num_str)), pos_start, self.pos), None
+
+
 
     def make_missive(self):
         pos_start = self.pos
@@ -2094,7 +2112,7 @@ class Lexer:
         while self.current_char is not None and self.current_char != '"':
             if self.current_char == ";":
                 return None, IllegalCharError(pos_start, self.pos, "Unclosed Missive")
-
+        
             if self.current_char == '\\':
                 self.advance()
                 if self.current_char in ESC_SEQ:
@@ -2109,11 +2127,11 @@ class Lexer:
 
         if self.current_char != '"' or self.current_char == ";":
             return None, IllegalCharError(pos_start, self.pos, "Unclosed Missive")
-
+        
         missive_content += '"'
         self.advance()
         return Tokens(TT_STRING_LITERAL, missive_content, pos_start, self.pos), None
-
+    
     def make_letter(self):
         pos_start = self.pos.copy()
         self.advance()
