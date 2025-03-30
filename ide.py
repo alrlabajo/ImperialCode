@@ -419,35 +419,42 @@ if __name__ == "__main__":
         terminalIO.write(clear_command)
         terminalIO.write(f"ic {current_file_name} -m syntax\r".encode("utf-8"))
 
-    # def analyze_semantic():
-    #     global current_file_name
+    def analyze_semantic():
+        global current_file_name
 
-    #     if current_file_name is None:
-    #         return QMessageBox.critical(
-    #             window,
-    #             "No File Opened",
-    #             "Please open a file first or save your current file.",
-    #             QMessageBox.StandardButton.Ok,
-    #         )
+        if current_file_name is None:
+            return QMessageBox.critical(
+                window,
+                "No File Opened",
+                "Please open a file first or save your current file.",
+                QMessageBox.StandardButton.Ok,
+            )
 
-    #     code = text_edit.toPlainText()
+        code = text_edit.toPlainText()
 
-    #     # Clear the table
-    #     token_table.setRowCount(0)
+        # Clear the table
+        token_table.setRowCount(0)
 
-    #     tokens, _ = ic.run_lexical(current_file_name, code)
-    #     for token in tokens:
-    #         row_pos = token_table.rowCount()
-    #         token_table.insertRow(row_pos)
+        tokens, _ = ic.run_lexical(current_file_name, code)
+        for token in tokens:
+            row_pos = token_table.rowCount()
+            
+            if isinstance(token, list): 
+                for sub_token in token:
+                    token_table.insertRow(row_pos)
+                    token_table.setItem(row_pos, 0, QTableWidgetItem(sub_token.value if sub_token.value else sub_token.type))
+                    token_table.setItem(row_pos, 1, QTableWidgetItem(sub_token.type))
+                    row_pos += 1 
+            else:
+                token_table.insertRow(row_pos)
+                token_table.setItem(row_pos, 0, QTableWidgetItem(token.value if token.value else token.type))
+                token_table.setItem(row_pos, 1, QTableWidgetItem(token.type))
 
-    #         token_table.setItem(row_pos, 0, QTableWidgetItem(token.lexeme_str()))
-    #         token_table.setItem(row_pos, 1, QTableWidgetItem(token.token_type_str()))
-
-    #     # Pass and run a command to the terminal
-    #     # clear terminal output
-    #     global clear_command
-    #     terminalIO.write(clear_command)
-    #     terminalIO.write(f"ic {current_file_name}\r".encode("utf-8"))
+         # Pass and run a command to the terminal
+         # clear terminal output
+        global clear_command
+        terminalIO.write(clear_command)
+        terminalIO.write(f"ic {current_file_name}\r".encode("utf-8"))
 
     """
         MAIN PROGRAM
@@ -483,7 +490,7 @@ if __name__ == "__main__":
 
     lexical_button.clicked.connect(analyze_lexical)
     syntax_button.clicked.connect(analyze_syntax)
-    # semantic_button.clicked.connect(analyze_semantic)
+    semantic_button.clicked.connect(analyze_semantic)
 
     # File buttons
     new_file_button = QPushButton("New File")

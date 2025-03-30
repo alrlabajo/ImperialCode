@@ -1,5 +1,10 @@
 Embark() {
+	Numeral count = 0;
 
-		Emit("hello" "hi");
-
+	Act {
+		count++;  // Increment count prevent infinite loop
+		Thou (count == 3) {
+    	}
+    Emit("%d", count); 
+	 } Until (count < 5);
 }

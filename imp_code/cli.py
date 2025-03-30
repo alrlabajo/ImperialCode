@@ -1,9 +1,8 @@
 import argparse
 import datetime
 import os
-from .compiler import run_lexical, run_syntax
+from .compiler import run_lexical, run_syntax, run_semantic
 import time
-
 
 
 def main():
@@ -35,8 +34,8 @@ def main():
     elif args.mode == "syntax":
         args.verbose = True
         _run_syntax(args.file, code)
-    # else:
-    #     _run_semantic(args.file, code)
+    else:
+        _run_semantic(args.file, code)
 
 def format_time(seconds):
     if seconds < 1e-6:
@@ -73,7 +72,7 @@ def _run_lexical(file_path, code):
 
 @log_runtime
 def _run_syntax(file_path, code):
-    tokens, ast, errors = run_syntax(file_path, code)
+    errors = run_syntax(file_path, code)
     
     flattened_errors = []
     for err in errors:
@@ -94,13 +93,13 @@ def _run_syntax(file_path, code):
 
 
 
-# @log_runtime
-# def _run_semantic(file_path, code):
-#     start_time = time.time()
-#     tokens, ast, res, errors = run_semantic(file_path, code)
-#     if errors:
-#         for error in errors:
-#             print(error.as_string())
+@log_runtime
+def _run_semantic(file_path, code):
+    start_time = time.time()
+    tokens, ast, res, errors = run_semantic(file_path, code)
+    if errors:
+        for error in errors:
+            print(error.as_string())
 
 # def cli():
 #     now = datetime.datetime.now()

@@ -1,0 +1,4 @@
+Embark() {
+	Numeral age;
+	age = 'a';
+}
