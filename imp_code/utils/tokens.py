@@ -7,7 +7,7 @@ UPPER_ALPHA = [letter.upper() for letter in LOWER_ALPHA]
 ALPHABET = LOWER_ALPHA + UPPER_ALPHA
 DIGITS = list("0123456789")
 ALPHA_NUM = ALPHABET + DIGITS
-ARITH_OP = ["+", "-", "*", "/"]
+ARITH_OP = ["+", "-", "*", "/", "%"]
 REL_OP = ["==", "!=", "<", ">", "<=", ">="]
 FORMAT_SPECIFIERS = ["%d", "%f", "%s", "%v", "%c"]
 INT_LIM =  9

@@ -2,17 +2,14 @@ Embark() {
 	Letter greetings = 'a';
 
 	Shift(greetings) {
-		Opt 'm':
-			Emit("Good morning");
-			Halt;
 		Opt 'a':
 			Emit("Good afternoon");
+		Opt 'm':
+			Emit("Good morning");
 		Opt 'e':
 			Emit("Good evening");
-		Opt 'd':
-			Emit("Invalid greetings");
+		Usual:
+			Emit("This is usual");
 	}
-	
-	Recede 0;
 }
 		

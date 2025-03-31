@@ -90,16 +90,21 @@ def _run_syntax(file_path, code):
     else:
         print("No syntax errors found.")
 
-
-
-
 @log_runtime
 def _run_semantic(file_path, code):
-    start_time = time.time()
     tokens, ast, res, errors = run_semantic(file_path, code)
+    
     if errors:
         for error in errors:
-            print(error.as_string())
+            if hasattr(error, "as_string"):
+                print(error.as_string())
+            else:
+                print(error)
+    elif res and res.error:
+        print(f"Runtime Error: {res.error}")
+    else:
+        print("Execution complete.")
+
 
 # def cli():
 #     now = datetime.datetime.now()

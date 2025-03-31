@@ -2025,7 +2025,7 @@ class Lexer:
                     self.state = '0'
 
             # &&
-            elif self.state == '201':
+            elif self.state == '202':
                 token = Tokens(TT_AND, '&&', pos_start=self.pos)
                 self.state = '0'
 

@@ -134,7 +134,6 @@ class Parser:
         ))
         return None
 
-
     def parse_var_declaration(self):
         data_type = self.parse_data_type()
         identifier_token = self.expect(TT_IDENTIFIER)
@@ -398,6 +397,11 @@ class Parser:
                     return BinaryOp(IntLiteral(token.value), next_token, right)
                 return IntLiteral(token.value)
             elif token.type == TT_FLOAT_LITERAL:
+                next_token = self.current_token
+                if next_token in (TT_PLUS, TT_MINUS, TT_MUL, TT_DIV, TT_MODULO):
+                    self.advance()
+                    right = self.parse_value()
+                    return BinaryOp(FloatLiteral(token.value), next_token, right)
                 return FloatLiteral(token.value)
             elif token.type == TT_CHAR_LITERAL:
                 return CharLiteral(token.value)
@@ -493,7 +497,8 @@ class Parser:
             expr = self.parse_expression()
             self.expect(TT_RPAREN)
             return expr
-        return self.parse_value()  # Can be literal, identifier, or subscripted access
+        return self.parse_value()
+    
     def parse_expression_tail(self, left=None):
         if self.current_token and self.current_token.type in self.get_all_operator_tokens():
             op = self.current_token
@@ -590,7 +595,6 @@ class Parser:
                 self.current_token.pos_end,f"Expected return type {TT_VOID}, {TT_INT}, {TT_FLOAT}, {TT_CHAR}, or {TT_BOOL}")
 
     def parse_function_call(self, identifier_token=None):
-        """Production 97: <function_call_statement> → Identifier(<argument>)"""
         lpar = self.expect(TT_LPAREN)
         if isinstance(lpar, InvalidSyntaxError):
             self.errors.append(lpar)
@@ -601,10 +605,9 @@ class Parser:
         semi = self.expect(TT_TERMINATE)
         if isinstance(semi, InvalidSyntaxError):
             self.errors.append(semi)
-        return FunctionCall(identifier_token.name if identifier_token else None, arguments) 
+        return FunctionCall(identifier_token.value if identifier_token else None, arguments) 
 
     def parse_argument(self):
-        """Production 98–99: <argument> → <value> <argument_tail> | λ"""
         args = []
         if self.current_token.type not in (TT_RPAREN,):
             args.append(self.parse_value())
@@ -646,9 +649,13 @@ class Parser:
             params.append((data_type, ident_token.value))
         return params
 
-    def parse_statements(self):
+    def parse_statements(self, inside_switch=False):
         statements = []
-        while self.current_token and self.current_token.type != TT_RBRACE:
+        stop_tokens = [TT_RBRACE]
+        if inside_switch:
+            stop_tokens.extend([TT_CASE, TT_DEFAULT])  # Stop at case labels when inside a switch
+
+        while self.current_token and self.current_token.type not in stop_tokens:
             stmt = self.parse_statement()
 
             if isinstance(stmt, InvalidSyntaxError):
@@ -878,8 +885,12 @@ class Parser:
         lbrace = self.expect(TT_LBRACE)
         if isinstance(lbrace, InvalidSyntaxError):
             self.errors.append(lbrace)
-        opt_values = self.parse_opt_value()
-        usual_value = self.parse_usual_value()
+        opt_values = None
+        if self.current_token and self.current_token.type == TT_CASE:
+            opt_values = self.parse_opt_value()
+        usual_value = None
+        if self.current_token and self.current_token.type in (TT_DEFAULT):
+            usual_value = self.parse_usual_value()
         rbrace = self.expect(TT_RBRACE)
         if isinstance(rbrace, InvalidSyntaxError):
             self.errors.append(rbrace)
@@ -887,7 +898,7 @@ class Parser:
 
     def parse_opt_value(self):
         cases = []
-        while self.current_token.type == TT_CASE:
+        while self.current_token and self.current_token.type == TT_CASE:
             opt = self.expect(TT_CASE)
             if isinstance(opt, InvalidSyntaxError):
                 self.errors.append(opt)
@@ -895,16 +906,15 @@ class Parser:
             colon = self.expect(TT_COLON)
             if isinstance(colon, InvalidSyntaxError):
                 self.errors.append(colon)
-            body = self.parse_statements()
-            halt = self.parse_halt_value()
+            # Pass True to indicate we're inside a switch
+            body = self.parse_statements(inside_switch=True)
+            halt = None
+            if self.current_token and self.current_token.type in (TT_BREAK):
+                halt = self.parse_halt_control()
             cases.append(Case(value, body, halt))
-            tail = self.parse_opt_tail()
-            if tail:
-                cases.extend(tail)
         return cases
-
     def parse_opt_tail(self):
-        if self.current_token.type == TT_CASE:
+        if self.current_token and self.current_token.type == TT_CASE:
             return self.parse_opt_value()
         return []
 
@@ -922,7 +932,10 @@ class Parser:
             if isinstance(colon, InvalidSyntaxError):
                 self.errors.append(colon)
             body = self.parse_statements()
-            return Case("usual", body)
+            halt = None
+            if self.current_token and self.current_token.type in (TT_BREAK):
+                halt = self.parse_halt_control()
+            return Case("usual", body, halt)
         return None
 
     def parse_loop_statement(self):
@@ -954,9 +967,6 @@ class Parser:
         update = None
         if self.current_token and self.current_token.type == TT_IDENTIFIER:
             update = self.parse_update_expression()
-            semi = self.expect(TT_TERMINATE)
-            if isinstance(semi, InvalidSyntaxError):
-                self.errors.append(semi)
         rpar = self.expect(TT_RPAREN)
         if isinstance(rpar, InvalidSyntaxError):
             self.errors.append(rpar)
@@ -997,9 +1007,6 @@ class Parser:
             semi = self.expect(TT_TERMINATE)
             if isinstance(semi, InvalidSyntaxError):
                 self.errors.append(semi)
-        semi = self.expect(TT_TERMINATE)
-        if isinstance(semi, InvalidSyntaxError):
-            self.errors.append(semi)
         control = None
         if self.current_token and self.current_token.type in (TT_BREAK, TT_CONTINUE):
             control = self.parse_loop_control()
@@ -1091,6 +1098,33 @@ class Parser:
                 self.current_token.pos_start,
                 self.current_token.pos_end,"Expected values or format specifier")
 
+    # def parse_emit_value(self):
+    #     if self.current_token.type == TT_STRING_LITERAL:
+    #         token = self.current_token
+    #         self.advance()
+    #         inner = token.value.strip('"').strip("'")
+    #         valid_formats = ['%d', '%s', '%f', '%c', '%v']
+    #         if inner not in valid_formats:
+    #             error = InvalidSyntaxError(
+    #                 token.pos_start,
+    #                 token.pos_end,
+    #                 f"Invalid format specifier: '{inner}'. Expected one of: {', '.join(valid_formats)}"
+    #             )
+    #             self.errors.append(error)
+    #             return error
+    #         return StringLiteral(token.value)
+    #     else:
+    #         error = InvalidSyntaxError(
+    #             self.current_token.pos_start,
+    #             self.current_token.pos_end,
+    #             "Expected a format specifier string literal"
+    #         )
+    #         self.errors.append(error)
+    #         return error
+
+
+
+
     def parse_data_storage(self):
         if self.current_token.type == TT_COMMA:
             comma = self.expect(TT_COMMA)
@@ -1137,6 +1171,9 @@ class Parser:
         if isinstance(rpar, InvalidSyntaxError):
             self.errors.append(rpar)
         return InputStatement(fmt, addr)
+
+   
+
 
     def parse_memory_address(self):
         if self.current_token.type != TT_COMMA:

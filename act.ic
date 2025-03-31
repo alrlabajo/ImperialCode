@@ -2,9 +2,10 @@ Embark() {
 	Numeral count = 0;
 
 	Act {
-		count++;  // Increment count prevent infinite loop
-		Thou (count == 3) {
+count++;  // Increment count prevent infinite loop
+Thou (count == 3) {
     	}
-    Emit("%d", count); 
+    Emit("%l", count);
+	 Seek("%d", &count); 
 	 } Until (count < 5);
 }

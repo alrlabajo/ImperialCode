@@ -234,36 +234,57 @@ class Interpreter:
         result = []
         seen_names = set()  # Track variable names we've already seen
         
+        # Modified error check - use only Exception as the base class
+        if isinstance(addr, Exception):
+            # Just return an empty list - we'll handle the error elsewhere
+            return result
+        
         if isinstance(addr, list):
             for a in addr:
                 for item in self.flatten_memory_addresses(a):
+                    # Skip error objects
+                    if isinstance(item, Exception):
+                        continue
+                        
+                    if hasattr(item, 'identifier') and hasattr(item.identifier, 'name'):
+                        var_name = item.identifier.name
+                        if var_name not in seen_names:
+                            seen_names.add(var_name)
+                            result.append(item)
+        elif hasattr(addr, 'tail') and addr.tail:
+            if hasattr(addr, 'identifier') and hasattr(addr.identifier, 'name'):
+                var_name = addr.identifier.name
+                if var_name not in seen_names:
+                    seen_names.add(var_name)
+                    result.append(addr)
+            
+            # Process the tail
+            for item in self.flatten_memory_addresses(addr.tail):
+                # Skip error objects
+                if isinstance(item, Exception):
+                    continue
+                    
+                if hasattr(item, 'identifier') and hasattr(item.identifier, 'name'):
                     var_name = item.identifier.name
                     if var_name not in seen_names:
                         seen_names.add(var_name)
                         result.append(item)
-        elif hasattr(addr, 'tail') and addr.tail:
-            var_name = addr.identifier.name
-            if var_name not in seen_names:
-                seen_names.add(var_name)
-                result.append(addr)
-            
-            # Process the tail
-            for item in self.flatten_memory_addresses(addr.tail):
-                var_name = item.identifier.name
+        else:
+            # Make sure addr has the expected attributes
+            if hasattr(addr, 'identifier') and hasattr(addr.identifier, 'name'):
+                var_name = addr.identifier.name
                 if var_name not in seen_names:
                     seen_names.add(var_name)
-                    result.append(item)
-        else:
-            var_name = addr.identifier.name
-            if var_name not in seen_names:
-                seen_names.add(var_name)
-                result.append(addr)
+                    result.append(addr)
         
-        return result
-
+        return result    
     
     def visit_InputStatement(self, node, context):
         res = RTResult()
+
+        # Early check for errors in the node
+        if isinstance(node.memory_address, Exception):
+            return res.failure(node.memory_address)
 
         fmt = node.format_specifier.value.strip('"').strip("'") if hasattr(node.format_specifier, "value") else str(node.format_specifier)
         
@@ -272,14 +293,14 @@ class Interpreter:
 
         addresses = self.flatten_memory_addresses(node.memory_address)
 
-        if len(specifiers) != len(addresses):
-            return res.failure(Exception(f"Mismatch: {len(specifiers)} specifier(s) but {len(addresses)} address(es)."))
+        # Check if we got any addresses
+        if not addresses:
+            return res.failure(Exception("No valid memory addresses found for input."))
 
         for i in range(len(specifiers)):
             addr = addresses[i]
             var_name = addr.identifier.name
-            
-            # Don't print a prompt - just read input
+
             user_input = input()
 
             try:
@@ -307,7 +328,6 @@ class Interpreter:
             except ValueError as ve:
                 return res.failure(Exception(f"Input error for {specifiers[i]}: {ve}"))
 
-            # Set the variable in symbol table
             context.symbol_table.set(var_name, user_input)
 
         return res.success(None)

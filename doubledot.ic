@@ -1,5 +1,5 @@
 Embark() {
-	Numeral x = 243331.;
-	Decimal x = 24.3444@;
+	Numeral x = 243331.123.12;
+	Decimal x = 24.3444;
 
 }

@@ -31,28 +31,23 @@ def run_syntax(fn, text):
     else:
         return []
     
-def run_semantic(fn, text):
-    lexer = Lexer(fn, text)
+def run_semantic(file_path, code):
+    # Lexer
+    lexer = Lexer(file_path, code)
     tokens, errors = lexer.make_tokens()
-
     if errors:
-        return errors 
-
+        return None, None, None, errors
+    
+    # Parser
     parser = Parser(tokens)
     ast = parser.parse_program()
-
     if parser.errors:
-        return parser.errors
-    elif isinstance(ast, InvalidSyntaxError):
-        return [ast]
-
+        return tokens, None, None, parser.errors
+    
+    # Semantic analyzer
     interpreter = Interpreter()
     context = Context('<program>')
-    result = interpreter.visit(ast, context)
-
-    if result.error:
-        print(f"Runtime Error: {result.error}")
-    else:
-        print("\n\nExecution complete.")
-
-    return tokens, ast, result, []
+    context.symbol_table = SymbolTable()
+    res = interpreter.visit(ast, context)
+    
+    return tokens, ast, res, [] 

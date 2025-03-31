@@ -1,4 +1,5 @@
 Embark() {
-	Numeral count = 0;
+	Numeral age;
+	Seek("%w", &age);
 }
 

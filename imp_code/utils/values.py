@@ -20,19 +20,19 @@ class Value:
 		return self
 
 	def added_to(self, other):
-		if isinstance(other, Number):
-			return Number(self.value + other.value).set_context(self.context), None
+		if isinstance(other, Value):
+			return Value(self.value + other.value).set_context(self.context), None
 
 	def subbed_by(self, other):
-		if isinstance(other, Number):
-			return Number(self.value - other.value).set_context(self.context), None
+		if isinstance(other, Value):
+			return Value(self.value - other.value).set_context(self.context), None
 
 	def multed_by(self, other):
-		if isinstance(other, Number):
-			return Number(self.value * other.value).set_context(self.context), None
+		if isinstance(other, Value):
+			return Value(self.value * other.value).set_context(self.context), None
 
 	def dived_by(self, other):
-		if isinstance(other, Number):
+		if isinstance(other, Value):
 			if other.value == 0:
 				return None, RTError(
 					other.pos_start, other.pos_end,
@@ -40,7 +40,18 @@ class Value:
 					self.context
 				)
 
-			return Number(self.value / other.value).set_context(self.context), None
+			return Value(self.value / other.value).set_context(self.context), None
+		
+	def remained_by(self, other):
+		if isinstance(other, Value):
+			if other.value == 0:
+				return None, RTError(
+					other.pos_start, other.pos_end,
+					'Modulo by zero',
+					self.context
+				)
+
+			return Value(self.value % other.value).set_context(self.context), None
 
 	def __repr__(self):
 		return str(self.value)

@@ -7,32 +7,35 @@ class ASTNode:
 
 class Program(ASTNode):
     def __init__(self, global_declarations, main_statements):
-        self.global_declarations = global_declarations  # List of global variable/function declarations
-        self.main_statements = main_statements  # List of statements inside `Embark()`
+        self.global_declarations = global_declarations 
+        self.main_statements = main_statements
 
-class VariableDeclaration:
-    def __init__(self, data_type, identifier, dimensions=None, assignment=None, tail=None):
+class VariableDeclaration(ASTNode):
+    def __init__(self, data_type, identifier, dimensions=None, assignment=None, tail=None, row=None):
         self.data_type = data_type
         self.identifier = identifier
         self.dimensions = dimensions
         self.assignment = assignment
         self.tail = tail
+        self.row = row
 
 class VariableDeclarationTail(ASTNode):
-    def __init__(self, identifier, assignment=None, next_tail=None):
-        self.identifier = identifier  # Variable name
-        self.assignment = assignment  # Optional assignment (`= value`)
-        self.next_tail = next_tail  # Next variable in chain (`b, c, d`)
+    def __init__(self, identifier, assignment=None, dimensions=None, row=None, next_tail=None):
+        self.identifier = identifier 
+        self.assignment = assignment  
+        self.dimensions = dimensions
+        self.row = row
+        self.next_tail = next_tail
 
 class ConstantDeclaration(ASTNode):
     def __init__(self, data_type, identifier, value):
-        self.data_type = data_type  # Type of the constant
-        self.identifier = identifier  # Name of the constant
-        self.value = value  # Assigned value (expression)
+        self.data_type = data_type 
+        self.identifier = identifier 
+        self.value = value  
 
 class Identifier(ASTNode):
     def __init__(self, name):
-        self.name = name  # Variable or function name
+        self.name = name 
 
 class IntLiteral(ASTNode):
     def __init__(self, value):
@@ -44,7 +47,7 @@ class FloatLiteral(ASTNode):
 
 class StringLiteral(ASTNode):
     def __init__(self, value):
-        self.value = value.strip('"').strip("'")  # Remove quotes
+        self.value = value.strip('"').strip("'") 
 
 class CharLiteral(ASTNode):
     def __init__(self, value):
@@ -56,126 +59,126 @@ class BoolLiteral(ASTNode):
 
 class BinaryOp(ASTNode):
     def __init__(self, left, operator, right):
-        self.left = left  # Left-hand side expression
-        self.operator = operator  # Operator (`+`, `-`, `*`, `/`, `<`, `==`)
-        self.right = right  # Right-hand side expression
+        self.left = left 
+        self.operator = operator 
+        self.right = right 
 
 class UnaryOp(ASTNode):
     def __init__(self, operator, operand):
-        self.operator = operator  # Operator (`-`, `!`)
-        self.operand = operand  # Operand
+        self.operator = operator 
+        self.operand = operand
 
 class Assignment(ASTNode):
     def __init__(self, identifier, value):
-        self.identifier = identifier  # Variable being assigned
-        self.value = value  # Assigned value (expression)
+        self.identifier = identifier 
+        self.value = value  
 
 class UpdateExpression(ASTNode):
     def __init__(self, identifier, operator, value):
-        self.identifier = identifier  # Variable being updated
-        self.operator = operator  # +=, -=, *=, /=
-        self.value = value  # New value
+        self.identifier = identifier  
+        self.operator = operator 
+        self.value = value 
 
 class FunctionCall(ASTNode):
     def __init__(self, identifier, arguments):
-        self.identifier = identifier  # Function name
-        self.arguments = arguments  # List of argument expressions
+        self.identifier = identifier
+        self.arguments = arguments 
 
 class IfStatement(ASTNode):
     def __init__(self, condition, then_branch, elif_branches=None, else_branch=None):
-        self.condition = condition  # Main condition (if)
-        self.then_branch = then_branch  # List of statements inside `Thou`
-        self.elif_branches = elif_branches or []  # List of (condition, body) for `Or Thou`
-        self.else_branch = else_branch  # List of statements inside `Or`
+        self.condition = condition
+        self.then_branch = then_branch 
+        self.elif_branches = elif_branches or []  
+        self.else_branch = else_branch 
 
 class ForLoop(ASTNode):
     def __init__(self, initialization, condition, update, body, control=None):
-        self.initialization = initialization  # Loop variable assignment
-        self.condition = condition  # Condition (e.g., `i < 10`)
-        self.update = update  # Update expression (e.g., `i = i + 1`)
-        self.body = body  # List of statements inside the loop
+        self.initialization = initialization 
+        self.condition = condition 
+        self.update = update 
+        self.body = body
         self.control = control
 
 class WhileLoop(ASTNode):
     def __init__(self, condition, body, update=None, control=None):
-        self.condition = condition  # Condition expression
-        self.body = body  # List of statements inside the loop
-        self.update = update  # Update expression (e.g., `i = i + 1`)
+        self.condition = condition
+        self.body = body 
+        self.update = update 
         self.control = control
 
 class DoWhileLoop(ASTNode):
     def __init__(self, body, condition, update=None, control=None):
-        self.body = body  # List of statements inside the loop
+        self.body = body 
         self.update = update
         self.control = control
-        self.condition = condition  # Loop condition
+        self.condition = condition 
 
 class Function(ASTNode):
     def __init__(self, return_type, name, parameters, body):
-        self.return_type = return_type  # Function return type
-        self.name = name  # Function name
-        self.parameters = parameters  # List of parameters
-        self.body = body  # List of statements inside the function
+        self.return_type = return_type
+        self.name = name 
+        self.parameters = parameters  
+        self.body = body 
 
 class Argument(ASTNode):
     def __init__(self, value):
-        self.value = value  # The argument expression (e.g., Literal, Identifier, etc.)
+        self.value = value 
 
 class ArgumentTail(ASTNode):
     def __init__(self, value, next_tail=None):
-        self.value = value  # Current argument
-        self.next_tail = next_tail  # Next argument in the chain
-
+        self.value = value 
+        self.next_tail = next_tail  
 class Parameter(ASTNode):
     def __init__(self, data_type, identifier):
-        self.data_type = data_type  # Type of parameter
-        self.identifier = identifier  # Name of parameter
+        self.data_type = data_type  
+        self.identifier = identifier 
 
 class ReturnStatement(ASTNode):
     def __init__(self, value):
-        self.value = value  # Expression being returned
+        self.value = value 
 
 class OutputStatement(ASTNode):
     def __init__(self, format_specifier, value):
-        self.format_specifier = format_specifier  # Format (%d, %s, etc.)
-        self.value = value  # Expression to print
+        self.format_specifier = format_specifier 
+        self.value = value  
 
 class InputStatement(ASTNode):
     def __init__(self, format_specifier, memory_address):
-        self.format_specifier = format_specifier  # Format specifier
-        self.memory_address = memory_address  # Memory location to store input
+        self.format_specifier = format_specifier 
+        self.memory_address = memory_address  
 
 class LedgerAccess(ASTNode):
     def __init__(self, identifier, indices):
-        self.identifier = identifier  # Array name
-        self.indices = indices  # List of accessed indices ([2], [1,3])
+        self.identifier = identifier 
+        self.indices = indices 
 
 class HaltStatement(ASTNode):
-    pass  # Represents 'Halt' (break)
+    pass 
 
 class ExtendStatement(ASTNode):
-    pass  # Represents 'Extend' (continue)
+    pass 
 
 class MemoryAddress(ASTNode):
     def __init__(self, identifier):
-        self.identifier = identifier  # Variable being accessed by reference
+        self.identifier = identifier 
 
 class ValueAssignmentTail(ASTNode):
     def __init__(self, identifier, value, next_tail=None):
-        self.identifier = identifier  # Variable being assigned
-        self.value = value  # Assigned value (expression)
-        self.next_tail = next_tail  # Points to the next assignment
+        self.identifier = identifier  
+        self.value = value 
+        self.next_tail = next_tail  
 
 class SwitchStatement(ASTNode):
     def __init__(self, expression, cases, default_case=None):
-        self.expression = expression  # The variable or expression being checked
-        self.cases = cases  # List of (case_value, body_statements)
-        self.default_case = default_case  # Optional default block
+        self.expression = expression 
+        self.cases = cases 
+        self.default_case = default_case
 
 class Case(ASTNode):
-    def __init__(self, case_value, body_statements):
-        self.case_value = case_value  # The value being compared (e.g., `case 1:`)
-        self.body_statements = body_statements  # Statements inside the case block
+    def __init__(self, case_value, body_statements, halt=None):
+        self.case_value = case_value  
+        self.body_statements = body_statements 
+        self.halt = halt
 
 class ValueAssignment(ASTNode):
         def __init__(self, identifier, operator, value, tail=None):
@@ -205,3 +208,11 @@ class LedgerDeclaration(ASTNode):
     def __init__(self, ledger, row):
         self.ledger = ledger
         self.row = row
+
+class ArrayInitializer(ASTNode):
+    def __init__(self, values):
+        self.values = values 
+
+class ArrayLiteral(ASTNode):
+    def __init__(self, elements):
+        self.elements = elements
