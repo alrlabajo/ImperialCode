@@ -1122,9 +1122,6 @@ class Parser:
     #         self.errors.append(error)
     #         return error
 
-
-
-
     def parse_data_storage(self):
         if self.current_token.type == TT_COMMA:
             comma = self.expect(TT_COMMA)
@@ -1171,8 +1168,6 @@ class Parser:
         if isinstance(rpar, InvalidSyntaxError):
             self.errors.append(rpar)
         return InputStatement(fmt, addr)
-
-   
 
 
     def parse_memory_address(self):

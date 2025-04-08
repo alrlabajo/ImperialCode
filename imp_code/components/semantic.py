@@ -5,6 +5,7 @@
 from ..utils.tokens import * 
 from ..utils.nodes import *
 from ..utils.results import *
+from ..utils.values import *
 
 class Interpreter:
     def visit(self, node, context):
@@ -83,27 +84,27 @@ class Interpreter:
             context.symbol_table.set(name, value, var_type=data_type)
             
             if value is not None:
-                if data_type == TT_INT:  # Numeral type
+                if data_type == TT_INT:
                     if not isinstance(value, int):
                         expected = self.get_type_name(None, data_type)
                         actual = self.get_type_name(value)
                         return subres.failure(Exception(f"Invalid type for '{name}': {actual} instead of {expected}."))
-                elif data_type == TT_FLOAT:  # Decimal type
+                elif data_type == TT_FLOAT:  
                     if not isinstance(value, float):
                         expected = self.get_type_name(None, data_type)
                         actual = self.get_type_name(value)
                         return subres.failure(Exception(f"Invalid type for '{name}': {actual} instead of {expected}."))
-                elif data_type == TT_STRING:  # Missive type  # FIXED INDENTATION
+                elif data_type == TT_STRING:
                     if not isinstance(value, str) or value[0] not in ["'", '"']:
                         expected = self.get_type_name(None, data_type)
                         actual = self.get_type_name(value)
                         return subres.failure(Exception(f"Invalid type for '{name}': {actual} instead of {expected}."))
-                elif data_type == TT_CHAR:  # Letter type     # FIXED INDENTATION
+                elif data_type == TT_CHAR:  
                     if not isinstance(value, str) or len(value) != 1:
                         expected = self.get_type_name(None, data_type)
                         actual = self.get_type_name(value)
                         return subres.failure(Exception(f"Invalid type for '{name}': {actual} instead of {expected}."))
-                elif data_type == TT_BOOL:  # Veracity type   # FIXED INDENTATION
+                elif data_type == TT_BOOL:  
                     if not isinstance(value, bool):
                         expected = self.get_type_name(None, data_type)
                         actual = self.get_type_name(value)
@@ -132,7 +133,6 @@ class Interpreter:
         value = res.register(self.visit(value_node, context))
         if res.error: return res
 
-        # Type checking
         if not self.is_type_compatible(var_type, value):
             expected_type = self.map_type_token_to_class(var_type)
             actual_type = self.get_type_name(value)
@@ -182,7 +182,25 @@ class Interpreter:
             elif op_type == TT_MUL:
                 result = left * right
             elif op_type == TT_DIV:
-                result = left / right
+                if isinstance(left, Value) and isinstance(right, Value):
+                    result, error = left.dived_by(right)
+                    if error:
+                        return res.failure(error)
+                    return res.success(result)
+                elif right == 0:
+                    return res.failure(Exception("division by zero"))
+                else:
+                    result = left / right
+            elif op_type == TT_MODULO:
+                if isinstance(left, Value) and isinstance(right, Value):
+                    result, error = left.remained_by(right)
+                    if error:
+                        return res.failure(error)
+                    return res.success(result)
+                elif right == 0:
+                    return res.failure(Exception("modulo by zero"))
+                else:
+                    result = left % right
             elif op_type == TT_EQUALTO:
                 result = left == right
             elif op_type == TT_NOTEQUAL:

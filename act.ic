@@ -1,11 +1,32 @@
+Method Void greet(Missive name) {
+    Emit("Hello, %s!", name);
+    // No Recede <value>; needed because return type is Void
+}
+
+Numeral x = 10, y = 20;
+Decimal b = 1.2, a = 3.2;
+
+
 Embark() {
-	Numeral count = 0;
+	Numeral count = 3.5;
+	Letter greeting = 1;
 
 	Act {
-count++;  // Increment count prevent infinite loop
-Thou (count == 3) {
-    	}
-    Emit("%l", count);
-	 Seek("%d", &count); 
-	 } Until (count < 5);
+		count++;  // Increment count prevent infinite loop
+	Thou (count == 3) {
+			Emit("Loop increment");
+   }
+    Emit("%d", count);
+	} Until (count < 5);
+
+	Shift(greetings) {
+		Opt 'a':
+			Emit("Good afternoon");
+		Opt 'm':
+			Emit("Good morning");
+		Opt 'e':
+			Emit("Good evening");
+		Usual:
+			Emit("This is usual");
+	}
 }

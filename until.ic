@@ -1,5 +1,5 @@
 Embark() {
-	Until (i < 5) {
+	Until (i < ) {
 		Emit("%d\n", i);
 		i++;
 	}

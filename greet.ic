@@ -1,8 +1,10 @@
-Embark() {
-	Numeral age = 34, b=2;
-	Missive name;
 
-	Emit("Enter your name and age: ");
-	Seek("%s %d", &name, &age);
-	Emit("Hi %s, you're %d years old.", name, age);
+Embark() {
+
+	Per( Numeral k = 1; k < 5; k++) { 
+Emit("%d", k);
+Numeral square = k * k; 
+Emit("%f", square); 
+}
+
 }

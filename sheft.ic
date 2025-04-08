@@ -1,5 +1,5 @@
 Embark() {
-	Letter greetings = 'a';
+	Letter greetings = 'a";
 
 	Shift(greetings) {
 		Opt 'a':

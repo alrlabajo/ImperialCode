@@ -1,5 +1,7 @@
 Embark() {
-	Numeral age;
-	Seek("%w", &age);
+	Numeral a;
+	Thou((n==v) && (n<= 10)) {
+		Emit("hello");
+	}
 }
 

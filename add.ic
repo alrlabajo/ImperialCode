@@ -1,5 +1,7 @@
 Embark() {
-	Num3ral
+	Numeral a=10, b= 0;
+	Numeral result = a % b;
+	Emit("Result: %d", result);
 }
 
 
