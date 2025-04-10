@@ -1,0 +1,12 @@
+Embark() {
+    Numeral year;
+    
+    Emit("Enter year: ");
+    Seek("%d", &year);
+
+    Thou (year % 4 == 0) {
+        Emit("%d might be a leap year", year);
+    } Or {
+        Emit("%d is definitely not a leap year.", year);
+    }
+}

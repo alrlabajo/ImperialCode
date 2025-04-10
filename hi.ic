@@ -1,7 +1,10 @@
 Embark() {
-	Numeral a;
-	Thou((n==v) && (n<= 10)) {
-		Emit("hello");
-	}
+	Numeral a, b=4, c=4, result, d;
+	a=5;
+	d=5;
+	result = a+b+c;
+
+	Emit("Result: %d", result);
+	Emit("D: %d", d);
 }
 

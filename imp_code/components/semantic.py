@@ -6,6 +6,8 @@ from ..utils.tokens import *
 from ..utils.nodes import *
 from ..utils.results import *
 from ..utils.values import *
+from ..utils.context import Context
+from ..utils.symbol_table import SymbolTable
 
 class Interpreter:
     def visit(self, node, context):
@@ -78,48 +80,61 @@ class Interpreter:
         def assign_var(identifier_node, assignment_expr, data_type):
             subres = RTResult()
             name = identifier_node.name
-            value = subres.register(self.visit(assignment_expr, context)) if assignment_expr else None
-            if subres.error: return subres
-            
+            # If there is an assignment, evaluate it;
+            # otherwise, provide a default value based on the data type.
+            if assignment_expr:
+                value = subres.register(self.visit(assignment_expr, context))
+            else:
+                default_values = {
+                    TT_INT: 0,
+                    TT_FLOAT: 0.0,
+                    TT_STRING: "",
+                    TT_CHAR: "",  # Alternatively, you could use " " if desired.
+                    TT_BOOL: False
+                }
+                value = default_values.get(data_type, None)
+            if subres.error:
+                return subres
+
             context.symbol_table.set(name, value, var_type=data_type)
-            
+
+            # Optional type checking
             if value is not None:
-                if data_type == TT_INT:
-                    if not isinstance(value, int):
-                        expected = self.get_type_name(None, data_type)
-                        actual = self.get_type_name(value)
-                        return subres.failure(Exception(f"Invalid type for '{name}': {actual} instead of {expected}."))
-                elif data_type == TT_FLOAT:  
-                    if not isinstance(value, float):
-                        expected = self.get_type_name(None, data_type)
-                        actual = self.get_type_name(value)
-                        return subres.failure(Exception(f"Invalid type for '{name}': {actual} instead of {expected}."))
-                elif data_type == TT_STRING:
-                    if not isinstance(value, str) or value[0] not in ["'", '"']:
-                        expected = self.get_type_name(None, data_type)
-                        actual = self.get_type_name(value)
-                        return subres.failure(Exception(f"Invalid type for '{name}': {actual} instead of {expected}."))
-                elif data_type == TT_CHAR:  
-                    if not isinstance(value, str) or len(value) != 1:
-                        expected = self.get_type_name(None, data_type)
-                        actual = self.get_type_name(value)
-                        return subres.failure(Exception(f"Invalid type for '{name}': {actual} instead of {expected}."))
-                elif data_type == TT_BOOL:  
-                    if not isinstance(value, bool):
-                        expected = self.get_type_name(None, data_type)
-                        actual = self.get_type_name(value)
-                        return subres.failure(Exception(f"Invalid type for '{name}': {actual} instead of {expected}."))
+                if data_type == TT_INT and not isinstance(value, int):
+                    expected = self.get_type_name(None, data_type)
+                    actual = self.get_type_name(value)
+                    return subres.failure(Exception(f"Invalid type for '{name}': {actual} instead of {expected}."))
+                elif data_type == TT_FLOAT and not isinstance(value, float):
+                    expected = self.get_type_name(None, data_type)
+                    actual = self.get_type_name(value)
+                    return subres.failure(Exception(f"Invalid type for '{name}': {actual} instead of {expected}."))
+                elif data_type == TT_STRING and (not isinstance(value, str) or (value and value[0] not in ['"', '"'])):
+                    expected = self.get_type_name(None, data_type)
+                    actual = self.get_type_name(value)
+                    return subres.failure(Exception(f"Invalid type for '{name}': {actual} instead of {expected}."))
+                elif data_type == TT_CHAR and (not isinstance(value, str) or len(value) != 1):
+                    expected = self.get_type_name(None, data_type)
+                    actual = self.get_type_name(value)
+                    return subres.failure(Exception(f"Invalid type for '{name}': {actual} instead of {expected}."))
+                elif data_type == TT_BOOL and not isinstance(value, bool):
+                    expected = self.get_type_name(None, data_type)
+                    actual = self.get_type_name(value)
+                    return subres.failure(Exception(f"Invalid type for '{name}': {actual} instead of {expected}."))
             return subres.success(None)
+
         res.register(assign_var(node.identifier, node.assignment, node.data_type))
-        if res.error: return res
+        if res.error:
+            return res
 
         tail = node.tail
         while tail:
             res.register(assign_var(tail.identifier, tail.assignment, node.data_type))
-            if res.error: return res
+            if res.error:
+                return res
             tail = tail.next_tail
 
         return res.success(None)
+
     
     def visit_ValueAssignment(self, node, context):
         res = RTResult()
@@ -142,7 +157,6 @@ class Interpreter:
         return res.success(None)
 
     def is_type_compatible(self, expected_token_type, value):
-        """Check if a Python value is compatible with the expected token type"""
         if expected_token_type == TT_INT:  # Numeral
             return isinstance(value, int)
         elif expected_token_type == TT_FLOAT:  # Decimal
@@ -248,19 +262,15 @@ class Interpreter:
         return res.success(None)
     
     def flatten_memory_addresses(self, addr):
-        """Flattens a possibly nested structure of memory addresses into a list."""
         result = []
-        seen_names = set()  # Track variable names we've already seen
+        seen_names = set()  
         
-        # Modified error check - use only Exception as the base class
         if isinstance(addr, Exception):
-            # Just return an empty list - we'll handle the error elsewhere
             return result
         
         if isinstance(addr, list):
             for a in addr:
                 for item in self.flatten_memory_addresses(a):
-                    # Skip error objects
                     if isinstance(item, Exception):
                         continue
                         
@@ -276,9 +286,7 @@ class Interpreter:
                     seen_names.add(var_name)
                     result.append(addr)
             
-            # Process the tail
             for item in self.flatten_memory_addresses(addr.tail):
-                # Skip error objects
                 if isinstance(item, Exception):
                     continue
                     
@@ -288,7 +296,6 @@ class Interpreter:
                         seen_names.add(var_name)
                         result.append(item)
         else:
-            # Make sure addr has the expected attributes
             if hasattr(addr, 'identifier') and hasattr(addr.identifier, 'name'):
                 var_name = addr.identifier.name
                 if var_name not in seen_names:
@@ -311,7 +318,6 @@ class Interpreter:
 
         addresses = self.flatten_memory_addresses(node.memory_address)
 
-        # Check if we got any addresses
         if not addresses:
             return res.failure(Exception("No valid memory addresses found for input."))
 
@@ -349,3 +355,74 @@ class Interpreter:
             context.symbol_table.set(var_name, user_input)
 
         return res.success(None)
+    
+    def visit_IfStatement(self, node, context):
+        res = RTResult()
+        
+        condition_value = res.register(self.visit(node.condition, context))
+        if res.error: return res
+
+        if bool(condition_value):
+            for stmt in node.if_branch:
+                res.register(self.visit(stmt, context))
+                if res.error: return res
+        else:
+            elif_executed = False
+            for i, elif_stmt in enumerate(node.elif_branches):
+                elif_condition = res.register(self.visit(elif_stmt.condition, context))
+                if res.error: return res
+                
+                if bool(elif_condition):
+                    for stmt in elif_stmt.if_branch:
+                        res.register(self.visit(stmt, context))
+                        if res.error: return res
+                    elif_executed = True
+                    break
+            
+            if not elif_executed and node.else_branch:
+                if isinstance(node.else_branch, list):
+                    for stmt in node.else_branch:
+                        res.register(self.visit(stmt, context))
+                        if res.error: return res
+                else:
+                    res.register(self.visit(node.else_branch, context))
+                    if res.error: return res
+        return res.success(None)
+    
+    def visit_Function(self, node, context):
+        context.function_table[node.name] = node
+        return RTResult().success(None)
+
+
+    def visit_FunctionCall(self, node, context):
+        res = RTResult()
+
+        func = context.function_table.get(node.identifier)
+        if not func:
+            return res.failure(Exception(f"Undefined Method: {node.identifier}"))
+
+        if len(node.arguments) != len(func.parameters):
+            return res.failure(Exception(f"Expected {len(func.parameters)} arguments, got {len(node.arguments)}"))
+
+        new_context = Context(display_name=f"{node.identifier}()", parent=context)  # ✅ FIXED
+
+        for (param_type, param_name), arg_expr in zip(func.parameters, node.arguments):
+            value = res.register(self.visit(arg_expr, context))
+            if res.error: return res
+            new_context.symbol_table.set(param_name, value, var_type=param_type)
+
+        for stmt in func.body:
+            res.register(self.visit(stmt, new_context))
+            if res.error: return res
+
+        return res.success(None)
+
+    def visit_ReturnStatement(self, node, context):
+        res = RTResult()
+        
+        value = None
+        if node.value:
+            value = res.register(self.visit(node.value, context))
+            if res.error: return res
+        
+        return res.success_return(value)

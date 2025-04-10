@@ -1,0 +1,54 @@
+
+//11. 
+Method Void rightTriangle() {
+
+  Emit("   *");
+  Emit("  **");
+  Emit(" ***");
+  Emit("****");
+}
+
+//12. 
+Method Void leftTriangle() {
+
+  Emit("*");
+  Emit("**");
+  Emit("***");
+  Emit("****");
+}
+
+//13. 
+Method Void triangle() {
+  Emit("   *");
+  Emit("  ***");
+  Emit(" *****");
+  Emit("*******");
+}
+
+//14.
+Method Void square() {
+  Emit("*******");
+  Emit("*******");
+  Emit("*******");
+  Emit("*******");
+}
+
+//15. 
+Method Void rectangle() {
+  Emit("************");
+  Emit("************");
+  Emit("************");
+  Emit("************");
+}
+
+Embark() {
+rightTriangle();
+Emit("\n");
+leftTriangle();
+Emit("\n");
+triangle();
+Emit("\n");
+square();
+Emit("\n");
+rectangle();
+}

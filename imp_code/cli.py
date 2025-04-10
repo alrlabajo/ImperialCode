@@ -103,7 +103,7 @@ def _run_semantic(file_path, code):
     elif res and res.error:
         print(f"Runtime Error: {res.error}")
     else:
-        print("Execution complete.")
+        print("\nExecution complete.")
 
 
 # def cli():

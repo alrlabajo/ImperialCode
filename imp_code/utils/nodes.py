@@ -85,9 +85,9 @@ class FunctionCall(ASTNode):
         self.arguments = arguments 
 
 class IfStatement(ASTNode):
-    def __init__(self, condition, then_branch, elif_branches=None, else_branch=None):
+    def __init__(self, condition, if_branch, elif_branches=None, else_branch=None):
         self.condition = condition
-        self.then_branch = then_branch 
+        self.if_branch = if_branch 
         self.elif_branches = elif_branches or []  
         self.else_branch = else_branch 
 

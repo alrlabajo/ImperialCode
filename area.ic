@@ -1,0 +1,14 @@
+Embark() {
+    Decimal length, width;
+	  Decimal area;
+    
+    Emit("Enter length: ");
+    Seek("%f", &length);
+
+    Emit("Enter width: ");
+    Seek("%f", &width);
+
+    area = length*width;
+    Emit("The area of the rectangle is %f", area);
+
+}

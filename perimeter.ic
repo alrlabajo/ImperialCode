@@ -1,0 +1,13 @@
+Embark() {
+    Decimal length, width;
+	  Decimal perimeter;
+    
+    Emit("Enter length: ");
+    Seek("%f", &length);
+
+    Emit("Enter width: ");
+    Seek("%f", &width);
+
+    perimeter = length+width;
+    Emit("The perimeter of the rectangle is %f", perimeter);
+}

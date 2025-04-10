@@ -1,9 +1,13 @@
 Embark() {
-	Numeral age;
-	Emit("Enter your age: ");
-    Emit("You are ");
-    Emit("%d", age);
-    Emit(" years old.");
-	
-    Recede 0;
+    Numeral score = 100;
+
+    Thou (score >= 90) {
+        Emit("Grade: A");
+    } Or Thou (score >= 80) {
+        Emit("Grade: B");
+    } Or Thou (score >= 70) {
+        Emit("Grade: C");
+    } Or {
+        Emit("Grade: F");
+    }
 }

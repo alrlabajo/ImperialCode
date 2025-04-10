@@ -1,0 +1,38 @@
+Embark() {
+    // 1) Left-aligned right triangle
+    Emit("\n1) Left-Aligned Right Triangle:\n");
+    Emit("*");
+    Emit("**");
+    Emit("***");
+    Emit("****");
+
+    // 2) Right-aligned right triangle
+    // (we’ll add spaces on the left to push the stars over)
+    Emit("\n2) Right-Aligned Right Triangle:\n");
+    Emit("   *");
+    Emit("  **");
+    Emit(" ***");
+    Emit("****");
+
+    // 3) Isosceles triangle
+    Emit("\n3) Isosceles Triangle:\n");
+    Emit("   *");
+    Emit("  ***");
+    Emit(" *****");
+    Emit("*******");
+
+    // 4) Square (4x4)
+    Emit("\n4) Square:\n");
+    Emit("*********");
+    Emit("*********");
+    Emit("*********");
+    Emit("*********");
+
+    // 5) Rectangle (5 wide, 3 tall)
+    Emit("\n5) Rectangle:\n");
+    Emit("****************");
+    Emit("****************");
+    Emit("****************");
+    Emit("****************");
+}
+
