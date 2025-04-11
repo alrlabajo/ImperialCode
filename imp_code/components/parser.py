@@ -430,44 +430,13 @@ class Parser:
             return self.parse_function_call()
         elif self.current_token.type == TT_LBRACKET:
             return self.parse_ledger_element()
-        elif self.current_token.type in (TT_PLUS, TT_MINUS, TT_MUL, TT_DIV, TT_MODULO, TT_AND, TT_OR, TT_LESSTHAN, TT_GREATERTHAN, TT_LESSTHANEQUAL,TT_GREATERTHANEQUAL,TT_EQUALTO, TT_NOTEQUAL):
-            return self.parse_expression_tail()
         else:
             return None
 
     def parse_value(self):
-        """Production 52–54: <value> → <var_name> <value_tail> | <literal> | <expression>"""
-        if self.current_token.type == TT_IDENTIFIER:
-            var = self.parse_var_name()
-            tail = self.parse_value_tail()
-            if isinstance(tail, BinaryOp):
-                tail.left = var
-                return tail
-            return var
-        elif self.current_token.type in (TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE):
-            token = self.current_token
-            self.advance()
-            if token.type == TT_INT_LITERAL:
-                next_token = self.current_token
-                if next_token in (TT_PLUS, TT_MINUS, TT_MUL, TT_DIV, TT_MODULO):
-                    self.advance()
-                    right = self.parse_value()
-                    return BinaryOp(IntLiteral(token.value), next_token, right)
-                return IntLiteral(token.value)
-            elif token.type == TT_FLOAT_LITERAL:
-                next_token = self.current_token
-                if next_token in (TT_PLUS, TT_MINUS, TT_MUL, TT_DIV, TT_MODULO):
-                    self.advance()
-                    right = self.parse_value()
-                    return BinaryOp(FloatLiteral(token.value), next_token, right)
-                return FloatLiteral(token.value)
-            elif token.type == TT_CHAR_LITERAL:
-                return CharLiteral(token.value)
-            elif token.type == TT_STRING_LITERAL:
-                return StringLiteral(token.value)
-            elif token.type in (TT_TRUE, TT_FALSE):
-                return BoolLiteral(token.value)
-
+        if self.current_token.type in (TT_IDENTIFIER, TT_INT_LITERAL, TT_FLOAT_LITERAL, 
+                                    TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE):
+            return self.parse_expression()
         elif self.current_token.type == TT_LPAREN:
             lpar = self.expect(TT_LPAREN)
             if isinstance(lpar, InvalidSyntaxError):
@@ -555,17 +524,43 @@ class Parser:
             expr = self.parse_expression()
             self.expect(TT_RPAREN)
             return expr
-        return self.parse_value()
-    
+        elif self.current_token.type == TT_IDENTIFIER:
+            # Handle identifier directly
+            id_token = self.current_token
+            self.advance()
+            return Identifier(id_token.value)
+        elif self.current_token.type in (TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, 
+                                    TT_STRING_LITERAL, TT_TRUE, TT_FALSE):
+            # Handle literals directly
+            token = self.current_token
+            self.advance()
+            if token.type == TT_INT_LITERAL:
+                return IntLiteral(token.value)
+            elif token.type == TT_FLOAT_LITERAL:
+                return FloatLiteral(token.value)
+            elif token.type == TT_CHAR_LITERAL:
+                return CharLiteral(token.value)
+            elif token.type == TT_STRING_LITERAL:
+                return StringLiteral(token.value)
+            elif token.type in (TT_TRUE, TT_FALSE):
+                return BoolLiteral(token.value)
+        else:
+            self.errors.append(InvalidSyntaxError(
+                self.current_token.pos_start,
+                self.current_token.pos_end,
+                f"Expected {TT_IDENTIFIER}, {TT_INT_LITERAL}, {TT_FLOAT_LITERAL}, {TT_CHAR_LITERAL}, {TT_STRING_LITERAL}, {TT_TRUE}, {TT_FALSE} or {TT_LPAREN}"
+            ))
+            return None
+        
     def parse_expression_tail(self, left=None):
         if self.current_token and self.current_token.type in self.get_all_operator_tokens():
             op = self.current_token
             self.advance()
-            right = self.parse_value()
+            right = self.parse_expression()
             if right is None:
                 return InvalidSyntaxError(op.pos_start, op.pos_end, "Missing right-hand side of expression")
             combined = BinaryOp(left, op, right)
-            return self.parse_expression_tail(combined)
+            return combined
         return left
 
     def parse_update_expression(self):

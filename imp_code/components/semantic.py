@@ -80,8 +80,6 @@ class Interpreter:
         def assign_var(identifier_node, assignment_expr, data_type):
             subres = RTResult()
             name = identifier_node.name
-            # If there is an assignment, evaluate it;
-            # otherwise, provide a default value based on the data type.
             if assignment_expr:
                 value = subres.register(self.visit(assignment_expr, context))
             else:
@@ -89,7 +87,7 @@ class Interpreter:
                     TT_INT: 0,
                     TT_FLOAT: 0.0,
                     TT_STRING: "",
-                    TT_CHAR: "",  # Alternatively, you could use " " if desired.
+                    TT_CHAR: "", 
                     TT_BOOL: False
                 }
                 value = default_values.get(data_type, None)

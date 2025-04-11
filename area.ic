@@ -9,6 +9,6 @@ Embark() {
     Seek("%f", &width);
 
     area = length*width;
-    Emit("The area of the rectangle is %f", area);
+    Emit("The area of the rectangle is %.2f", area);
 
 }
