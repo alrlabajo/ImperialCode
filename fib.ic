@@ -1,0 +1,17 @@
+Embark() {
+    Numeral n, num1 = 0, num2 = 1, nextNum;
+
+    Emit("Enter the number of Fibonacci numbers to generate: ");
+    Seek("%d", &n);
+
+    Emit("Fibonacci Series: ");
+
+    Per (Numeral i = 1; i <= n; i++) {
+        Emit("%d,", num1);
+        nextNum = num1 + num2;
+        num1 = num2;
+        num2 = nextNum;
+    }
+
+    return 0;
+}

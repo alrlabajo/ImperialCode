@@ -1,13 +1,11 @@
-Method Void odd_or_even(Numeral number) {
-	Thou(number % 2 == 0) {
-		Emit("%d is an even number", number);
-	} Or {
-		Emit("%d is an odd number", number);
-	}
-}
-
 Embark() {
-	Numeral num =3;
-	odd_or_even(num);
-}
+    Numeral number;
+    Emit("Enter a number: ");
+    Seek("%d", &number);
 
+    Thou (number % 2 == 0) {
+        Emit("Even\n");
+    } Or {
+        Emit("Odd\n");
+    }
+}

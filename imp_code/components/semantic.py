@@ -2,12 +2,12 @@
 # SEMANTIC + INTERPRETER
 #######################################
 
-from ..utils.tokens import * 
+from ..utils.tokens import *
 from ..utils.nodes import *
 from ..utils.results import *
 from ..utils.values import *
 from ..utils.context import Context
-from ..utils.symbol_table import SymbolTable
+from ..utils.symbol_table import *
 
 class Interpreter:
     def visit(self, node, context):
@@ -17,7 +17,7 @@ class Interpreter:
 
     def no_visit_method(self, node, context):
         raise Exception(f'No visit_{type(node).__name__} method defined')
-    
+
     def visit_IntLiteral(self, node, context):
         return RTResult().success(node.value)
 
@@ -32,7 +32,6 @@ class Interpreter:
 
     def visit_BoolLiteral(self, node, context):
         return RTResult().success(node.value)
-
 
     def visit_Identifier(self, node, context):
         res = RTResult()
@@ -50,7 +49,7 @@ class Interpreter:
             res.register(self.visit(stmt, context))
             if res.error: return res
         return res.success(None)
-    
+
     def get_type_name(self, value, data_type=None):
         if isinstance(value, int):
             return "Numeral Literal"
@@ -87,7 +86,7 @@ class Interpreter:
                     TT_INT: 0,
                     TT_FLOAT: 0.0,
                     TT_STRING: "",
-                    TT_CHAR: "", 
+                    TT_CHAR: "",
                     TT_BOOL: False
                 }
                 value = default_values.get(data_type, None)
@@ -96,7 +95,6 @@ class Interpreter:
 
             context.symbol_table.set(name, value, var_type=data_type)
 
-            # Optional type checking
             if value is not None:
                 if data_type == TT_INT and not isinstance(value, int):
                     expected = self.get_type_name(None, data_type)
@@ -133,7 +131,7 @@ class Interpreter:
 
         return res.success(None)
 
-    
+
     def visit_ValueAssignment(self, node, context):
         res = RTResult()
 
@@ -214,28 +212,34 @@ class Interpreter:
                 else:
                     result = left % right
             elif op_type == TT_EQUALTO:
-                result = left == right
+                result = bool(left == right)
             elif op_type == TT_NOTEQUAL:
-                result = left != right
+                result = bool(left != right)
             elif op_type == TT_LESSTHAN:
-                result = left < right
+                result = bool(left < right)
             elif op_type == TT_GREATERTHAN:
-                result = left > right
+                result = bool(left > right)
             elif op_type == TT_LESSTHANEQUAL:
-                result = left <= right
+                result = bool(left <= right)
             elif op_type == TT_GREATERTHANEQUAL:
-                result = left >= right
+                result = bool(left >= right)
             elif op_type == TT_AND:
-                result = left and right
+                left = bool(left)
+                if not left:
+                    result = False
+                else:
+                    result = bool(right)
             elif op_type == TT_OR:
-                result = left or right
-            else:
-                return res.failure(Exception(f"Unsupported binary operator: {op_type}"))
+                left = bool(left)
+                if left:
+                    result = True
+                else:
+                    result = bool(right)
 
             return res.success(result)
         except Exception as e:
             return res.failure(e)
-        
+
     def visit_OutputStatement(self, node, context):
         res = RTResult()
 
@@ -248,69 +252,25 @@ class Interpreter:
                 if res.error: return res
 
                 values.append(1 if val is True else 0 if val is False else val)
-            
-            print(fmt % tuple(values))
+
+            print(fmt % tuple(values), end='')
 
         else:
             val = res.register(self.visit(node.value, context))
             if res.error: return res
             formatted_val = 1 if val is True else 0 if val is False else val
-            print(fmt % formatted_val)
+            print(fmt % formatted_val, end='')
 
         return res.success(None)
-    
-    def flatten_memory_addresses(self, addr):
-        result = []
-        seen_names = set()  
-        
-        if isinstance(addr, Exception):
-            return result
-        
-        if isinstance(addr, list):
-            for a in addr:
-                for item in self.flatten_memory_addresses(a):
-                    if isinstance(item, Exception):
-                        continue
-                        
-                    if hasattr(item, 'identifier') and hasattr(item.identifier, 'name'):
-                        var_name = item.identifier.name
-                        if var_name not in seen_names:
-                            seen_names.add(var_name)
-                            result.append(item)
-        elif hasattr(addr, 'tail') and addr.tail:
-            if hasattr(addr, 'identifier') and hasattr(addr.identifier, 'name'):
-                var_name = addr.identifier.name
-                if var_name not in seen_names:
-                    seen_names.add(var_name)
-                    result.append(addr)
-            
-            for item in self.flatten_memory_addresses(addr.tail):
-                if isinstance(item, Exception):
-                    continue
-                    
-                if hasattr(item, 'identifier') and hasattr(item.identifier, 'name'):
-                    var_name = item.identifier.name
-                    if var_name not in seen_names:
-                        seen_names.add(var_name)
-                        result.append(item)
-        else:
-            if hasattr(addr, 'identifier') and hasattr(addr.identifier, 'name'):
-                var_name = addr.identifier.name
-                if var_name not in seen_names:
-                    seen_names.add(var_name)
-                    result.append(addr)
-        
-        return result    
-    
+
     def visit_InputStatement(self, node, context):
         res = RTResult()
 
-        # Early check for errors in the node
         if isinstance(node.memory_address, Exception):
             return res.failure(node.memory_address)
 
         fmt = node.format_specifier.value.strip('"').strip("'") if hasattr(node.format_specifier, "value") else str(node.format_specifier)
-        
+
         import re
         specifiers = re.findall(r'%[dsfcv]', fmt)
 
@@ -353,10 +313,53 @@ class Interpreter:
             context.symbol_table.set(var_name, user_input)
 
         return res.success(None)
-    
+
+    def flatten_memory_addresses(self, addr):
+        result = []
+        seen_names = set()
+
+        if isinstance(addr, Exception):
+            return result
+
+        if isinstance(addr, list):
+            for a in addr:
+                for item in self.flatten_memory_addresses(a):
+                    if isinstance(item, Exception):
+                        continue
+
+                    if hasattr(item, 'identifier') and hasattr(item.identifier, 'name'):
+                        var_name = item.identifier.name
+                        if var_name not in seen_names:
+                            seen_names.add(var_name)
+                            result.append(item)
+        elif hasattr(addr, 'tail') and addr.tail:
+            if hasattr(addr, 'identifier') and hasattr(addr.identifier, 'name'):
+                var_name = addr.identifier.name
+                if var_name not in seen_names:
+                    seen_names.add(var_name)
+                    result.append(addr)
+
+            for item in self.flatten_memory_addresses(addr.tail):
+                if isinstance(item, Exception):
+                    continue
+
+                if hasattr(item, 'identifier') and hasattr(item.identifier, 'name'):
+                    var_name = item.identifier.name
+                    if var_name not in seen_names:
+                        seen_names.add(var_name)
+                        result.append(item)
+        else:
+            if hasattr(addr, 'identifier') and hasattr(addr.identifier, 'name'):
+                var_name = addr.identifier.name
+                if var_name not in seen_names:
+                    seen_names.add(var_name)
+                    result.append(addr)
+
+        return result
+
     def visit_IfStatement(self, node, context):
         res = RTResult()
-        
+
         condition_value = res.register(self.visit(node.condition, context))
         if res.error: return res
 
@@ -369,14 +372,14 @@ class Interpreter:
             for i, elif_stmt in enumerate(node.elif_branches):
                 elif_condition = res.register(self.visit(elif_stmt.condition, context))
                 if res.error: return res
-                
+
                 if bool(elif_condition):
                     for stmt in elif_stmt.if_branch:
                         res.register(self.visit(stmt, context))
                         if res.error: return res
                     elif_executed = True
                     break
-            
+
             if not elif_executed and node.else_branch:
                 if isinstance(node.else_branch, list):
                     for stmt in node.else_branch:
@@ -386,41 +389,291 @@ class Interpreter:
                     res.register(self.visit(node.else_branch, context))
                     if res.error: return res
         return res.success(None)
-    
-    def visit_Function(self, node, context):
-        context.function_table[node.name] = node
-        return RTResult().success(None)
 
+    def visit_ForLoop(self, node, context):
+        res = RTResult()
+
+        new_context = Context(display_name="For Loop", parent=context)
+
+        if node.initialization:
+            res.register(self.visit(node.initialization, new_context))
+            if res.error: return res
+
+        while True:
+            condition_value = res.register(self.visit(node.condition, new_context))
+            if res.error: return res
+
+            if not bool(condition_value):
+                break
+
+            for stmt in node.body:
+                res.register(self.visit(stmt, new_context))
+                if res.error: return res
+
+            if node.update:
+                res.register(self.visit(node.update, new_context))
+                if res.error: return res
+
+        return res.success(None)
+
+    def visit_Initialization(self, node, context):
+        res = RTResult()
+        res.register(self.visit(node.declaration, context))
+        if res.error: return res
+        return res.success(None)
+
+    def visit_UpdateExpression(self, node, context):
+        res = RTResult()
+
+        identifier = node.identifier.name
+        value = context.symbol_table.get(identifier)
+        operator = node.operator.type
+        if value is None:
+            return res.failure(Exception(f"'{identifier}' is not defined"))
+
+        if node.operator.type == TT_INC:
+            value += 1
+        elif node.operator.type == TT_DEC:
+            value -= 1
+        else:
+            return res.failure(Exception(f"Invalid operator: {operator}"))
+
+        context.symbol_table.set(identifier, value)
+        return res.success(value)
+
+    def visit_WhileLoop(self, node, context):
+        res = RTResult()
+
+        new_context = Context(display_name="While Loop", parent=context)
+
+        while True:
+            condition_value = res.register(self.visit(node.condition, new_context))
+            if res.error: return res
+
+            if not bool(condition_value):
+                break
+
+            for stmt in node.body:
+                res.register(self.visit(stmt, new_context))
+                if res.error: return res
+
+            if node.update:
+                res.register(self.visit(node.update, new_context))
+                if res.error: return res
+
+        return res.success(None)
+
+    def visit_DoWhileLoop(self, node, context):
+        res = RTResult()
+
+        new_context = Context(display_name="Do While Loop", parent=context)
+        for stmt in node.body:
+            res.register(self.visit(stmt, new_context))
+            if res.error: return res
+        while True:
+            condition_value = res.register(self.visit(node.condition, new_context))
+            if res.error: return res
+
+            if not bool(condition_value):
+                break
+            if node.update:
+                res.register(self.visit(node.update, new_context))
+                if res.error: return res
+
+            for stmt in node.body:
+                res.register(self.visit(stmt, new_context))
+                if res.error: return res
+
+        for var_name, value in new_context.symbol_table.symbols.items():
+            if context.symbol_table.get(var_name) is not None:
+                context.symbol_table.set(var_name, value)
+
+        return res.success(None)
+
+    def visit_Argument(self, node, context):
+        res = RTResult()
+        value = res.register(self.visit(node.value, context))
+        if res.error: return res
+        return res.success(value)
+
+    def visit_ArgumentTail(self, node, context):
+        res = RTResult()
+        value = res.register(self.visit(node.value, context))
+        if res.error: return res
+        tail_value = res.register(self.visit(node.next_tail, context))
+        if res.error: return res
+        return res.success([value] + tail_value)
+
+    def visit_Parameter(self, node, context):
+        res = RTResult()
+        data_type = node.data_type
+        identifier = node.identifier.name
+        context.symbol_table.set(identifier, None, var_type=data_type)
+        return res.success(None)
+
+    def visit_Function(self, node, context):
+        res = RTResult()
+
+        if isinstance(node.name, str):
+            func_name = node.name
+        else:
+            func_name = node.name.value
+
+        func_params_list = []
+        if node.parameters:
+            for param in node.parameters:
+                if isinstance(param, tuple):
+                    param_type, param_name = param
+                    func_params_list.append((param_type, param_name))
+                else:
+                    param_res = res.register(self.visit(param, context))
+                    if res.error: return res
+                    func_params_list.append(param_res)
+
+        func_body = node.body
+        func_return_type = node.return_type if hasattr(node, 'return_type') else None
+
+        function_obj = Function(func_return_type, func_name, func_params_list, func_body)
+
+        context.symbol_table.set_function(func_name, function_obj)
+
+        context.symbol_table.set(func_name, function_obj)
+
+        return res.success(function_obj)
+
+    def visit_ReturnStatement(self, node, context):
+        res = RTResult()
+        return_value = None
+
+        if node.value:
+            return_value = res.register(self.visit(node.value, context))
+            if res.error: return res
+
+        current_context = context
+        func_context = None
+        func_name = None
+        func_return_type = None
+
+        while current_context:
+            if hasattr(current_context, 'display_name') and current_context.display_name.startswith('Function:'):
+                func_context = current_context
+                func_name = current_context.display_name[9:].strip()
+                break
+            current_context = current_context.parent
+
+
+        if func_context and func_name:
+            func_return_type = func_context.return_type if hasattr(func_context, 'return_type') else None
+
+            if func_return_type is None:
+                if func_name.startswith('Void'):
+                    if return_value is not None:
+                        return res.failure(Exception(f"Function '{func_name}' is void and cannot return a value"))
+                    return res.success(None)
+
+                if func_name.startswith('Numeral'):
+                    func_return_type = TT_INT
+                elif func_name.startswith('Decimal'):
+                    func_return_type = TT_FLOAT
+                elif func_name.startswith('Missive'):
+                    func_return_type = TT_STRING
+                elif func_name.startswith('Letter'):
+                    func_return_type = TT_CHAR
+                elif func_name.startswith('Veracity'):
+                    func_return_type = TT_BOOL
+
+            if return_value is not None and func_return_type is not None:
+                if not self.is_type_compatible(func_return_type, return_value):
+                    expected_type = self.map_type_token_to_class(func_return_type)
+                    actual_type = self.get_type_name(return_value)
+                    return res.failure(Exception(f"Invalid return type for '{func_name}': {actual_type} instead of {expected_type}."))
+
+        return res.success(return_value)
 
     def visit_FunctionCall(self, node, context):
         res = RTResult()
 
-        func = context.function_table.get(node.identifier)
-        if not func:
-            return res.failure(Exception(f"Undefined Method: {node.identifier}"))
+        func_name = node.identier.value if hasattr(node.identifier, 'value') else node.identifier
+        func_value = context.symbol_table.get_function(func_name)
 
-        if len(node.arguments) != len(func.parameters):
-            return res.failure(Exception(f"Expected {len(func.parameters)} arguments, got {len(node.arguments)}"))
+        if func_value is None:
+            func_value = context.symbol_table.get(func_name)
 
-        new_context = Context(display_name=f"{node.identifier}()", parent=context)  # ✅ FIXED
+        if func_value is None:
+            return res.failure(Exception(f"Function '{func_name}' not defined"))
 
-        for (param_type, param_name), arg_expr in zip(func.parameters, node.arguments):
-            value = res.register(self.visit(arg_expr, context))
+        if not isinstance(func_value, Function):
+            return res.failure(Exception(f"'{func_name}' is not a function"))
+
+        if len(node.arguments) != len(func_value.parameters):
+            return res.failure(Exception(f"Function '{func_name}' expects {len(func_value.parameters)} arguments, but got {len(node.arguments)}"))
+
+        new_context = Context(display_name=func_name, parent=context)
+
+        for i, arg in enumerate(node.arguments):
+            arg_value = res.register(self.visit(arg, new_context))
             if res.error: return res
-            new_context.symbol_table.set(param_name, value, var_type=param_type)
 
-        for stmt in func.body:
+            param_type = func_value.parameters[i][0]
+            if not self.is_type_compatible(param_type, arg_value):
+                expected_type = self.map_type_token_to_class(param_type)
+                actual_type = self.get_type_name(arg_value)
+                return res.failure(Exception(f"Invalid argument type for '{func_name}': {actual_type} instead of {expected_type}."))
+
+            new_context.symbol_table.set(func_value.parameters[i][1], arg_value)
+
+        func_body = func_value.body
+        for stmt in func_body:
             res.register(self.visit(stmt, new_context))
             if res.error: return res
 
         return res.success(None)
 
-    def visit_ReturnStatement(self, node, context):
+    def visit_HaltStatement(self, node, context):
         res = RTResult()
-        
-        value = None
-        if node.value:
-            value = res.register(self.visit(node.value, context))
-            if res.error: return res
-        
-        return res.success_return(value)
+        return res.success(None)
+
+    def visit_ExtendStatement(self, node, context):
+        res = RTResult()
+        return res.success(None)
+
+    def visit_SwitchStatement(self, node, context):
+        res = RTResult()
+        identifier_name = node.expression
+        expression_value = context.symbol_table.get(identifier_name)
+
+        if expression_value is None:
+            return res.failure(Exception(f"'{identifier_name}' is not defined"))
+
+        case_matched = False
+
+        if node.cases:
+            for case in node.cases:
+                if case.case_value == "usual":
+                    continue
+
+                if not case_matched:
+                    case_value = res.register(self.visit(case.case_value, context))
+                    if res.error: return res
+
+                    if expression_value == case_value:
+                        case_matched = True
+                if case_matched:
+                    for stmt in case.body_statements:
+                        if isinstance(stmt, HaltStatement):
+                            return res.success(None)
+
+                        res.register(self.visit(stmt, context))
+                        if res.error: return res
+
+        if not case_matched and node.default_case:
+            default_case = node.default_case
+
+            for stmt in default_case.body_statements:
+                if isinstance(stmt, HaltStatement):
+                    return res.success(None)
+
+                res.register(self.visit(stmt, context))
+                if res.error: return res
+
+        return res.success(None)

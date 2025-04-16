@@ -1,4 +1,9 @@
 Embark() {
-	Numeral a=1, b=1, c=a+b;
-	Emit("%d", c);
+	Numeral a=1;
+
+	Act {
+		Emit("Hello People\n");
+		a++;
+	} Until (a<=2);
+
 }

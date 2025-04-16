@@ -4,9 +4,10 @@ Embark() {
     Emit("Enter year: ");
     Seek("%d", &year);
 
-    Thou (year % 4 == 0) {
-        Emit("%d might be a leap year", year);
+    Thou ((year % 4 == 0 && year % 100 !=0) || (year % 4 == 0)) {
+        Emit("%d is a leap year.", year);
     } Or {
-        Emit("%d is definitely not a leap year.", year);
+        Emit("%d is not a leap year.", year);
     }
+
 }

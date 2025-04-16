@@ -1,15 +1,32 @@
 Embark() {
-	Letter greetings = 'a";
-
-	Shift(greetings) {
-		Opt 'a':
-			Emit("Good afternoon");
-		Opt 'm':
-			Emit("Good morning");
-		Opt 'e':
-			Emit("Good evening");
-		Usual:
-			Emit("This is usual");
-	}
+    Numeral score = 100;
+    Missive grade;
+    
+    Shift(score) {
+        Opt 100:
+            grade = "Perfect Score";
+            Emit("Perfect Score: A+\n");
+            Halt;
+        Opt 90:
+            grade = "Excellent";
+            Emit("Excellent: A\n");
+            Halt;
+        Opt 80:
+            grade = "Very Good";
+            Emit("Very Good: B\n");
+            Halt;
+        Opt 70:
+            grade = "Good";
+            Emit("Good: C\n");
+            Halt;
+        Opt 60:
+            grade = "Pass";
+            Emit("Pass: D\n");
+            Halt;
+        Usual:
+            grade = "Needs Improvement";
+            Emit("Needs Improvement: F\n");
+    }
+    
+    Emit("Final grade: %s\n", grade);
 }
-		

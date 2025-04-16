@@ -1,44 +1,35 @@
 class SymbolTable:
     def __init__(self, parent=None):
         self.symbols = {}
+        self.types = {}
         self.parent = parent
-    
+        self.functions = {}
+
     def get(self, name):
-        value = self.symbols.get(name)
-        if value is not None and isinstance(value, dict):
-            return value.get('value')
+        value = self.symbols.get(name, None)
         if value is None and self.parent:
             return self.parent.get(name)
         return value
-    
-    def get_info(self, name):
-        value = self.symbols.get(name)
-        if value is not None:
-            return value
-        if self.parent:
-            return self.parent.get_info(name)
-        return None
-    
-    def lookup_type(self, name):
-        info = self.get_info(name)
-        if info and isinstance(info, dict) and 'type' in info:
-            return info['type']
-        if self.parent:
-            return self.parent.lookup_type(name)
-        return None
-    
+
     def set(self, name, value, var_type=None):
-        if var_type is not None:
-            self.symbols[name] = {
-                'value': value,
-                'type': var_type
-            }
-        else:
-            info = self.get_info(name)
-            if info and isinstance(info, dict):
-                info['value'] = value
-            else:
-                self.symbols[name] = value
-    
-    def remove(self, name):
-        del self.symbols[name]
+        self.symbols[name] = value
+        if var_type:
+            self.types[name] = var_type
+        return value
+
+    def set_function(self, name, function_obj):
+        self.functions[name] = function_obj
+        return function_obj
+
+    def lookup_type(self, name):
+        var_type = self.types.get(name, None)
+        if var_type is None and self.parent:
+            return self.parent.lookup_type(name)
+        return var_type
+
+    # Add a method to get functions
+    def get_function(self, name):
+        func = self.functions.get(name, None)
+        if func is None and self.parent:
+            return self.parent.get_function(name)
+        return func
