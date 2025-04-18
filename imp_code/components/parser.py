@@ -225,7 +225,17 @@ class Parser:
                 row = self.parse_ledger_declaration_row()
                 return VariableDeclaration(veracity, identifier, dimensions, row)
         elif self.current_token.type == TT_EQUAL:
-            return self.parse_ver_declaration_assign()
+            assignment, tail = self.parse_ver_declaration_assign()
+            if tail:
+                return VariableDeclaration(veracity, identifier, None, assignment, tail)
+            else:
+                return VariableDeclaration(veracity, identifier, None, assignment)
+        else:
+            return InvalidSyntaxError(
+            self.current_token.pos_start,
+            self.current_token.pos_end,
+            f"Expected {TT_EQUAL} or {TT_LBRACKET}"
+        )
 
     def parse_ver_declaration_assign(self):
         equal = self.expect(TT_EQUAL)

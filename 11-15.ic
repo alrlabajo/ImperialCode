@@ -2,43 +2,43 @@
 //11. 
 Method Void rightTriangle() {
 
-  Emit("   *");
-  Emit("  **");
-  Emit(" ***");
-  Emit("****");
+  Emit("   *\n");
+  Emit("  **\n");
+  Emit(" ***\n");
+  Emit("****\n");
 }
 
 //12. 
 Method Void leftTriangle() {
 
-  Emit("*");
-  Emit("**");
-  Emit("***");
-  Emit("****");
+  Emit("*\n");
+  Emit("**\n");
+  Emit("***\n");
+  Emit("****\n");
 }
 
 //13. 
 Method Void triangle() {
-  Emit("   *");
-  Emit("  ***");
-  Emit(" *****");
-  Emit("*******");
+  Emit("   *\n");
+  Emit("  ***\n");
+  Emit(" *****\n");
+  Emit("*******\n");
 }
 
 //14.
 Method Void square() {
-  Emit("*******");
-  Emit("*******");
-  Emit("*******");
-  Emit("*******");
+  Emit("*******\n");
+  Emit("*******\n");
+  Emit("*******\n");
+  Emit("*******\n");
 }
 
 //15. 
 Method Void rectangle() {
-  Emit("************");
-  Emit("************");
-  Emit("************");
-  Emit("************");
+  Emit("************\n");
+  Emit("************\n");
+  Emit("************\n");
+  Emit("************\n");
 }
 
 Embark() {

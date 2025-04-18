@@ -79,7 +79,7 @@ QPlainTextEdit#text_editor {
     background-color: #D7CFCF;
     color: black;
     font-family: "Cascadia Code", "Menlo";
-    font-size: 14px;
+    font-size: 20px;
     padding: 10px;
 }
 
@@ -94,7 +94,7 @@ QTableWidget#token_table {
     background-color: #D7CFCF;
     color: black;
     font-family: "monospace";
-    font-size: 14px;
+    font-size: 16px;
     padding: 10px;
 }
 

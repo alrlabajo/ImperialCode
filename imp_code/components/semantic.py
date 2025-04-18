@@ -46,7 +46,8 @@ class Interpreter:
             res.register(self.visit(decl, context))
             if res.error: return res
         for stmt in node.main_statements:
-            res.register(self.visit(stmt, context))
+            result = self.visit(stmt, context)
+            res.register(result)
             if res.error: return res
         return res.success(None)
 
@@ -130,7 +131,6 @@ class Interpreter:
             tail = tail.next_tail
 
         return res.success(None)
-
 
     def visit_ValueAssignment(self, node, context):
         res = RTResult()
@@ -394,8 +394,16 @@ class Interpreter:
 
         if bool(condition_value):
             for stmt in node.if_branch:
-                res.register(self.visit(stmt, context))
+                result = self.visit(stmt, context)
+                res.register(result)
                 if res.error: return res
+                
+                if result.should_break:
+                    res.should_break = True
+                    return res
+                elif result.should_continue:
+                    res.should_continue = True
+                    return res
         else:
             elif_executed = False
             for i, elif_stmt in enumerate(node.elif_branches):
@@ -404,47 +412,81 @@ class Interpreter:
 
                 if bool(elif_condition):
                     for stmt in elif_stmt.if_branch:
-                        res.register(self.visit(stmt, context))
+                        result = self.visit(stmt, context)
+                        res.register(result)
                         if res.error: return res
+                        
+                        if result.should_break:
+                            res.should_break = True
+                            return res
+                        elif result.should_continue:
+                            res.should_continue = True
+                            return res
+                            
                     elif_executed = True
                     break
 
             if not elif_executed and node.else_branch:
                 if isinstance(node.else_branch, list):
                     for stmt in node.else_branch:
-                        res.register(self.visit(stmt, context))
+                        result = self.visit(stmt, context)
+                        res.register(result)
                         if res.error: return res
+                        
+                        if result.should_break:
+                            res.should_break = True
+                            return res
+                        elif result.should_continue:
+                            res.should_continue = True
+                            return res
                 else:
                     res.register(self.visit(node.else_branch, context))
                     if res.error: return res
-        return res.success(None)
+        
+        return res
 
     def visit_ForLoop(self, node, context):
         res = RTResult()
 
-        new_context = Context(display_name="For Loop", parent=context)
+        loop_context = Context(context.display_name, context)
+        loop_context.symbol_table = SymbolTable(context.symbol_table)
 
         if node.initialization:
-            res.register(self.visit(node.initialization, new_context))
+            res.register(self.visit(node.initialization, loop_context))
             if res.error: return res
-
+        
         while True:
-            condition_value = res.register(self.visit(node.condition, new_context))
+            condition_value = res.register(self.visit(node.condition, loop_context))
             if res.error: return res
-
-            if not bool(condition_value):
+            
+            if not condition_value:
                 break
 
+            should_continue = False
             for stmt in node.body:
-                res.register(self.visit(stmt, new_context))
+                result = self.visit(stmt, loop_context)
+                res.register(result)
                 if res.error: return res
+
+                if result.should_break:
+                    return res.success(None)
+                
+                if result.should_continue:
+                    should_continue = True
+                    break
+
+            if should_continue:
+                if node.update:
+                    res.register(self.visit(node.update, loop_context))
+                    if res.error: return res
+                continue 
 
             if node.update:
-                res.register(self.visit(node.update, new_context))
+                res.register(self.visit(node.update, loop_context))
                 if res.error: return res
-
+                    
         return res.success(None)
-
+    
     def visit_Initialization(self, node, context):
         res = RTResult()
         res.register(self.visit(node.declaration, context))
@@ -469,56 +511,83 @@ class Interpreter:
 
         context.symbol_table.set(identifier, value)
         return res.success(value)
-
+    
     def visit_WhileLoop(self, node, context):
         res = RTResult()
 
-        new_context = Context(display_name="While Loop", parent=context)
+        loop_context = Context(context.display_name,context)
+        loop_context.symbol_table = SymbolTable(context.symbol_table)
 
         while True:
-            condition_value = res.register(self.visit(node.condition, new_context))
+            condition_value = res.register(self.visit(node.condition, loop_context))
             if res.error: return res
-
-            if not bool(condition_value):
+            
+            if not condition_value:
                 break
 
+            should_continue = False
             for stmt in node.body:
-                res.register(self.visit(stmt, new_context))
+                result = self.visit(stmt, loop_context)
+                res.register(result)
                 if res.error: return res
+
+                if result.should_break:
+                    return res.success(None)
+                
+                if result.should_continue:
+                    should_continue = True
+                    break
+
+            if should_continue:
+                if node.update:
+                    res.register(self.visit(node.update, loop_context))
+                    if res.error: return res
+                continue 
 
             if node.update:
-                res.register(self.visit(node.update, new_context))
+                res.register(self.visit(node.update, loop_context))
                 if res.error: return res
-
+                    
         return res.success(None)
-
+    
     def visit_DoWhileLoop(self, node, context):
         res = RTResult()
 
-        new_context = Context(display_name="Do While Loop", parent=context)
-        for stmt in node.body:
-            res.register(self.visit(stmt, new_context))
-            if res.error: return res
+        loop_context = Context(context.display_name,context)
+        loop_context.symbol_table = SymbolTable(context.symbol_table)
+
         while True:
-            condition_value = res.register(self.visit(node.condition, new_context))
+            condition_value = res.register(self.visit(node.condition, loop_context))
             if res.error: return res
-
-            if not bool(condition_value):
+            
+            if not condition_value:
                 break
-            if node.update:
-                res.register(self.visit(node.update, new_context))
-                if res.error: return res
 
+            should_continue = False
             for stmt in node.body:
-                res.register(self.visit(stmt, new_context))
+                result = self.visit(stmt, loop_context)
+                res.register(result)
                 if res.error: return res
 
-        for var_name, value in new_context.symbol_table.symbols.items():
-            if context.symbol_table.get(var_name) is not None:
-                context.symbol_table.set(var_name, value)
+                if result.should_break:
+                    return res.success(None)
+                
+                if result.should_continue:
+                    should_continue = True
+                    break
 
+            if should_continue:
+                if node.update:
+                    res.register(self.visit(node.update, loop_context))
+                    if res.error: return res
+                continue 
+
+            if node.update:
+                res.register(self.visit(node.update, loop_context))
+                if res.error: return res
+                    
         return res.success(None)
-
+    
     def visit_Argument(self, node, context):
         res = RTResult()
         value = res.register(self.visit(node.value, context))
@@ -670,10 +739,12 @@ class Interpreter:
 
     def visit_HaltStatement(self, node, context):
         res = RTResult()
+        res.should_break = True
         return res.success(None)
 
     def visit_ExtendStatement(self, node, context):
         res = RTResult()
+        res.should_continue = True
         return res.success(None)
 
     def visit_SwitchStatement(self, node, context):

@@ -1,4 +1,28 @@
-Veracity isPure = Pure , isNay = Nay;
-
 Embark() {
+  // Example 4: continue in a do-while loop
+  Emit("Example 4: continue in a do-while loop\n");
+  Numeral k = 0;
+  Act {
+    k++;
+    Thou (k % 2 == 0) {
+      Emit("Skipping even number: %d\n", k);
+      Extend; // Skip even numbers
+    }
+    Emit("k is an odd number: %d\n", k);
+  } Until (k < 10);
+  Emit("Do-while loop finished.\n\n");
+
+  // Example 5: Nested loops with break (breaking the inner loop)
+  Emit("Example 5: Nested loops with break\n");
+  Per (Numeral i = 1; i <= 3; i++) {
+    Emit("Outer loop iteration: %d\n", i);
+    Per (Numeral j = 1; j <= 5; j++) {
+      Emit("  Inner loop j: %d\n", j);
+      Thou (j == 3) {
+        Emit("  Breaking inner loop when j equals %d\n", j);
+        Halt; // Only breaks out of the inner loop
+      }
+    }
+  }
+  Emit("Nested loops finished.\n");
 }
