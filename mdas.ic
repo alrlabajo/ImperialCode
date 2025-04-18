@@ -1,0 +1,61 @@
+Method Numeral add(Numeral num1, Numeral num2) {
+	Recede num1 + num2;
+}
+
+Method Numeral sub(Numeral num1, Numeral num2) {
+	Recede num1 - num2;
+}
+
+Method Numeral mul(Numeral num1, Numeral num2) {
+	Recede num1 * num2;
+}
+
+Method Numeral div(Numeral num1, Numeral num2) {
+	Thou (num2 != 0) {
+        Recede num1 / num2;
+    } Or {
+        Emit("Error: Division by zero!\n");
+        Halt; // Exit the program if division by zero occurs
+    }
+}
+
+Embark() {
+	Numeral x, y, choice, result;
+
+	Emit("Enter first number: ");
+	Seek("%d", &x);
+	Emit("Enter second number: ");
+	Seek("%d", &y);
+
+	Emit("\n1. Addition\n2. Subtraction\n3. Multiplication\n4. Division\n");
+
+	Emit("Enter operation to use: ");
+	Seek("%d", &choice);
+
+	Shift(choice) {
+        Opt 1:
+result = add(x,y);
+            Halt;
+        Opt 2:
+result = sub(x,y);
+            Halt;
+        Opt 3:
+result = mul(x,y);
+            Halt;
+        Opt 4:
+Opt 4:
+    Thou (y == 0) {
+        Emit("Error: Division by zero!\n");
+    } Or {
+        result = div(x, y);
+    }
+    Halt;
+        Usual:
+            Emit("No operation chosen");
+    }
+    
+    Emit("Result: %d\n", result);
+}
+
+
+

@@ -1559,8 +1559,12 @@ class Lexer:
                     self.state = '148'
                     self.advance()
                 else:
-                    token = Tokens(TT_MINUS, '-', pos_start=self.pos)
-                    self.state = '0'
+                    if self.current_char is not None and (self.current_char =='.' or self.current_char.isdigit()):
+                        token, error = self.make_numeral_decimal(is_negative=True)
+                        self.state = '0'
+                    else:
+                        token = Tokens(TT_MINUS, '-', pos_start=self.pos)
+                        self.state = '0'
 
                     if token:
                         error = self.check_delim(token)
@@ -2055,13 +2059,16 @@ class Lexer:
 
         return tokens, errors
     
-    def make_numeral_decimal(self):
+    def make_numeral_decimal(self, is_negative=False):
         pos_start = self.pos.copy()
         num_str = ''
         dot_count = 0
         left_digits = 0
         right_digits = 0
         is_left = True
+
+        if is_negative:
+            num_str += '-'
 
         while self.current_char is not None and (self.current_char.isdigit() or self.current_char == '.'):
             if self.current_char == '.':
@@ -2072,7 +2079,7 @@ class Lexer:
                         f"Multiple decimal points in numeric literal: '{num_str + self.current_char}'"
                     )
                 dot_count += 1
-                is_left = False  # From now on, count digits as right_digits
+                is_left = False
             else:
                 if is_left:
                     left_digits += 1
@@ -2088,15 +2095,12 @@ class Lexer:
             else:
                 return Tokens(TT_INT_LITERAL, str(int(num_str)), pos_start, self.pos), None
         else:
-            # Disallow literals that both start and end with a decimal point.
-            # For example: ".1234." is not allowed.
             if num_str[0] == '.' and num_str[-1] == '.':
                 return None, ExceedDecimalError(
                     pos_start,
                     self.pos,
                     f"Numeric literal cannot both start and end with a decimal point: '{num_str}'"
                 )
-            # Allow trailing decimal, so if right_digits == 0, it's acceptable.
             if left_digits > FLOAT_LIM or right_digits > FLOAT_PRECISION_LIM:
                 return None, ExceedDecimalError(pos_start, self.pos, f"{num_str}")
             else:

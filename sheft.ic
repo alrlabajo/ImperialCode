@@ -1,6 +1,9 @@
 Embark() {
-    Numeral score = 100;
+    Numeral score;
     Missive grade;
+
+	Emit("Enter your score: ");
+	Seek("%d", &score);
     
     Shift(score) {
         Opt 100:

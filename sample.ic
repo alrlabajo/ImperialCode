@@ -1,0 +1,31 @@
+// Function to print cubes of numbers from start to end
+Method Void printCubes(Numeral start, Numeral end) {
+    Emit("Cubes of numbers from %d to %d:\n", start, end);
+    
+    Per (Numeral i = start; i <= end; i++) {
+        Numeral cube = i * i * i;
+        Emit("Cube of %d = %d\n", i, cube);
+    }
+}
+
+
+// Function to generate a table of numbers and their cubes
+Method Void generateCubeTable(Numeral n) {
+    Emit("Number\tCube\n");
+    Emit("------\t------\n");
+    
+    Per (Numeral i = 1; i <= n; i++) {
+        Emit("%d\t%d\n", i, i * i * i);
+    }
+}
+
+
+Embark() {
+    // Example 1: Print cubes of numbers from 1 to 5
+    printCubes(1, 5);
+    Emit("\n");
+    
+    // Example 5: Generate a table of 10 numbers and their cubes
+    generateCubeTable(10);
+
+}

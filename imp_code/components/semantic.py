@@ -187,10 +187,13 @@ class Interpreter:
         try:
             if op_type == TT_PLUS:
                 result = left + right
+                return res.success(result)
             elif op_type == TT_MINUS:
                 result = left - right
+                return res.success(result)
             elif op_type == TT_MUL:
                 result = left * right
+                return res.success(result)
             elif op_type == TT_DIV:
                 if isinstance(left, Value) and isinstance(right, Value):
                     result, error = left.dived_by(right)
@@ -201,6 +204,7 @@ class Interpreter:
                     return res.failure(Exception("division by zero"))
                 else:
                     result = left / right
+                    return res.success(result)
             elif op_type == TT_MODULO:
                 if isinstance(left, Value) and isinstance(right, Value):
                     result, error = left.remained_by(right)
@@ -211,30 +215,41 @@ class Interpreter:
                     return res.failure(Exception("modulo by zero"))
                 else:
                     result = left % right
+                    return res.success(result)
             elif op_type == TT_EQUALTO:
                 result = bool(left == right)
+                return res.success(result)
             elif op_type == TT_NOTEQUAL:
                 result = bool(left != right)
+                return res.success(result)
             elif op_type == TT_LESSTHAN:
                 result = bool(left < right)
+                return res.success(result)
             elif op_type == TT_GREATERTHAN:
                 result = bool(left > right)
+                return res.success(result)
             elif op_type == TT_LESSTHANEQUAL:
                 result = bool(left <= right)
+                return res.success(result)
             elif op_type == TT_GREATERTHANEQUAL:
                 result = bool(left >= right)
+                return res.success(result)
             elif op_type == TT_AND:
                 left = bool(left)
                 if not left:
                     result = False
+                    return res.success(result)
                 else:
                     result = bool(right)
+                    return res.success(result)
             elif op_type == TT_OR:
                 left = bool(left)
                 if left:
                     result = True
+                    return res.success(result)
                 else:
                     result = bool(right)
+                    return res.success(result)
 
             return res.success(result)
         except Exception as e:
@@ -245,21 +260,35 @@ class Interpreter:
 
         fmt = node.format_specifier.value.strip('"').strip("'") if hasattr(node.format_specifier, "value") else str(node.format_specifier)
 
+        import re
+        format_specifiers = re.findall(r'%[dsfcv]', fmt)
+
+        values = []
         if isinstance(node.value, list):
-            values = []
             for v in node.value:
                 val = res.register(self.visit(v, context))
                 if res.error: return res
+                values.append(val)
 
-                values.append(1 if val is True else 0 if val is False else val)
-
-            print(fmt % tuple(values), end='')
-
-        else:
-            val = res.register(self.visit(node.value, context))
-            if res.error: return res
-            formatted_val = 1 if val is True else 0 if val is False else val
-            print(fmt % formatted_val, end='')
+        if len(format_specifiers) > len(values):
+            return res.failure(Exception(f"Not enough arguments. Expected {len(format_specifiers)}"))
+        
+        try:
+            if values:
+                val_fmt = fmt
+                for i, specifier in enumerate(format_specifiers):
+                    if specifier == '%v':
+                        val_fmt = val_fmt.replace('%v', '%s', 1)
+                        if i <len(values):
+                            values[i] = TT_TRUE if values[i] else TT_FALSE
+                    elif specifier in ['%d', '%f', '%c', '%s']:
+                        if i < len(values) and isinstance(values[i], bool):
+                            values[i] = 1 if values[i] else 0
+                print(val_fmt % tuple(values), end='', flush=True)
+            else:
+                print(fmt, end='', flush=True)
+        except TypeError as e:
+            return res.failure(Exception(f"Format error: {str(e)}"))
 
         return res.success(None)
 
@@ -588,12 +617,12 @@ class Interpreter:
                     actual_type = self.get_type_name(return_value)
                     return res.failure(Exception(f"Invalid return type for '{func_name}': {actual_type} instead of {expected_type}."))
 
-        return res.success(return_value)
+        return res.success_return(return_value)
 
     def visit_FunctionCall(self, node, context):
         res = RTResult()
 
-        func_name = node.identier.value if hasattr(node.identifier, 'value') else node.identifier
+        func_name = node.identifier.value if hasattr(node.identifier, 'value') else node.identifier
         func_value = context.symbol_table.get_function(func_name)
 
         if func_value is None:
@@ -609,6 +638,7 @@ class Interpreter:
             return res.failure(Exception(f"Function '{func_name}' expects {len(func_value.parameters)} arguments, but got {len(node.arguments)}"))
 
         new_context = Context(display_name=func_name, parent=context)
+        new_context.return_type = func_value.return_type
 
         for i, arg in enumerate(node.arguments):
             arg_value = res.register(self.visit(arg, new_context))
@@ -622,12 +652,21 @@ class Interpreter:
 
             new_context.symbol_table.set(func_value.parameters[i][1], arg_value)
 
+        return_value = None
         func_body = func_value.body
+        return_present = False
         for stmt in func_body:
+            if return_present:
+                break
             res.register(self.visit(stmt, new_context))
             if res.error: return res
 
-        return res.success(None)
+            if hasattr (res, 'return_value') and res.return_value is not None:
+                return_value = res.return_value
+                res.return_value = None
+                return_present = True
+
+        return res.success(return_value)
 
     def visit_HaltStatement(self, node, context):
         res = RTResult()
@@ -677,3 +716,20 @@ class Interpreter:
                 if res.error: return res
 
         return res.success(None)
+    
+    def visit_UnaryOp(self, node, context):
+        res = RTResult()
+
+        operand = res.register(self.visit(node.operand, context))
+        if res.error: return res
+
+        op_type = node.operator.type
+
+        if op_type == TT_MINUS:
+            result = -operand
+            return res.success(result)
+        elif op_type == TT_NOT:
+            result = not operand
+            return res.success(result)
+
+        return res.failure(Exception(f"Invalid unary operator: {op_type}"))

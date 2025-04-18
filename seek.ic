@@ -1,1 +1,16 @@
-Numeral
+Embark() {
+    Veracity a = Pure;
+    Veracity b = Nay;
+    
+    Emit("a = %v, b = %v\n", a, b);
+    Emit("a AND b = %v\n", a && b);
+    Emit("a OR b = %v\n", a || b);
+    Emit("NOT a = %v\n", !a);
+    
+    Emit("\nComparisons return boolean values:\n");
+    Numeral x = 5;
+    Numeral y = 10;
+    Emit("%d < %d is %v\n", x, y, x < y);
+    Emit("%d > %d is %v\n", x, y, x > y);
+    Emit("%d == %d is %v\n", x, y, x == y);
+}
