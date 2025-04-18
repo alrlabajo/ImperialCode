@@ -1,0 +1,4 @@
+Veracity isPure = Pure , isNay = Nay;
+
+Embark() {
+}

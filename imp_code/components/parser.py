@@ -112,6 +112,8 @@ class Parser:
     def parse_declare(self):
         if self.current_token.type == TT_CONST:
             return self.parse_const_declaration()
+        elif self.current_token.type == TT_BOOL:
+            return self.parse_ver_declaration()
         else:
             return self.parse_var_declaration()
 
@@ -207,6 +209,67 @@ class Parser:
                 current = new_tail
         return head
 
+    def parse_ver_declaration(self):
+        veracity = self.expect(TT_BOOL)
+        if isinstance(veracity, InvalidSyntaxError):
+            self.errors.append(veracity)
+
+        identifier_token = self.expect(TT_IDENTIFIER)
+        if isinstance(identifier_token, InvalidSyntaxError):
+            self.errors.append(identifier_token)
+        identifier = Identifier(identifier_token.value)
+        
+        if self.current_token.type == TT_LBRACKET:
+            dimensions = self.parse_ledger_element()
+            if self.current_token.type == TT_EQUAL:
+                row = self.parse_ledger_declaration_row()
+                return VariableDeclaration(veracity, identifier, dimensions, row)
+        elif self.current_token.type == TT_EQUAL:
+            return self.parse_ver_declaration_assign()
+
+    def parse_ver_declaration_assign(self):
+        equal = self.expect(TT_EQUAL)
+        if isinstance(equal, InvalidSyntaxError):
+            self.errors.append(equal)
+        value = self.parse_veracity_lit()
+        tail = self.parse_ver_declaration_tail() if self.current_token.type == TT_COMMA else None
+        return value, tail if tail else None
+    
+    def parse_ver_declaration_tail(self):
+        head = None
+        current = None
+        while self.current_token.type == TT_COMMA:
+            self.expect(TT_COMMA)
+            id_token = self.expect(TT_IDENTIFIER)
+            if isinstance(id_token, InvalidSyntaxError):
+                self.errors.append(id_token)
+                break
+            identifier = Identifier(id_token.value)
+            assign = None
+            if self.current_token.type == TT_EQUAL:
+                self.expect(TT_EQUAL)
+                assign = self.parse_veracity_lit()
+            new_tail = VariableDeclarationTail(identifier, assign, None)
+            if head is None:
+                head = new_tail
+                current = head
+            else:
+                current.next_tail = new_tail
+                current = new_tail
+        return head
+    
+    def parse_veracity_lit(self):
+        if self.current_token.type in (TT_TRUE, TT_FALSE):
+            token = self.current_token
+            self.advance()
+            return BoolLiteral(token.value)
+        else:
+            error = InvalidSyntaxError(
+                self.current_token.pos_start,
+                self.current_token.pos_end,f"Expected {TT_TRUE} or {TT_FALSE}")
+            self.errors.append(error)
+            return None
+        
     def parse_const_declaration(self):
         const = self.expect(TT_CONST)
         if isinstance(const, InvalidSyntaxError):
@@ -409,14 +472,14 @@ class Parser:
         return rows
 
     def parse_data_type(self):
-        if self.current_token.type in (TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL):
+        if self.current_token.type in (TT_INT, TT_FLOAT, TT_CHAR, TT_STRING):
             token = self.current_token
             self.advance()
             return token.type
         else:
             return InvalidSyntaxError(
                 self.current_token.pos_start,
-                self.current_token.pos_end,f"Expected data type {TT_INT}, {TT_FLOAT}, {TT_CHAR}, {TT_STRING}, or {TT_BOOL}")
+                self.current_token.pos_end,f"Expected data type {TT_INT}, {TT_FLOAT}, {TT_CHAR}, or {TT_STRING}")
 
     def parse_var_name(self):
         id_token = self.expect(TT_IDENTIFIER)
@@ -424,17 +487,9 @@ class Parser:
             self.errors.append(id_token)
         return Identifier(id_token.value)
 
-    def parse_value_tail(self):
-        if self.current_token.type == TT_LPAREN:
-            return self.parse_function_call()
-        elif self.current_token.type == TT_LBRACKET:
-            return self.parse_ledger_element()
-        else:
-            return None
-
     def parse_value(self):
         if self.current_token.type in (TT_IDENTIFIER, TT_INT_LITERAL, TT_FLOAT_LITERAL,
-                                    TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_TRUE, TT_FALSE):
+                                    TT_CHAR_LITERAL, TT_STRING_LITERAL):
             return self.parse_expression()
         elif self.current_token.type == TT_LPAREN:
             lpar = self.expect(TT_LPAREN)
