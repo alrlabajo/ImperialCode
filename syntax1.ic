@@ -1,7 +1,0 @@
-Embark() {
-    Numeral a = 2;
-    Numeral b = 2;
-    Numeral sum = a + b;
-    
-    Emit("Sum of %d and %d is %d\n", a, b, a+b);
-}

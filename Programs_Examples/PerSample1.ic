@@ -1,0 +1,12 @@
+
+Embark() {
+
+	Per( Numeral k = 1; k < 5; k++) { 
+
+	
+		Numeral square = k * k; 
+		Emit("%f", square); 
+	Emit("\n");
+}
+
+}

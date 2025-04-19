@@ -1,0 +1,24 @@
+Embark() {
+    Numeral decValue = 5;
+    Numeral bit0;
+    Decimal bit1;
+    Decimal bit2;
+    Decimal bit3;
+    Decimal tempValue;
+
+		Emit("Converting Decimal %d to Binary...\n", decValue);
+
+    bit0 = decValue % 2;     
+    tempValue = decValue / 2; 
+    bit1 = tempValue % 2;      
+    tempValue = tempValue / 2; 
+    bit2 = tempValue % 2;      
+    tempValue = tempValue / 2; 
+    bit3 = tempValue % 2;     
+    Emit("Binary representation (4-bit): %d%d%d%d\n", bit3, bit2, bit1, bit0); 
+
+    Emit("Converting Binary %d%d%d%d to Decimal...\n", bit3, bit2, bit1, bit0);
+    Numeral decResult;
+    decResult = ((0 * 8) + (1 * 4) + (0 * 2) + (1 * 1));
+    Emit("Decimal equivalent: %d\n", decResult);
+}

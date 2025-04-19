@@ -1,0 +1,23 @@
+Method Void sumOfDivisors(Numeral num, Numeral i, Numeral sum) {
+    Thou (i == num / 2 + 1) {
+        Thou (sum == num) {
+            printf("%d ", num);
+        }
+    }
+    Thou (num % i == 0) {
+        sum += i;
+    }
+    sumOfDivisors(num, i + 1, sum);
+}
+
+Method Void findPerfectNumbers(Numeral num) {
+    Thou (num > 100) {
+    }
+    sumOfDivisors(num, 1, 0);
+    findPerfectNumbers(num + 1);
+}
+
+Embark() {
+    Emit("Perfect numbers between 1 and 100 are:\n");
+    findPerfectNumbers(1);
+}

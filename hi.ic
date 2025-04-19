@@ -1,6 +1,0 @@
-Embark() {
-	Numeral a= 2+2;
-	Emit("%d", a);
-}
-
-

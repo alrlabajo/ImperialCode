@@ -1,0 +1,19 @@
+
+//Wrong Program
+
+Method Void fibonacci(Numeral a, Numeral b, Numeral count, Numeral max) {
+	Thou (count >= max) {
+		Emit("%d", a);
+		fibonacci(b, a+b, count+1, max);
+	}
+}
+
+Embark() {
+	Numeral terms;
+
+	Emit("Enter the number of terms: ");
+	Seek("%d", &terms);
+
+	Emit("Fibonaci Series: ");
+	fibonacci(0,1, 0, terms);
+}

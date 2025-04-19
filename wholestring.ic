@@ -1,7 +1,0 @@
-Embark() {
-	Missive name;
-	Emit("Enter your name: ");
-	Seek("%s", &name);
-	Emit("Hello, %s!", name);
-}
-

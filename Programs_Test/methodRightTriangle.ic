@@ -1,0 +1,16 @@
+Method RightTriangle() {
+    Numeral n, i, j;
+
+    Emit("Enter the number of rows for Right Triangle: ");
+    Seek(“%d”, &n);
+    Emit("\nRight Triangle:\n");
+
+    for (i = 1;i <= n; i++) {
+        for (j = 1; j <= i; j++) {
+            Emit("*");
+        }
+        Emit("\n");
+    }
+
+    Recede 0;
+}

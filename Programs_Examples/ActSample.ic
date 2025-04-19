@@ -8,8 +8,8 @@ Decimal b = 1.2, a = 3.2;
 
 
 Embark() {
-	Numeral count = 3.5;
-	Letter greeting = 1;
+	Numeral count = 3;
+	Letter greeting = "a";
 
 	Act {
 		count++;  // Increment count prevent infinite loop
@@ -19,7 +19,7 @@ Embark() {
     Emit("%d", count);
 	} Until (count < 5);
 
-	Shift(greetings) {
+	Shift(greeting) {
 		Opt 'a':
 			Emit("Good afternoon");
 		Opt 'm':
