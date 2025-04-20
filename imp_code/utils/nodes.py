@@ -28,10 +28,11 @@ class VariableDeclarationTail(ASTNode):
         self.next_tail = next_tail
 
 class ConstantDeclaration(ASTNode):
-    def __init__(self, data_type, identifier, value):
+    def __init__(self, data_type, identifier, value, tail=None):
         self.data_type = data_type
         self.identifier = identifier
         self.value = value
+        self.tail = tail
 
 class Identifier(ASTNode):
     def __init__(self, name):

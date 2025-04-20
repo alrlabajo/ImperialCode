@@ -27,9 +27,27 @@ class SymbolTable:
             return self.parent.lookup_type(name)
         return var_type
 
-    # Add a method to get functions
     def get_function(self, name):
         func = self.functions.get(name, None)
         if func is None and self.parent:
             return self.parent.get_function(name)
         return func
+
+    def is_constant(self, name):
+        if hasattr(self, 'constants') and name in self.constants:
+            return True
+
+        if self.parent and name not in self.symbols:
+            return self.parent.is_constant(name)
+
+        return False
+
+    def set(self, name, value, var_type=None, is_constant=False):
+        self.symbols[name] = value
+        if var_type is not None:
+            self.types[name] = var_type
+        if is_constant:
+            if not hasattr(self, 'constants'):
+                self.constants = set()
+            self.constants.add(name)
+        return value

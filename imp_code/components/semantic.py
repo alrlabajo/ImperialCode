@@ -77,9 +77,14 @@ class Interpreter:
     def visit_VariableDeclaration(self, node, context):
         res = RTResult()
 
+
         def assign_var(identifier_node, assignment_expr, data_type):
             subres = RTResult()
             name = identifier_node.name
+
+            if context.symbol_table.is_constant(name):
+                return res.failure(Exception(f"'{name}' is a constant."))
+            
             if assignment_expr:
                 value = subres.register(self.visit(assignment_expr, context))
             else:
@@ -139,6 +144,9 @@ class Interpreter:
         var_type = context.symbol_table.lookup_type(var_name)
         if var_type is None:
             return res.failure(Exception(f"'{var_name}' is not defined"))
+
+        if context.symbol_table.is_constant(var_name):
+            return res.failure(Exception(f"'{var_name}' is a constant."))
 
         value_node = node.value
         value = res.register(self.visit(value_node, context))
@@ -272,7 +280,7 @@ class Interpreter:
 
         if len(format_specifiers) > len(values):
             return res.failure(Exception(f"Not enough arguments. Expected {len(format_specifiers)}"))
-        
+
         try:
             if values:
                 val_fmt = fmt
@@ -397,7 +405,7 @@ class Interpreter:
                 result = self.visit(stmt, context)
                 res.register(result)
                 if res.error: return res
-                
+
                 if result.should_break:
                     res.should_break = True
                     return res
@@ -415,14 +423,14 @@ class Interpreter:
                         result = self.visit(stmt, context)
                         res.register(result)
                         if res.error: return res
-                        
+
                         if result.should_break:
                             res.should_break = True
                             return res
                         elif result.should_continue:
                             res.should_continue = True
                             return res
-                            
+
                     elif_executed = True
                     break
 
@@ -432,7 +440,7 @@ class Interpreter:
                         result = self.visit(stmt, context)
                         res.register(result)
                         if res.error: return res
-                        
+
                         if result.should_break:
                             res.should_break = True
                             return res
@@ -442,7 +450,7 @@ class Interpreter:
                 else:
                     res.register(self.visit(node.else_branch, context))
                     if res.error: return res
-        
+
         return res
 
     def visit_ForLoop(self, node, context):
@@ -454,11 +462,11 @@ class Interpreter:
         if node.initialization:
             res.register(self.visit(node.initialization, loop_context))
             if res.error: return res
-        
+
         while True:
             condition_value = res.register(self.visit(node.condition, loop_context))
             if res.error: return res
-            
+
             if not condition_value:
                 break
 
@@ -470,7 +478,7 @@ class Interpreter:
 
                 if result.should_break:
                     return res.success(None)
-                
+
                 if result.should_continue:
                     should_continue = True
                     break
@@ -479,14 +487,14 @@ class Interpreter:
                 if node.update:
                     res.register(self.visit(node.update, loop_context))
                     if res.error: return res
-                continue 
+                continue
 
             if node.update:
                 res.register(self.visit(node.update, loop_context))
                 if res.error: return res
-                    
+
         return res.success(None)
-    
+
     def visit_Initialization(self, node, context):
         res = RTResult()
         res.register(self.visit(node.declaration, context))
@@ -511,7 +519,7 @@ class Interpreter:
 
         context.symbol_table.set(identifier, value)
         return res.success(value)
-    
+
     def visit_WhileLoop(self, node, context):
         res = RTResult()
 
@@ -521,7 +529,7 @@ class Interpreter:
         while True:
             condition_value = res.register(self.visit(node.condition, loop_context))
             if res.error: return res
-            
+
             if not condition_value:
                 break
 
@@ -533,7 +541,7 @@ class Interpreter:
 
                 if result.should_break:
                     return res.success(None)
-                
+
                 if result.should_continue:
                     should_continue = True
                     break
@@ -542,14 +550,14 @@ class Interpreter:
                 if node.update:
                     res.register(self.visit(node.update, loop_context))
                     if res.error: return res
-                continue 
+                continue
 
             if node.update:
                 res.register(self.visit(node.update, loop_context))
                 if res.error: return res
-                    
+
         return res.success(None)
-    
+
     def visit_DoWhileLoop(self, node, context):
         res = RTResult()
 
@@ -559,7 +567,7 @@ class Interpreter:
         while True:
             condition_value = res.register(self.visit(node.condition, loop_context))
             if res.error: return res
-            
+
             if not condition_value:
                 break
 
@@ -571,7 +579,7 @@ class Interpreter:
 
                 if result.should_break:
                     return res.success(None)
-                
+
                 if result.should_continue:
                     should_continue = True
                     break
@@ -580,14 +588,14 @@ class Interpreter:
                 if node.update:
                     res.register(self.visit(node.update, loop_context))
                     if res.error: return res
-                continue 
+                continue
 
             if node.update:
                 res.register(self.visit(node.update, loop_context))
                 if res.error: return res
-                    
+
         return res.success(None)
-    
+
     def visit_Argument(self, node, context):
         res = RTResult()
         value = res.register(self.visit(node.value, context))
@@ -787,7 +795,7 @@ class Interpreter:
                 if res.error: return res
 
         return res.success(None)
-    
+
     def visit_UnaryOp(self, node, context):
         res = RTResult()
 
@@ -804,3 +812,45 @@ class Interpreter:
             return res.success(result)
 
         return res.failure(Exception(f"Invalid unary operator: {op_type}"))
+
+    def visit_ConstantDeclaration(self, node, context):
+        res = RTResult()
+
+        name = node.identifier.name if hasattr(node.identifier, 'name') else node.identifier
+        data_type = node.data_type
+
+        # Constants must have an initialization value
+        if not node.value:
+            return res.failure(Exception(f"Constant '{name}' must be initialized with a value"))
+
+        # Evaluate the constant value
+        value = res.register(self.visit(node.value, context))
+        if res.error:
+            return res
+
+        # Type checking
+        if data_type == TT_INT and not isinstance(value, int):
+            expected = self.get_type_name(None, data_type)
+            actual = self.get_type_name(value)
+            return res.failure(Exception(f"Invalid type for constant '{name}': {actual} instead of {expected}."))
+        elif data_type == TT_FLOAT and not isinstance(value, float):
+            expected = self.get_type_name(None, data_type)
+            actual = self.get_type_name(value)
+            return res.failure(Exception(f"Invalid type for constant '{name}': {actual} instead of {expected}."))
+        elif data_type == TT_STRING and (not isinstance(value, str) or (value and value[0] not in ['"', '"'])):
+            expected = self.get_type_name(None, data_type)
+            actual = self.get_type_name(value)
+            return res.failure(Exception(f"Invalid type for constant '{name}': {actual} instead of {expected}."))
+        elif data_type == TT_CHAR and (not isinstance(value, str) or len(value) != 1):
+            expected = self.get_type_name(None, data_type)
+            actual = self.get_type_name(value)
+            return res.failure(Exception(f"Invalid type for constant '{name}': {actual} instead of {expected}."))
+        elif data_type == TT_BOOL and not isinstance(value, bool):
+            expected = self.get_type_name(None, data_type)
+            actual = self.get_type_name(value)
+            return res.failure(Exception(f"Invalid type for constant '{name}': {actual} instead of {expected}."))
+
+        # Set the constant in the symbol table
+        context.symbol_table.set(name, value, var_type=data_type, is_constant=True)
+
+        return res.success(None)
