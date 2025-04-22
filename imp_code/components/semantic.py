@@ -84,7 +84,7 @@ class Interpreter:
 
             if context.symbol_table.is_constant(name):
                 return res.failure(Exception(f"'{name}' is a constant."))
-            
+
             if assignment_expr:
                 value = subres.register(self.visit(assignment_expr, context))
             else:
@@ -140,25 +140,53 @@ class Interpreter:
     def visit_ValueAssignment(self, node, context):
         res = RTResult()
 
-        var_name = node.identifier.name
+        var_name = node.identifier.name if hasattr(node.identifier, 'name') else node.identifier
+
+        var_value = context.symbol_table.get(var_name)
         var_type = context.symbol_table.lookup_type(var_name)
-        if var_type is None:
+
+        if var_value is None:
             return res.failure(Exception(f"'{var_name}' is not defined"))
 
-        if context.symbol_table.is_constant(var_name):
-            return res.failure(Exception(f"'{var_name}' is a constant."))
-
-        value_node = node.value
-        value = res.register(self.visit(value_node, context))
+        value = res.register(self.visit(node.value, context))
         if res.error: return res
 
-        if not self.is_type_compatible(var_type, value):
+        op_type = node.operator.type if hasattr(node.operator, 'type') else node.operator
+
+        if op_type == TT_EQUAL:
+            new_value = value
+        elif op_type == TT_PLUSAND:  # +=
+            new_value = var_value + value
+        elif op_type == TT_MINUSAND:  # -=
+            new_value = var_value - value
+        elif op_type == TT_MULAND:  # *=
+            new_value = var_value * value
+        elif op_type == TT_DIVAND:  # /=
+            if value == 0:
+                return res.failure(Exception("Division by zero"))
+            if isinstance(var_value, int) and isinstance(value, int):
+                new_value = var_value // value
+            else:
+                new_value = var_value / value
+        elif op_type == TT_MODAND:  # %=
+            if value == 0:
+                return res.failure(Exception("Modulo by zero"))
+            new_value = var_value % value
+        else:
+            return res.failure(Exception(f"Unsupported assignment operator: {op_type}"))
+        if not self.is_type_compatible(var_type, new_value):
             expected_type = self.map_type_token_to_class(var_type)
-            actual_type = self.get_type_name(value)
+            actual_type = self.get_type_name(new_value)
             return res.failure(Exception(f"Invalid type for '{var_name}': {actual_type} instead of {expected_type}."))
 
-        context.symbol_table.set(var_name, value)
-        return res.success(None)
+        context.symbol_table.set(var_name, new_value)
+
+        if node.tail and node.tail is not None:
+            for assign in node.tail:
+                res.register(self.visit(assign, context))
+                if res.error: return res
+
+        return res.success(new_value)
 
     def is_type_compatible(self, expected_token_type, value):
         if expected_token_type == TT_INT:  # Numeral
@@ -190,6 +218,9 @@ class Interpreter:
         right = res.register(self.visit(node.right, context))
         if res.error: return res
 
+        result = None
+        error = None
+
         op_type = node.operator.type
 
         try:
@@ -203,16 +234,14 @@ class Interpreter:
                 result = left * right
                 return res.success(result)
             elif op_type == TT_DIV:
-                if isinstance(left, Value) and isinstance(right, Value):
-                    result, error = left.dived_by(right)
-                    if error:
-                        return res.failure(error)
-                    return res.success(result)
-                elif right == 0:
-                    return res.failure(Exception("division by zero"))
+                if right == 0:
+                    error = Exception("Division by zero")
                 else:
-                    result = left / right
-                    return res.success(result)
+                    if isinstance(left, int) and isinstance(right, int):
+                        result = left // right
+                    else:
+                        result = left / right
+                return res.success(result)
             elif op_type == TT_MODULO:
                 if isinstance(left, Value) and isinstance(right, Value):
                     result, error = left.remained_by(right)
@@ -259,6 +288,9 @@ class Interpreter:
                     result = bool(right)
                     return res.success(result)
 
+            if error:
+                return res.failure(error)
+
             return res.success(result)
         except Exception as e:
             return res.failure(e)
@@ -277,6 +309,7 @@ class Interpreter:
                 val = res.register(self.visit(v, context))
                 if res.error: return res
                 values.append(val)
+
 
         if len(format_specifiers) > len(values):
             return res.failure(Exception(f"Not enough arguments. Expected {len(format_specifiers)}"))
@@ -456,8 +489,8 @@ class Interpreter:
     def visit_ForLoop(self, node, context):
         res = RTResult()
 
-        loop_context = Context(context.display_name, context)
-        loop_context.symbol_table = SymbolTable(context.symbol_table)
+        loop_context = context
+        loop_context.symbol_table = context.symbol_table
 
         if node.initialization:
             res.register(self.visit(node.initialization, loop_context))
@@ -523,8 +556,8 @@ class Interpreter:
     def visit_WhileLoop(self, node, context):
         res = RTResult()
 
-        loop_context = Context(context.display_name,context)
-        loop_context.symbol_table = SymbolTable(context.symbol_table)
+        loop_context = context
+        loop_context.symbol_table = context.symbol_table
 
         while True:
             condition_value = res.register(self.visit(node.condition, loop_context))
@@ -561,8 +594,8 @@ class Interpreter:
     def visit_DoWhileLoop(self, node, context):
         res = RTResult()
 
-        loop_context = Context(context.display_name,context)
-        loop_context.symbol_table = SymbolTable(context.symbol_table)
+        loop_context = context
+        loop_context.symbol_table = context.symbol_table
 
         while True:
             condition_value = res.register(self.visit(node.condition, loop_context))
@@ -819,16 +852,13 @@ class Interpreter:
         name = node.identifier.name if hasattr(node.identifier, 'name') else node.identifier
         data_type = node.data_type
 
-        # Constants must have an initialization value
         if not node.value:
             return res.failure(Exception(f"Constant '{name}' must be initialized with a value"))
 
-        # Evaluate the constant value
         value = res.register(self.visit(node.value, context))
         if res.error:
             return res
 
-        # Type checking
         if data_type == TT_INT and not isinstance(value, int):
             expected = self.get_type_name(None, data_type)
             actual = self.get_type_name(value)
@@ -850,7 +880,6 @@ class Interpreter:
             actual = self.get_type_name(value)
             return res.failure(Exception(f"Invalid type for constant '{name}': {actual} instead of {expected}."))
 
-        # Set the constant in the symbol table
         context.symbol_table.set(name, value, var_type=data_type, is_constant=True)
 
         return res.success(None)

@@ -1,0 +1,15 @@
+Embark() {
+    Numeral binary, decimal = 0, base = 1, rem;
+
+    Emit("Enter a binary number: ");
+    Seek("%d", &binary);
+
+    Until (binary > 0) {
+        rem = binary % 10;
+        decimal += rem * base;
+        binary /= 10;
+        base *= 2;
+    }
+
+    Emit("Decimal equivalent: %d\n", decimal);
+}
