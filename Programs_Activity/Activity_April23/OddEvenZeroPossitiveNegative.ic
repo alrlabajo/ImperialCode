@@ -1,0 +1,24 @@
+Embark() {
+    Numeral number;
+
+    Emit("Enter a number: ");
+    Seek("%d", &number);
+
+    Thou (number == 0) {
+        Emit("The number is zero.\n");
+    } Or {
+        // Check if negative
+        Thou (number < 0) {
+            Emit("The number is negative and ");
+        } Or {
+            Emit("The number is positive and ");
+        }
+
+        // Then check even or odd
+        Thou (number % 2 == 0) {
+            Emit("even.\n");
+        } Or {
+            Emit("odd.\n");
+        }
+    }
+}

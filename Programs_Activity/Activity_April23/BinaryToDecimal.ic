@@ -4,7 +4,7 @@ Embark() {
     Emit("Enter a binary number: ");
     Seek("%d", &binary);
     
-    Decimal original = binary;
+    Numeral original = binary;
     
     Until(binary > 0) {
         digit = binary % 10;  // Get rightmost digit
