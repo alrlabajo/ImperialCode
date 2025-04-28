@@ -298,28 +298,34 @@ class Parser:
 
     def parse_ledger_element(self):
         sizes = []
+        
         lbracket = self.expect(TT_LBRACKET)
         if isinstance(lbracket, InvalidSyntaxError):
             self.errors.append(lbracket)
-        if self.current_token.type == TT_INT_LITERAL:
-            sizes.append(self.current_token.value)
-            self.advance()
+
+        expr = self.parse_expression()
+        if expr is not None:
+            sizes.append(expr)
+
         rbracket = self.expect(TT_RBRACKET)
         if isinstance(rbracket, InvalidSyntaxError):
             self.errors.append(rbracket)
 
-        if self.current_token.type == TT_LBRACKET:
+        if self.current_token and self.current_token.type == TT_LBRACKET:
             lbracket = self.expect(TT_LBRACKET)
             if isinstance(lbracket, InvalidSyntaxError):
                 self.errors.append(lbracket)
-            if self.current_token.type == TT_INT_LITERAL:
-                sizes.append(self.current_token.value)
-                self.advance()
+
+            expr = self.parse_expression()  # <-- again, allow full expression
+            if expr is not None:
+                sizes.append(expr)
+
             rbracket = self.expect(TT_RBRACKET)
             if isinstance(rbracket, InvalidSyntaxError):
                 self.errors.append(rbracket)
 
         return sizes
+
 
     def parse_ledger_declaration_row(self):
         equal = self.expect(TT_EQUAL)
@@ -513,7 +519,7 @@ class Parser:
         else:
             error = InvalidSyntaxError(
                 self.current_token.pos_start,
-                self.current_token.pos_end,f"Expected {TT_IDENTIFIER}, {TT_INT_LITERAL}, {TT_FLOAT_LITERAL}, {TT_CHAR_LITERAL}, {TT_STRING_LITERAL}, {TT_TRUE}, {TT_FALSE}, or {TT_LPAREN}")
+                self.current_token.pos_end,f"Expected {TT_IDENTIFIER}, {TT_INT_LITERAL}, {TT_FLOAT_LITERAL}, {TT_CHAR_LITERAL}, {TT_STRING_LITERAL}, or {TT_LPAREN}")
             self.errors.append(error)
             return None
 
@@ -599,7 +605,7 @@ class Parser:
             else:
                 return Identifier(id_token.value)
         elif self.current_token.type in (TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL,
-                                    TT_STRING_LITERAL, TT_TRUE, TT_FALSE):
+                                    TT_STRING_LITERAL):
             token = self.current_token
             self.advance()
             if token.type == TT_INT_LITERAL:
@@ -610,13 +616,11 @@ class Parser:
                 return CharLiteral(token.value)
             elif token.type == TT_STRING_LITERAL:
                 return StringLiteral(token.value)
-            elif token.type in (TT_TRUE, TT_FALSE):
-                return BoolLiteral(token.value)
         else:
             self.errors.append(InvalidSyntaxError(
                 self.current_token.pos_start,
                 self.current_token.pos_end,
-                f"Expected {TT_IDENTIFIER}, {TT_INT_LITERAL}, {TT_FLOAT_LITERAL}, {TT_CHAR_LITERAL}, {TT_STRING_LITERAL}, {TT_TRUE}, {TT_FALSE}, {TT_LPAREN}, or {TT_LBRACKET}"
+                f"Expected {TT_IDENTIFIER}, {TT_INT_LITERAL}, {TT_FLOAT_LITERAL}, {TT_CHAR_LITERAL}, {TT_STRING_LITERAL}, {TT_LPAREN}, or {TT_LBRACKET}"
             ))
             return None
 

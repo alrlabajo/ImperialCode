@@ -1,0 +1,33 @@
+Embark() {
+		Missive str;
+		Numeral flag = 0;
+
+    Emit("Enter a string to check if it's a palindrome: ");
+		Seek("%s", &str);
+
+		Numeral i = 0;
+		Numeral j = 0;
+
+	// Move j to end of string
+		Until(str[j] == "\0") {
+    		j++;
+		}
+		j = j - 1;  // Adjust j to point to last valid character
+
+		flag = 1; // Assume it's a palindrome
+
+		Until(i >= j) {
+    		Thou(str[i] != str[j]) {
+        		flag = 0; // Not a palindrome
+        		Halt;
+    		}
+    		i = i + 1;
+    		j = j - 1;
+		}
+
+		Thou(flag == 1) {
+    	Emit("%s is a palindrome.\n", str);
+		} Or {
+    	Emit("%s is not a palindrome.\n", str);
+		}
+}
