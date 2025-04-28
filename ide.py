@@ -454,6 +454,43 @@ if __name__ == "__main__":
          # clear terminal output
         global clear_command
         terminalIO.write(clear_command)
+        terminalIO.write(f"ic {current_file_name} -m semantic\r".encode("utf-8"))
+
+    def run_code():
+        global current_file_name
+
+        if current_file_name is None:
+            return QMessageBox.critical(
+                window,
+                "No File Opened",
+                "Please open a file first or save your current file.",
+                QMessageBox.StandardButton.Ok,
+            )
+
+        code = text_edit.toPlainText()
+
+        # Clear the table
+        token_table.setRowCount(0)
+
+        tokens, _ = ic.run_lexical(current_file_name, code)
+        for token in tokens:
+            row_pos = token_table.rowCount()
+            
+            if isinstance(token, list): 
+                for sub_token in token:
+                    token_table.insertRow(row_pos)
+                    token_table.setItem(row_pos, 0, QTableWidgetItem(sub_token.value if sub_token.value else sub_token.type))
+                    token_table.setItem(row_pos, 1, QTableWidgetItem(sub_token.type))
+                    row_pos += 1 
+            else:
+                token_table.insertRow(row_pos)
+                token_table.setItem(row_pos, 0, QTableWidgetItem(token.value if token.value else token.type))
+                token_table.setItem(row_pos, 1, QTableWidgetItem(token.type))
+
+         # Pass and run a command to the terminal
+         # clear terminal output
+        global clear_command
+        terminalIO.write(clear_command)
         terminalIO.write(f"ic {current_file_name}\r".encode("utf-8"))
 
     """
@@ -483,14 +520,17 @@ if __name__ == "__main__":
     lexical_button = QPushButton("Lexical Analysis")
     syntax_button = QPushButton("Syntax Analysis")
     semantic_button = QPushButton("Semantic Analysis")
+    run_button = QPushButton("Run")
 
     lexical_button.setObjectName("btn_analyzers")
     syntax_button.setObjectName("btn_analyzers")
     semantic_button.setObjectName("btn_analyzers")
+    run_button.setObjectName("btn_analyzers")
 
     lexical_button.clicked.connect(analyze_lexical)
     syntax_button.clicked.connect(analyze_syntax)
     semantic_button.clicked.connect(analyze_semantic)
+    run_button.clicked.connect(run_code)
 
     # File buttons
     new_file_button = QPushButton("New File")
@@ -523,6 +563,7 @@ if __name__ == "__main__":
     row1_layout.addWidget(lexical_button)
     row1_layout.addWidget(syntax_button)
     row1_layout.addWidget(semantic_button)
+    row1_layout.addWidget(run_button)
 
     row1_layout.addStretch(1)
     row1_layout.addWidget(new_file_button)

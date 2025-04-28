@@ -1347,17 +1347,17 @@ class Parser:
         if self.current_token.type != TT_STRING_LITERAL:
             return InvalidSyntaxError(
                 self.current_token.pos_start,
-                self.current_token.pos_end,"Expected format specifier")
+                self.current_token.pos_end,
+                "Expected format specifier"
+            )
         token = self.current_token
         self.advance()
         fmt = StringLiteral(token.value)
         memory_addr_root = self.parse_memory_address()
-        addr = self.flatten_memory_addresses(memory_addr_root)
         rpar = self.expect(TT_RPAREN)
         if isinstance(rpar, InvalidSyntaxError):
             self.errors.append(rpar)
-        return InputStatement(fmt, addr)
-
+        return InputStatement(fmt, memory_addr_root)
 
     def parse_memory_address(self):
         if self.current_token.type != TT_COMMA:

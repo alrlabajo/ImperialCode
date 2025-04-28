@@ -1,11 +1,11 @@
 Embark() {
-    Numeral x = 10;
+    Numeral x = 100;
 
     Thou (x < 5) {
         Emit("x is less than 5");
     } Or Thou (x == 10) {
         Emit("x is exactly 10");
     } Or {
-        Emit("x is something else");
+        Emit("%d is something else");
     }
 }

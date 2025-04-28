@@ -1,6 +1,6 @@
 Embark() {
     Numeral score;
-    Missive grade;
+    Missive grade = " ";
 
 	Emit("Enter your score: ");
 	Seek("%d", &score);

@@ -1,7 +1,7 @@
 import argparse
 import datetime
 import os
-from .compiler import run_lexical, run_syntax, run_semantic
+from .compiler import run_lexical, run_syntax, run_semantic, run_interpreter
 import time
 
 
@@ -13,7 +13,7 @@ def main():
         "file", nargs="?", type=str, help="The .ic file to run.", default=""
     )
     parser.add_argument(
-        "--mode", "-m", choices=["lexical", "syntax"], help="Mode to run."
+        "--mode", "-m", choices=["lexical", "syntax", "semantic"], help="Mode to run."
     )
     parser.add_argument(
         "--verbose", "-v", help="Run analysis in verbose mode.", action="store_true"
@@ -34,8 +34,11 @@ def main():
     elif args.mode == "syntax":
         args.verbose = True
         _run_syntax(args.file, code)
-    else:
+    elif args.mode == "semantic":
+        args.verbose = True
         _run_semantic(args.file, code)
+    else:
+        _run_interpreter(args.file, code)
 
 def format_time(seconds):
     if seconds < 1e-6:
@@ -92,18 +95,38 @@ def _run_syntax(file_path, code):
 
 @log_runtime
 def _run_semantic(file_path, code):
-    tokens, ast, res, errors = run_semantic(file_path, code)
-    
+    tokens, ast, context, errors = run_semantic(file_path, code)
+
     if errors:
         for error in errors:
             if hasattr(error, "as_string"):
                 print(error.as_string())
             else:
                 print(error)
-    elif res and res.error:
-        print(f"Runtime Error: {res.error}")
     else:
-        print("\nExecution complete.")
+        print("No semantic errors found.")
+
+@log_runtime
+def _run_interpreter(file_path, code):
+    tokens, ast, context, errors = run_semantic(file_path, code)
+
+    if errors:
+        for error in errors:
+            if hasattr(error, "as_string"):
+                print(error.as_string())
+            else:
+                print(error)
+    else:
+        res, runtime_errors = run_interpreter(ast, context)
+
+        if runtime_errors:
+            for error in runtime_errors:
+                if hasattr(error, "as_string"):
+                    print(error.as_string())
+                else:
+                    print(error)
+        else:
+            print("\nExecution complete.")
 
 
 # def cli():

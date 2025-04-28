@@ -1,5 +1,5 @@
 Embark() {
-    Numeral score = 60;
+    Numeral score = 100;
 
     Thou (score >= 90) {
         Emit("Grade: A");

@@ -1,8 +1,11 @@
 Embark() {
     Numeral decimal_num, binary_num = 0, i = 1, remainder;
+    
 
     Emit("Enter a decimal number: ");
     Seek("%d", &decimal_num);
+
+		Numeral orig = decimal_num;
 
     Until (decimal_num != 0) {
         remainder = decimal_num % 2;
@@ -11,6 +14,6 @@ Embark() {
         i *= 10;
     }
 
-    Emit("Binary equivalent: %d\n", binary_num);
+    Emit("The Binary equivalent of %d is %d\n", orig,binary_num);
 
 }

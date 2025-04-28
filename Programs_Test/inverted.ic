@@ -1,0 +1,27 @@
+Embark()
+{
+    Emit("number of Fibonacci numbers: ");
+    Numeral n;
+    Seek( "%d", &n );
+    Thou ( n > 47 ) {
+        n = 47;
+		}
+    Numeral f1 = 0;
+    Numeral f2 = 1;
+    Per ( Numeral i = 2; i < n; i ++ ) // calculate the first n Fibonacci numbers
+    {
+        Numeral s = f1 + f2;
+        f1 = f2;
+        f2 = s;
+    }
+
+    Until ( f1 >= 0 )
+    {
+        Emit( "%d ", f2 );
+        Numeral t = f2 - f1;
+        f2 = f1;
+        f1 = t;
+    }
+
+    Recede 0;
+}

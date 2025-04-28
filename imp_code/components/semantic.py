@@ -141,7 +141,6 @@ class Interpreter:
         res = RTResult()
 
         var_name = node.identifier.name if hasattr(node.identifier, 'name') else node.identifier
-
         var_value = context.symbol_table.get(var_name)
         var_type = context.symbol_table.lookup_type(var_name)
 

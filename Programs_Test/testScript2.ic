@@ -1,34 +1,5 @@
 Embark() {
-    Numeral i, j;
-    
-    Emit("Pattern with nested loops:\n");
-    
-    Per(Numeral i = 1; i <= 5; i++) {
-        // Print spaces
-        Per(Numeral j = 1; j <= 5 - i; j++) {
-            Emit(" ");
-        }
-        
-        // Print stars
-        Per(Numeral j = 1; j <= 2*i - 1; j++) {
-            Emit("*");
-        }
-        
-        Emit("\n");
-    }
-    
-    // Reverse pattern
-    Per(Numeral i = 4; i >= 1; i--) {
-        // Print spaces
-        Per(Numeral j = 1; j <= 5 - i; j++) {
-            Emit(" ");
-        }
-        
-        // Print stars
-        Per(Numeral j = 1; j <= 2*i - 1; j++) {
-            Emit("*");
-        }
-        
-        Emit("\n");
-    }
+Numeral sum;
+sum = 1+1;
+	Emit("%d", sum);
 }

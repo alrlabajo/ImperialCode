@@ -2,8 +2,8 @@ Embark() {
 	Numeral a=1;
 
 	Act {
-		Emit("Hello People\n");
+		Emit("%d\n", a);
 		a++;
-	} Until (a<=2);
+	} Until (a<=9);
 
 }

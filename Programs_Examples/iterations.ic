@@ -13,7 +13,7 @@ Embark() {
 	Emit("Enter the number of iterations: ");
 	Seek("%d", &iterations);
 
-	cubeIterations(number, iterations);
+	cubeIteration(number, iterations);
 
 	Recede 0;
 }

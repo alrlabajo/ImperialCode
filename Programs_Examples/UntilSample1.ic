@@ -1,5 +1,6 @@
 Embark() {
-	Until (i < ) {
+	Numeral i;
+	Until (i < 9 ) {
 		Emit("%d\n", i);
 		i++;
 	}
