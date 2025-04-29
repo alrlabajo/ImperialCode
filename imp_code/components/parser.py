@@ -151,7 +151,7 @@ class Parser:
         return None
 
     def parse_var_declaration(self):
-        data_type = self.parse_data_type()  # e.g., Numeral for 'int'
+        data_type = self.parse_data_type()
         identifier_token = self.expect(TT_IDENTIFIER)
         identifier = Identifier(identifier_token.value)
 
@@ -205,15 +205,16 @@ class Parser:
         return head
 
     def parse_ver_declaration(self):
-        veracity = self.expect(TT_BOOL)
-        if isinstance(veracity, InvalidSyntaxError):
-            self.errors.append(veracity)
+        ver_token = self.expect(TT_BOOL)
+        if isinstance(ver_token, InvalidSyntaxError):
+            self.errors.append(ver_token)
+        veracity = ver_token.type
 
         identifier_token = self.expect(TT_IDENTIFIER)
         if isinstance(identifier_token, InvalidSyntaxError):
             self.errors.append(identifier_token)
         identifier = Identifier(identifier_token.value)
-        
+
         if self.current_token.type == TT_LBRACKET:
             dimensions = self.parse_ledger_element()
             if self.current_token.type == TT_EQUAL:
@@ -226,11 +227,13 @@ class Parser:
             else:
                 return VariableDeclaration(veracity, identifier, None, assignment)
         else:
-            return InvalidSyntaxError(
-            self.current_token.pos_start,
-            self.current_token.pos_end,
-            f"Expected {TT_EQUAL} or {TT_LBRACKET}"
-        )
+            error = InvalidSyntaxError(
+                self.current_token.pos_start,
+                self.current_token.pos_end,
+                f"Expected {TT_EQUAL} or {TT_LBRACKET}"
+            )
+            self.errors.append(error)
+            return error
 
     def parse_ver_declaration_assign(self):
         equal = self.expect(TT_EQUAL)
@@ -239,7 +242,7 @@ class Parser:
         value = self.parse_value()
         tail = self.parse_ver_declaration_tail() if self.current_token.type == TT_COMMA else None
         return value, tail if tail else None
-    
+
     def parse_ver_declaration_tail(self):
         head = None
         current = None
@@ -253,7 +256,7 @@ class Parser:
             assign = None
             if self.current_token.type == TT_EQUAL:
                 self.expect(TT_EQUAL)
-                assign = self.parse_veracity_lit()
+                assign = self.parse_value()
             new_tail = VariableDeclarationTail(identifier, assign, None)
             if head is None:
                 head = new_tail
@@ -262,7 +265,7 @@ class Parser:
                 current.next_tail = new_tail
                 current = new_tail
         return head
-    
+
     def parse_veracity_lit(self):
         if self.current_token.type in (TT_TRUE, TT_FALSE):
             token = self.current_token
@@ -274,7 +277,7 @@ class Parser:
                 self.current_token.pos_end,f"Expected {TT_TRUE} or {TT_FALSE}")
             self.errors.append(error)
             return None
-        
+
     def parse_const_declaration(self):
         const = self.expect(TT_CONST)
         if isinstance(const, InvalidSyntaxError):
@@ -293,7 +296,7 @@ class Parser:
 
     def parse_ledger_element(self):
         sizes = []
-        
+
         lbracket = self.expect(TT_LBRACKET)
         if isinstance(lbracket, InvalidSyntaxError):
             self.errors.append(lbracket)
@@ -380,7 +383,7 @@ class Parser:
         dec_lit = self.expect(TT_FLOAT_LITERAL)
         if isinstance(dec_lit, InvalidSyntaxError):
             self.errors.append(dec_lit)
-            
+
         while self.current_token.type == TT_COMMA:
             comma = self.expect(TT_COMMA)
             if isinstance(comma, InvalidSyntaxError):
@@ -398,7 +401,7 @@ class Parser:
         let_lit = self.expect(TT_CHAR_LITERAL)
         if isinstance(let_lit, InvalidSyntaxError):
             self.errors.append(let_lit)
-            
+
         while self.current_token.type == TT_COMMA:
             comma = self.expect(TT_COMMA)
             if isinstance(comma, InvalidSyntaxError):
@@ -407,7 +410,7 @@ class Parser:
             let_lit = self.expect(TT_CHAR_LITERAL)
             if isinstance(let_lit, InvalidSyntaxError):
                 self.errors.append(let_lit)
-                
+
         return ArrayLiteral(elements)
 
     def parse_missive_ledger(self):
@@ -416,7 +419,7 @@ class Parser:
         miss_lit = self.expect(TT_STRING_LITERAL)
         if isinstance(miss_lit, InvalidSyntaxError):
             self.errors.append(miss_lit)
-            
+
         while self.current_token.type == TT_COMMA:
             comma = self.expect(TT_COMMA)
             if isinstance(comma, InvalidSyntaxError):
@@ -425,7 +428,7 @@ class Parser:
             miss_lit = self.expect(TT_STRING_LITERAL)
             if isinstance(miss_lit, InvalidSyntaxError):
                 self.errors.append(miss_lit)
-                
+
         return ArrayLiteral(elements)
 
     def parse_veracity_ledger(self):
@@ -451,11 +454,11 @@ class Parser:
         lbrace = self.expect(TT_LBRACE)
         if isinstance(lbrace, InvalidSyntaxError):
             self.errors.append(lbrace)
-            
+
         # Parse the first row
         row = self.parse_ledger_value()  # Already returns an ArrayLiteral
         rows.append(row)
-        
+
         rbrace = self.expect(TT_RBRACE)
         if isinstance(rbrace, InvalidSyntaxError):
             self.errors.append(rbrace)
@@ -468,14 +471,14 @@ class Parser:
             lbrace = self.expect(TT_LBRACE)
             if isinstance(lbrace, InvalidSyntaxError):
                 self.errors.append(lbrace)
-                
+
             row = self.parse_ledger_value()
             rows.append(row)
-            
+
             rbrace = self.expect(TT_RBRACE)
             if isinstance(rbrace, InvalidSyntaxError):
                 self.errors.append(rbrace)
-                
+
         # Return an ArrayLiteral containing ArrayLiterals for each row
         return ArrayLiteral(rows)
 
@@ -497,7 +500,7 @@ class Parser:
 
     def parse_value(self):
         return self.parse_expression()
-    
+
     def parse_expression(self):
         return self.parse_logical_or()
 
@@ -576,7 +579,7 @@ class Parser:
             node = Identifier(id_token.value)
             if self.current_token.type == TT_LPAREN:
                 node = self.parse_function_call(id_token)
-            
+
             indices = []
             while self.current_token.type == TT_LBRACKET:
                 self.advance()
@@ -586,7 +589,7 @@ class Parser:
             if indices:
                 node = LedgerAccess(node, indices)
             return node
-        
+
         elif self.current_token.type in (TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL):
             token = self.current_token
             self.advance()
@@ -609,7 +612,7 @@ class Parser:
                 f"Expected {TT_IDENTIFIER}, {TT_INT_LITERAL}, {TT_FLOAT_LITERAL}, {TT_CHAR_LITERAL}, {TT_STRING_LITERAL}, {TT_LPAREN}, or {TT_LBRACKET}"
             ))
             return None
-        
+
     def parse_expression_tail(self, left=None):
         if self.current_token and self.current_token.type in self.get_all_operator_tokens():
             op = self.current_token
@@ -1022,7 +1025,7 @@ class Parser:
                 if isinstance(rbrace, InvalidSyntaxError):
                     self.errors.append(rbrace)
 
-                return body  
+                return body
 
     def parse_else(self):
         if self.current_token.type == TT_ELSE:
@@ -1310,7 +1313,7 @@ class Parser:
                     self.current_token.pos_end,
                     "Expected identifier or expression after ','"
                 )
-                
+
             tail = self.parse_data_storage_tail()
             return [expr] + tail
         return []

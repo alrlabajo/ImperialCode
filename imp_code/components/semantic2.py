@@ -8,7 +8,7 @@ class SemanticAnalyzer:
     def analyze(self, node, context):
         method_name = f'analyze_{type(node).__name__}'
 
-        if isinstance(node, list): 
+        if isinstance(node, list):
             res = RTResult()
             for subnode in node:
                 res.register(self.analyze(subnode, context))
@@ -32,7 +32,7 @@ class SemanticAnalyzer:
             if res.error:
                 return res
         return res.success(None)
-    
+
     def analyze_VariableDeclaration(self, node, context):
         res = RTResult()
 
@@ -123,7 +123,7 @@ class SemanticAnalyzer:
             tail = tail.next_tail
 
         return res.success(None)
-    
+
     def is_valid_int_expression(self, expr, context):
         if isinstance(expr, BinaryOp):
             return self.is_valid_int_expression(expr.left, context) and self.is_valid_int_expression(expr.right, context)
@@ -137,7 +137,7 @@ class SemanticAnalyzer:
             return var_type == TT_INT
         else:
             return False
-        
+
     def analyze_ValueAssignment(self, node, context):
         res = RTResult()
 
@@ -148,12 +148,12 @@ class SemanticAnalyzer:
         if current_val is None:
             return res.failure(Exception(f"'{var_name}' is not defined"))
 
-        is_array_access = (hasattr(node.value, 'identifier') and 
-                           hasattr(node.value, 'indices'))
+        is_array_access = (hasattr(node.value, 'identifier') and
+                        hasattr(node.value, 'indices'))
 
         if is_array_access or isinstance(node.value, LedgerAccess) or isinstance(node.value, list):
             if var_type == TT_INT:
-                return res.success(0) 
+                return res.success(0)
             elif var_type == TT_FLOAT:
                 return res.success(0.0)
             elif var_type == TT_STRING:
@@ -203,9 +203,9 @@ class SemanticAnalyzer:
         context.symbol_table.set(name, value, var_type=data_type, is_constant=True)
 
         return res.success(None)
-    
+
     def analyze_IntLiteral(self, node, context):
-        return RTResult().success(node.value) 
+        return RTResult().success(node.value)
 
     def analyze_FloatLiteral(self, node, context):
         return RTResult().success(node.value)
@@ -214,23 +214,26 @@ class SemanticAnalyzer:
         return RTResult().success(node.value)
 
     def analyze_CharLiteral(self, node, context):
-        return RTResult().success(node.value) 
+        return RTResult().success(node.value)
 
     def analyze_BoolLiteral(self, node, context):
         return RTResult().success(node.value)
-    
+
     def is_type_compatible(self, expected_token_type, value):
-        if expected_token_type == TT_INT:  # Numeral
-            return isinstance(value, int)
+        if expected_token_type == TT_BOOL:  # Veracity
+            result = isinstance(value, bool)
+        elif expected_token_type == TT_INT:  # Numeral
+            result = isinstance(value, int)
         elif expected_token_type == TT_FLOAT:  # Decimal
-            return isinstance(value, float)
+            result = isinstance(value, (float))
         elif expected_token_type == TT_STRING:  # Missive
-            return isinstance(value, str)
+            result = isinstance(value, str) and len(value) > 1
         elif expected_token_type == TT_CHAR:  # Letter
-            return isinstance(value, str) and len(value) == 1
-        elif expected_token_type == TT_BOOL:  # Veracity
-            return isinstance(value, bool)
-        return False
+            result = isinstance(value, str) and len(value) == 1
+        else:
+            result = False
+
+        return result
 
     def map_type_token_to_class(self, token_type):
         return {
@@ -242,17 +245,14 @@ class SemanticAnalyzer:
         }.get(token_type, "Unknown")
 
     def get_type_name(self, value, data_type=None):
-        if isinstance(value, int):
+        if isinstance(value, bool):
+            return "Veracity"
+        elif isinstance(value, int):
             return "Numeral"
         elif isinstance(value, float):
             return "Decimal"
         elif isinstance(value, str):
-            if len(value) == 1:
-                return "Letter"
-            else:
-                return "Missive"
-        elif isinstance(value, bool):
-            return "Veracity"
+            return "Letter" if len(value) == 1 else "Missive"
         elif data_type:
             type_names = {
                 TT_INT: "Numeral",
@@ -331,7 +331,7 @@ class SemanticAnalyzer:
         if len(node.arguments) != len(func_value.parameters):
             return res.failure(Exception(f"Semantic Error: Function '{func_name}' expects {len(func_value.parameters)} arguments, but got {len(node.arguments)}"))
 
-        new_context = Context(display_name=func_name, parent=context)
+        new_context = Context(display_name=f"Function: {func_name}", parent=context)
         new_context.return_type = func_value.return_type
 
         for i, arg in enumerate(node.arguments):
@@ -347,22 +347,20 @@ class SemanticAnalyzer:
 
             new_context.symbol_table.set(func_value.parameters[i][1], arg_value)
 
-        # 🔥 Explicitly simulate value based on return type
+        # Critical fix: Return a simulated value that matches the declared return type
         return_type = func_value.return_type
         if return_type == TT_INT:
-            return res.success(0)
+            return res.success(0)  # Integer
         elif return_type == TT_FLOAT:
-            return res.success(0.0)
-        elif return_type == TT_CHAR:
-            return res.success('a')
+            return res.success(0.0)  # Float
         elif return_type == TT_STRING:
-            return res.success("example")
+            return res.success("example")  # String
+        elif return_type == TT_CHAR:
+            return res.success('a')  # Char
         elif return_type == TT_BOOL:
-            return res.success(True)  # Make sure True is treated correctly as boolean!
+            return res.success(True)  # Boolean - THIS IS THE CRITICAL FIX
         else:
             return res.success(None)
-
-
 
     def analyze_Function(self, node, context):
         res = RTResult()
@@ -462,7 +460,7 @@ class SemanticAnalyzer:
                         res.register(self.analyze(stmt, context))
                         if res.error:
                             return res
-                        
+
         if not case_matched and node.default_case:
             for stmt in node.default_case.body_statements:
                 res.register(self.analyze(stmt, context))
@@ -485,7 +483,7 @@ class SemanticAnalyzer:
                 res.register(self.analyze(stmt, context))
                 if res.error:
                     return res
-                
+
         return res.success(None)
 
     def analyze_ForLoop(self, node, context):
@@ -508,7 +506,7 @@ class SemanticAnalyzer:
                 res.register(self.analyze(stmt, context))
                 if res.error:
                     return res
-                
+
             if node.update:
                 res.register(self.analyze(node.update, context))
                 if res.error:
@@ -565,10 +563,17 @@ class SemanticAnalyzer:
         res = RTResult()
 
         operand = res.register(self.analyze(node.operand, context))
-        if res.error:
-            return res
+        if res.error: return res
 
-        return res.success(None)
+        op_type = node.operator.type if hasattr(node.operator, 'type') else node.operator
+
+        if op_type == TT_NOT:
+            if isinstance(operand, bool):
+                return res.success(not operand)
+            else:
+                return res.failure(Exception(f"Semantic Error: Cannot apply NOT operator to non-boolean value of type {self.get_type_name(operand)}"))
+
+        return res.failure(Exception(f"Semantic Error: Unsupported unary operator {op_type}"))
 
     def analyze_OutputStatement(self, node, context):
         res = RTResult()
@@ -604,7 +609,7 @@ class SemanticAnalyzer:
                     return res.failure(Exception(
                         f"Semantic Error: expected {expected_type} but got {actual_type}."
                     ))
-                    
+
         return res.success(None)
 
     def analyze_InputStatement(self, node, context):
@@ -647,7 +652,7 @@ class SemanticAnalyzer:
     def check_format_specifier_compatibility_with_var(self, specifier, var_token_type):
         if var_token_type is None:
             return False
-            
+
         if specifier == '%d':
             return var_token_type == TT_INT
         elif specifier == '%f':
@@ -722,25 +727,16 @@ class SemanticAnalyzer:
 
         if op_type in (TT_PLUS, TT_MINUS, TT_MUL, TT_DIV, TT_MODULO):
             if isinstance(left, int) and isinstance(right, int):
-                return res.success(0)  
+                return res.success(0)
             elif isinstance(left, float) or isinstance(right, float):
-                return res.success(0.0) 
+                return res.success(0.0)
             else:
                 return res.success(0)
-        elif op_type in (TT_EQUALTO, TT_NOTEQUAL, TT_LESSTHAN, TT_GREATERTHAN, 
+        elif op_type in (TT_EQUALTO, TT_NOTEQUAL, TT_LESSTHAN, TT_GREATERTHAN,
                     TT_LESSTHANEQUAL, TT_GREATERTHANEQUAL, TT_AND, TT_OR):
-            return res.success(False)
+            return res.success(True)
 
         return res.success(0)
-    
-    def analyze_UnaryOp(self, node, context):
-        res = RTResult()
-
-        operand = res.register(self.analyze(node.operand, context))
-        if res.error:
-            return res
-
-        return res.success(None)
 
     def analyze_Identifier(self, node, context):
         res = RTResult()
@@ -785,7 +781,7 @@ class SemanticAnalyzer:
                 return res
 
         return res.success(None)
-    
+
     def analyze_LedgerAccess(self, node, context):
         res = RTResult()
         array_name = node.identifier.name
@@ -797,7 +793,7 @@ class SemanticAnalyzer:
         if isinstance(array_info, dict) and 'value' in array_info and 'dimensions' in array_info:
             current = array_info['value']  # Get the actual array from the 'value' field
         else:
-            current = array_info 
+            current = array_info
 
         if not isinstance(current, list):
             return res.failure(Exception(f"Semantic Error: '{array_name}' is not a ledger."))
@@ -837,7 +833,7 @@ class SemanticAnalyzer:
 
         array_name = node.identifier.name
         array_info = context.symbol_table.get(array_name)
-        
+
         if array_info is None:
             return res.failure(Exception(f"Semantic Error: Ledger '{array_name}' is not defined."))
 
