@@ -1,0 +1,20 @@
+Embark() {
+    Emit("Example 3: While loop with break condition\n");
+    
+    Numeral sum = 0;
+    Numeral num = 0;
+    
+    Until(sum < 100) {
+        num++;
+        sum += num;
+        
+        Emit("Adding %d: sum = %d\n", num, sum);
+        
+        Thou(num >= 10 && sum < 50) {
+            Emit("Special condition met - breaking early\n");
+            Halt;
+        }
+    }
+    
+    Emit("Final sum: %d\n", sum);
+}

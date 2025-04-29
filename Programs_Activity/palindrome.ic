@@ -1,0 +1,21 @@
+Embark() {
+    Letter text[5] = { 'm' , 'a' , 'd' , 'a' , 'm' };  
+    Numeral n = 5;             
+
+    Veracity isPal = Pure;
+
+    Per(Numeral i = 0; i < n/2; i++) {
+        Thou(text[i] != text[n - 1 - i]) {
+            Veracity isPal = Nay;
+            Halt;
+        }
+    }
+
+    Thou(isPal) {
+        Emit("Yes, it's a palindrome!\n");
+    } Or {
+        Emit("No, not a palindrome.\n");
+    }
+
+    Recede 0;
+}

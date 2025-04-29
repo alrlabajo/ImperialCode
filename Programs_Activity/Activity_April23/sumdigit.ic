@@ -1,0 +1,19 @@
+Method Numeral getSum(Numeral n) 
+{  
+   Numeral sum = 0; 
+   Until (n != 0) 
+   { 
+       sum = sum + n % 10; 
+       n = n/10; 
+   } 
+   Recede sum; 
+} 
+  
+Embark() 
+{ 
+  Numeral n;
+	
+		Emit("Enter a number: ");
+		Seek("%d", &n); 
+  Emit(" %d ", getSum(n));  
+} 

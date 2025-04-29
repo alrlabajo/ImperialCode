@@ -1,0 +1,92 @@
+Embark() {
+    Numeral n1, n2, n3, n4, n5;
+    Numeral lowest, second, middle, fourth, highest;
+
+    Emit("Enter 5 numbers: ");
+    Seek("%d %d %d %d %d", &n1, &n2, &n3, &n4, &n5);
+
+    // STEP 1: Find lowest
+    Thou(n1 <= n2 && n1 <= n3 && n1 <= n4 && n1 <= n5) {
+        lowest = n1;
+        n1 = 999999;
+    } Or Thou(n2 <= n1 && n2 <= n3 && n2 <= n4 && n2 <= n5) {
+        lowest = n2;
+        n2 = 999999;
+    } Or Thou(n3 <= n1 && n3 <= n2 && n3 <= n4 && n3 <= n5) {
+        lowest = n3;
+        n3 = 999999;
+    } Or Thou(n4 <= n1 && n4 <= n2 && n4 <= n3 && n4 <= n5) {
+        lowest = n4;
+        n4 = 999999;
+    } Or {
+        lowest = n5;
+        n5 = 999999;
+    }
+
+    // STEP 2: Find second lowest
+    Thou(n1 <= n2 && n1 <= n3 && n1 <= n4 && n1 <= n5) {
+        second = n1;
+        n1 = 999999;
+    } Or Thou(n2 <= n1 && n2 <= n3 && n2 <= n4 && n2 <= n5) {
+        second = n2;
+        n2 = 999999;
+    } Or Thou(n3 <= n1 && n3 <= n2 && n3 <= n4 && n3 <= n5) {
+        second = n3;
+        n3 = 999999;
+    } Or Thou(n4 <= n1 && n4 <= n2 && n4 <= n3 && n4 <= n5) {
+        second = n4;
+        n4 = 999999;
+    } Or {
+        second = n5;
+        n5 = 999999;
+    }
+
+    // STEP 3: Find middle
+    Thou(n1 <= n2 && n1 <= n3 && n1 <= n4 && n1 <= n5) {
+        middle = n1;
+        n1 = 999999;
+    } Or Thou(n2 <= n1 && n2 <= n3 && n2 <= n4 && n2 <= n5) {
+        middle = n2;
+        n2 = 999999;
+    } Or Thou(n3 <= n1 && n3 <= n2 && n3 <= n4 && n3 <= n5) {
+        middle = n3;
+        n3 = 999999;
+    } Or Thou(n4 <= n1 && n4 <= n2 && n4 <= n3 && n4 <= n5) {
+        middle = n4;
+        n4 = 999999;
+    } Or {
+        middle = n5;
+        n5 = 999999;
+    }
+
+    // STEP 4: Find fourth
+    Thou(n1 <= n2 && n1 <= n3 && n1 <= n4 && n1 <= n5) {
+        fourth = n1;
+        n1 = 999999;
+    } Or Thou(n2 <= n1 && n2 <= n3 && n2 <= n4 && n2 <= n5) {
+        fourth = n2;
+        n2 = 999999;
+    } Or Thou(n3 <= n1 && n3 <= n2 && n3 <= n4 && n3 <= n5) {
+        fourth = n3;
+        n3 = 999999;
+    } Or Thou(n4 <= n1 && n4 <= n2 && n4 <= n3 && n4 <= n5) {
+        fourth = n4;
+        n4 = 999999;
+    } Or {
+        fourth = n5;
+        n5 = 999999;
+    }
+
+    // STEP 5: Find highest (remaining number)
+    Thou(n1 != 999999) { highest = n1; } Or
+    Thou(n2 != 999999) { highest = n2; } Or
+    Thou(n3 != 999999) { highest = n3; } Or
+    Thou(n4 != 999999) { highest = n4; } Or {
+        highest = n5;
+    }
+
+    Emit("\nAscending: %d %d %d %d %d\n", lowest, second, middle, fourth, highest);
+    Emit("Descending: %d %d %d %d %d\n", highest, fourth, middle, second, lowest);
+
+    Recede 0;
+}

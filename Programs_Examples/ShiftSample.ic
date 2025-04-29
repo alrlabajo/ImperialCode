@@ -1,6 +1,6 @@
 Embark() {
     Numeral score;
-    Missive grade = " ";
+    Missive grade;
 
 	Emit("Enter your score: ");
 	Seek("%d", &score);
@@ -11,8 +11,10 @@ Embark() {
             Emit("Perfect Score: A+\n");
             Halt;
         Opt 90:
-            grade = "Excellent";
-            Emit("Excellent: A\n");
+            Thou(score > 80) {
+            	Halt;
+        			}
+        			Emit("This should not happen\n");
             Halt;
         Opt 80:
             grade = "Very Good";

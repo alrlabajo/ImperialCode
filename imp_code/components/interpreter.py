@@ -11,6 +11,14 @@ class Interpreter:
 
     def visit(self, node, context):
         method_name = f'visit_{type(node).__name__}'
+        if isinstance(node, list): 
+            res = RTResult()
+            for subnode in node:
+                res.register(self.visit(subnode, context))
+                if res.error:
+                    return res
+            return res.success(None)
+        
         method = getattr(self, method_name, self.no_visit_method)
         return method(node, context)
 
@@ -19,15 +27,21 @@ class Interpreter:
 
     def visit_Program(self, node, context):
         res = RTResult()
+
         res.register(self.semantic_analyzer.analyze(node, context))
-        if res.error: return res
+        if res.error:
+            return res
 
         for decl in node.global_declarations:
             res.register(self.visit(decl, context))
-            if res.error: return res
+            if res.error:
+                return res
+
         for stmt in node.main_statements:
             res.register(self.visit(stmt, context))
-            if res.error: return res
+            if res.error:
+                return res
+
         return res.success(None)
 
     def visit_IntLiteral(self, node, context):
@@ -48,33 +62,105 @@ class Interpreter:
     def visit_VariableDeclaration(self, node, context):
         res = RTResult()
 
-        default_values = {
-            TT_INT: 0,
-            TT_FLOAT: 0.0,
-            TT_STRING: "",
-            TT_CHAR: '',
-            TT_BOOL: False
-        }
-
-        def assign_var(identifier_node, assignment_expr, data_type):
+        def assign_var(identifier_node, assignment_expr, data_type, dimensions, row):
+            subres = RTResult()
             name = identifier_node.name
-            if assignment_expr:
-                value = res.register(self.visit(assignment_expr, context))
-                if res.error:
-                    return res
+
+            if context.symbol_table.is_constant(name):
+                return subres.failure(Exception(f"'{name}' is a constant."))
+
+            if dimensions is not None:
+                processed_dimensions = []
+                for dim in dimensions:
+                    dim_value = subres.register(self.visit(dim, context))
+                    if subres.error:
+                        return subres
+                    if not isinstance(dim_value, int):
+                        return subres.failure(Exception("Ledger size must be an integer."))
+                    processed_dimensions.append(dim_value)
+
+                defaults = {
+                    TT_INT: 0,
+                    TT_FLOAT: 0.0,
+                    TT_STRING: "",
+                    TT_CHAR: '',
+                    TT_BOOL: False
+                }
+                default_value = defaults.get(data_type, 0)
+                if len(processed_dimensions) == 1:
+                    array_value = [default_value] * processed_dimensions[0]
+                elif len(processed_dimensions) == 2:
+                    r, c = processed_dimensions
+                    array_value = [[default_value] * c for _ in range(r)]
+                else:
+                    return subres.failure(Exception("Only 1D and 2D ledgers are supported."))
+
+                context.symbol_table.set(name, array_value, var_type=data_type, dimensions=processed_dimensions)
+
+                init_ast = row if row is not None else assignment_expr
+                if init_ast:
+                    init_val = subres.register(self.visit(init_ast, context))
+                    if subres.error:
+                        return subres
+                    init_list = init_val
+
+                    if isinstance(init_list, list) and all(isinstance(rw, list) for rw in init_list):
+                        for i in range(len(array_value)):
+                            for j in range(len(array_value[0])):
+                                try:
+                                    array_value[i][j] = init_list[i][j]
+                                except (IndexError, TypeError):
+                                    array_value[i][j] = default_value
+ 
+                    elif isinstance(init_list, list):
+                        if len(processed_dimensions) == 1:
+                            for i, v in enumerate(init_list[: len(array_value)]):
+                                array_value[i] = v
+                        else:
+                            for j, v in enumerate(init_list[: len(array_value[0])]):
+                                array_value[0][j] = v
             else:
-                value = default_values.get(data_type, None)
+                defaults = {
+                    TT_INT: 0,
+                    TT_FLOAT: 0.0,
+                    TT_STRING: "",
+                    TT_CHAR: '',
+                    TT_BOOL: False
+                }
+                default_value = defaults.get(data_type, None)
+                context.symbol_table.set(name, default_value, var_type=data_type)
 
-            context.symbol_table.set(name, value, var_type=data_type)
-            return res.success(None)
+                if assignment_expr:
+                    assign_node = ValueAssignment(
+                        identifier=identifier_node,
+                        operator=Tokens(TT_EQUAL),
+                        value=assignment_expr
+                    )
+                    result = subres.register(self.visit(assign_node, context))
+                    if subres.error:
+                        return subres
 
-        res.register(assign_var(node.identifier, node.assignment, node.data_type))
+            return subres.success(None)
+
+        res.register(assign_var(
+            node.identifier,
+            node.assignment,
+            node.data_type,
+            node.dimensions,
+            node.row
+        ))
         if res.error:
             return res
 
         tail = node.tail
         while tail:
-            res.register(assign_var(tail.identifier, tail.assignment, node.data_type))
+            res.register(assign_var(
+                tail.identifier,
+                tail.assignment,
+                node.data_type,
+                tail.dimensions,
+                tail.row
+            ))
             if res.error:
                 return res
             tail = tail.next_tail
@@ -83,43 +169,47 @@ class Interpreter:
 
     def visit_ValueAssignment(self, node, context):
         res = RTResult()
-
         var_name = node.identifier.name
         var_data = context.symbol_table.get(var_name)
-        if var_data is None:
-            return res.failure(Exception(f"'{var_name}' is not defined."))
+        
+        if var_data is None and not context.symbol_table.exists(var_name):
+            return res.failure(Exception(f"Runtime Error: Variable '{var_name}' is not declared."))
 
-        var_value = var_data.get('value') if isinstance(var_data, dict) else var_data
-
+        # Extract the actual value from the dictionary if needed
+        current_value = var_data
+        if isinstance(var_data, dict) and 'value' in var_data:
+            current_value = var_data['value']
+        
         value = res.register(self.visit(node.value, context))
         if res.error:
             return res
 
-        op_type = node.operator.type
+        if value is None:
+            return res.failure(Exception(f"Runtime Error: Cannot assign None to variable '{var_name}'."))
 
-        try:
-            if op_type == TT_EQUAL:
-                new_value = value
-            elif op_type == TT_PLUSAND:
-                new_value = var_value + value
-            elif op_type == TT_MINUSAND:
-                new_value = var_value - value
-            elif op_type == TT_MULAND:
-                new_value = var_value * value
-            elif op_type == TT_DIVAND:
-                if value == 0:
-                    return res.failure(Exception("Division by zero"))
-                new_value = var_value // value if isinstance(var_value, int) else var_value / value
-            elif op_type == TT_MODAND:
-                if value == 0:
-                    return res.failure(Exception("Modulo by zero"))
-                new_value = var_value % value
-            else:
-                return res.failure(Exception(f"Unsupported assignment operator: {op_type}"))
-        except TypeError:
-            return res.failure(Exception(f"Invalid operation: {var_value} {op_type} {value}"))
+        op_type = node.operator.type if hasattr(node.operator, 'type') else node.operator
 
-        context.symbol_table.set(var_name, new_value)
+        if op_type == TT_EQUAL:
+            new_value = value
+        elif op_type == TT_PLUSAND:
+            new_value = current_value + value
+        elif op_type == TT_MINUSAND:
+            new_value = current_value - value
+        elif op_type == TT_MULAND:
+            new_value = current_value * value
+        elif op_type == TT_DIVAND:
+            if value == 0:
+                return res.failure(Exception("Runtime Error: Division by zero."))
+            new_value = current_value // value if isinstance(current_value, int) else current_value / value
+        elif op_type == TT_MODAND:
+            if value == 0:
+                return res.failure(Exception("Runtime Error: Modulo by zero."))
+            new_value = current_value % value
+        else:
+            return res.failure(Exception(f"Runtime Error: Unsupported assignment operator: {op_type}"))
+
+        context.symbol_table.set_value(var_name, new_value)
+
         return res.success(new_value)
 
     def visit_Identifier(self, node, context):
@@ -137,18 +227,33 @@ class Interpreter:
 
     def visit_BinaryOp(self, node, context):
         res = RTResult()
+        
         left = res.register(self.visit(node.left, context))
         if res.error: return res
+        
         right = res.register(self.visit(node.right, context))
         if res.error: return res
+
+        if left is None:
+            return res.failure(Exception(f"Left operand of '{node.operator.type}' is None"))
+        
+        if right is None:
+            return res.failure(Exception(f"Right operand of '{node.operator.type}' is None"))
+
         op_type = node.operator.type
 
         try:
             if op_type == TT_PLUS: return res.success(left + right)
             if op_type == TT_MINUS: return res.success(left - right)
             if op_type == TT_MUL: return res.success(left * right)
-            if op_type == TT_DIV: return res.success(left / right)
-            if op_type == TT_MODULO: return res.success(left % right)
+            if op_type == TT_DIV: 
+                if right == 0:
+                    return res.failure(Exception("Division by zero"))
+                return res.success(left / right)
+            if op_type == TT_MODULO: 
+                if right == 0:
+                    return res.failure(Exception("Modulo by zero"))
+                return res.success(left % right)
             if op_type == TT_EQUALTO: return res.success(left == right)
             if op_type == TT_NOTEQUAL: return res.success(left != right)
             if op_type == TT_LESSTHAN: return res.success(left < right)
@@ -158,9 +263,11 @@ class Interpreter:
             if op_type == TT_AND: return res.success(bool(left) and bool(right))
             if op_type == TT_OR: return res.success(bool(left) or bool(right))
             return res.failure(Exception(f"Unsupported binary operator: {op_type}"))
+        except TypeError as e:
+            return res.failure(Exception(f"Type error in operation {left} {op_type} {right}: {str(e)}"))
         except Exception as e:
             return res.failure(e)
-
+        
     def visit_UnaryOp(self, node, context):
         res = RTResult()
         operand = res.register(self.visit(node.operand, context))
@@ -214,6 +321,11 @@ class Interpreter:
 
         return res.success(None)
 
+    def extract_raw_value(self, value):
+        if isinstance(value, dict) and 'value' in value:
+            return self.extract_raw_value(value['value'])
+        return value
+
     def visit_OutputStatement(self, node, context):
         res = RTResult()
 
@@ -227,11 +339,16 @@ class Interpreter:
             for v in node.value:
                 val = res.register(self.visit(v, context))
                 if res.error: return res
-                values.append(val)
+                if val is None:
+                    return res.failure(Exception("Runtime Error: Trying to output a variable that is None (uninitialized)."))
+                values.append(self.extract_raw_value(val))  # Extract raw value
         else:
             val = res.register(self.visit(node.value, context))
             if res.error: return res
-            values.append(val)
+            if val is None:
+                return res.failure(Exception("Runtime Error: Trying to output a variable that is None (uninitialized)."))
+            values.append(self.extract_raw_value(val))  # Extract raw value
+
 
         try:
             if values:
@@ -255,57 +372,46 @@ class Interpreter:
 
         if bool(condition):
             for stmt in node.if_branch:
-                res.register(self.visit(stmt, context))
+                stmt_result = self.visit(stmt, context)
+                res.register(stmt_result)
                 if res.error: return res
+
+                if stmt_result.should_break:
+                    res.should_break = True
+                    return res
+                if stmt_result.should_continue:
+                    res.should_continue = True
+                    return res
         else:
             for elif_branch in node.elif_branches:
                 elif_condition = res.register(self.visit(elif_branch.condition, context))
                 if res.error: return res
                 if bool(elif_condition):
                     for stmt in elif_branch.if_branch:
-                        res.register(self.visit(stmt, context))
+                        stmt_result = self.visit(stmt, context)
+                        res.register(stmt_result)
                         if res.error: return res
+
+                        if stmt_result.should_break:
+                            res.should_break = True
+                            return res
+                        if stmt_result.should_continue:
+                            res.should_continue = True
+                            return res
                     return res.success(None)
 
             if node.else_branch:
                 for stmt in node.else_branch:
-                    res.register(self.visit(stmt, context))
+                    stmt_result = self.visit(stmt, context)
+                    res.register(stmt_result)
                     if res.error: return res
 
-        return res.success(None)
-
-    def visit_WhileLoop(self, node, context):
-        res = RTResult()
-
-        while True:
-            condition = res.register(self.visit(node.condition, context))
-            if res.error: return res
-
-            if not bool(condition):
-                break
-
-            for stmt in node.body:
-                res.register(self.visit(stmt, context))
-                if res.error: return res
-
-        return res.success(None)
-
-    def visit_DoWhileLoop(self, node, context):
-        res = RTResult()
-
-        first = True
-        while True:
-            if not first:
-                condition = res.register(self.visit(node.condition, context))
-                if res.error: return res
-                if not bool(condition):
-                    break
-            else:
-                first = False
-
-            for stmt in node.body:
-                res.register(self.visit(stmt, context))
-                if res.error: return res
+                    if stmt_result.should_break:
+                        res.should_break = True
+                        return res
+                    if stmt_result.should_continue:
+                        res.should_continue = True
+                        return res
 
         return res.success(None)
 
@@ -314,24 +420,127 @@ class Interpreter:
 
         if node.initialization:
             res.register(self.visit(node.initialization, context))
-            if res.error: return res
+            if res.error:
+                return res
 
         while True:
             condition = res.register(self.visit(node.condition, context))
-            if res.error: return res
+            if res.error:
+                return res
             if not bool(condition):
                 break
 
+            should_break = False
+            should_continue = False
+            
             for stmt in node.body:
-                res.register(self.visit(stmt, context))
-                if res.error: return res
+                stmt_result = self.visit(stmt, context)
+                res.register(stmt_result)
+                if res.error:
+                    return res
+
+                if isinstance(stmt, HaltStatement) or (stmt_result and stmt_result.should_break):
+                    should_break = True
+                    break
+
+                if isinstance(stmt, ExtendStatement) or (stmt_result and stmt_result.should_continue):
+                    should_continue = True
+                    break
+
+            if should_break:
+                break  # Break out of the while loop
+                
+            if should_continue:
+                # Skip to next iteration, but don't forget to update
+                if node.update:
+                    res.register(self.visit(node.update, context))
+                    if res.error:
+                        return res
+                continue  # Continue to next iteration
 
             if node.update:
                 res.register(self.visit(node.update, context))
-                if res.error: return res
+                if res.error:
+                    return res
 
         return res.success(None)
 
+    def visit_WhileLoop(self, node, context):
+        res = RTResult()
+
+        while True:
+            condition = res.register(self.visit(node.condition, context))
+            if res.error:
+                return res
+
+            if not bool(condition):
+                break
+
+            should_break = False
+            should_continue = False
+            
+            for stmt in node.body:
+                stmt_result = self.visit(stmt, context)
+                res.register(stmt_result)
+                if res.error:
+                    return res
+
+                if isinstance(stmt, HaltStatement) or (stmt_result and stmt_result.should_break):
+                    should_break = True
+                    break
+
+                if isinstance(stmt, ExtendStatement) or (stmt_result and stmt_result.should_continue):
+                    should_continue = True
+                    break
+
+            if should_break:
+                break  # Break out of the while loop
+                
+            if should_continue:
+                continue  # Skip to next iteration
+
+
+        return res.success(None)
+
+    def visit_DoWhileLoop(self, node, context):
+        res = RTResult()
+
+        first_iteration = True
+        while True:
+            if not first_iteration:
+                condition = res.register(self.visit(node.condition, context))
+                if res.error:
+                    return res
+                if not bool(condition):
+                    break
+            else:
+                first_iteration = False
+
+            should_break = False
+            should_continue = False
+            
+            for stmt in node.body:
+                stmt_result = self.visit(stmt, context)
+                res.register(stmt_result)
+                if res.error:
+                    return res
+
+                if isinstance(stmt, HaltStatement) or (stmt_result and stmt_result.should_break):
+                    should_break = True
+                    break
+
+                if isinstance(stmt, ExtendStatement) or (stmt_result and stmt_result.should_continue):
+                    should_continue = True
+                    break
+
+            if should_break:
+                break  # Break out of the while loop
+                
+            if should_continue:
+                continue  # Skip to next iteration
+ 
+        return res.success(None)
+    
     def visit_Function(self, node, context):
         res = RTResult()
 
@@ -356,14 +565,28 @@ class Interpreter:
             for i, param in enumerate(func.parameters):
                 param_value = res.register(self.visit(node.arguments[i], context))
                 if res.error: return res
-                new_context.symbol_table.set(param.identifier.name, param_value, var_type=param.data_type)
+                
+                # Handle param correctly depending on its type
+                if isinstance(param, tuple):
+                    # If param is a tuple, it's likely (name, data_type)
+                    param_name = param[0]
+                    param_type = param[1] if len(param) > 1 else None
+                elif hasattr(param, 'name'):
+                    # If param is an object with a name attribute
+                    param_name = param.name
+                    param_type = param.data_type if hasattr(param, 'data_type') else None
+                else:
+                    # Fallback - use param as name directly
+                    param_name = param
+                    param_type = None
+                    
+                new_context.symbol_table.set(param_name, param_value, var_type=param_type)
 
         for stmt in func.body:
             res.register(self.visit(stmt, new_context))
             if res.error: return res
 
         return res.success(None)
-
     def visit_ReturnStatement(self, node, context):
         res = RTResult()
         if node.value:
@@ -385,53 +608,45 @@ class Interpreter:
     def visit_SwitchStatement(self, node, context):
         res = RTResult()
 
-        switch_value = context.symbol_table.get(node.expression)
+        expr_value = res.register(self.visit(node.expression, context))
+        if res.error:
+            return res
+
         matched = False
 
         if node.cases:
             for case in node.cases:
                 if case.case_value == "usual":
                     continue
+
                 case_val = res.register(self.visit(case.case_value, context))
-                if res.error: return res
-                if case_val == switch_value or matched:
+                if res.error:
+                    return res
+
+                if expr_value == case_val or matched:
                     matched = True
                     for stmt in case.body_statements:
-                        res.register(self.visit(stmt, context))
-                        if res.error: return res
+                        stmt_result = self.visit(stmt, context)
+                        res.register(stmt_result)
+                        if res.error:
+                            return res
+                        if stmt_result.should_break:
+                            return res
 
         if not matched and node.default_case:
             for stmt in node.default_case.body_statements:
-                res.register(self.visit(stmt, context))
-                if res.error: return res
+                stmt_result = self.visit(stmt, context)
+                res.register(stmt_result)
+                if res.error:
+                    return res
+                if stmt_result.should_break:
+                    return res
 
         return res.success(None)
 
     def visit_MemoryAddress(self, node, context):
         res = RTResult()
         return res.success(context.symbol_table.get(node.identifier.name))
-
-    def visit_LedgerAccess(self, node, context):
-        res = RTResult()
-        return res.success(context.symbol_table.get(node.identifier.name))
-
-    def visit_ArrayInitializer(self, node, context):
-        res = RTResult()
-        values = []
-        for val in node.values:
-            v = res.register(self.visit(val, context))
-            if res.error: return res
-            values.append(v)
-        return res.success(values)
-
-    def visit_ArrayLiteral(self, node, context):
-        res = RTResult()
-        elements = []
-        for elem in node.elements:
-            e = res.register(self.visit(elem, context))
-            if res.error: return res
-            elements.append(e)
-        return res.success(elements)
 
     def visit_UpdateExpression(self, node, context):
         res = RTResult()
@@ -459,3 +674,141 @@ class Interpreter:
         if res.error:
             return res
         return res.success(None)
+
+    def visit_LedgerAccess(self, node, context):
+        res = RTResult()
+        
+        array_name = node.identifier.name
+        array_info = context.symbol_table.get(array_name)
+        if array_info is None:
+            return res.failure(Exception(f"'{array_name}' is not defined."))
+
+        if isinstance(array_info, dict) and 'value' in array_info:
+            current = array_info['value']
+        else:
+            current = array_info
+
+        for idx_node in node.indices:
+            idx = res.register(self.visit(idx_node, context))
+            if res.error:
+                return res
+            
+            if not isinstance(idx, int):
+                return res.failure(Exception("Ledger index must be an integer"))
+            if idx < 0 or idx >= len(current):
+                return res.failure(Exception(f"Index {idx} out of bounds for ledger '{array_name}'"))
+            current = current[idx]
+
+        return res.success(current)
+
+    def visit_LedgerAssignment(self, node, context):
+        res = RTResult()
+
+        array_name = node.identifier.name
+        value = res.register(self.visit(node.value, context))
+        if res.error:
+            return res
+        
+        array_data = context.symbol_table.get(array_name)
+        if array_data is None:
+            return res.failure(Exception(f"'{array_name}' is not defined."))
+        
+        array = array_data
+        if isinstance(array_data, dict) and 'value' in array_data:
+            array = array_data['value']
+        
+        if not isinstance(array, list):
+            return res.failure(Exception(f"Target '{array_name}' is not a list for assignment."))
+        
+        indices = []
+        for idx_node in node.dimensions:
+            idx = res.register(self.visit(idx_node, context))
+            if res.error:
+                return res
+            if not isinstance(idx, int):
+                return res.failure(Exception("Ledger index must be an integer."))
+            indices.append(idx)
+        
+        if len(indices) == 1:
+            idx = indices[0]
+            if idx < 0 or idx >= len(array):
+                return res.failure(Exception(f"Ledger index {idx} out of bounds."))
+                
+            op_type = node.operator.type
+            if op_type == TT_EQUAL:
+                array[idx] = value
+            elif op_type == TT_PLUSAND:
+                array[idx] += value
+            elif op_type == TT_MINUSAND:
+                array[idx] -= value
+            elif op_type == TT_MULAND:
+                array[idx] *= value
+            elif op_type == TT_DIVAND:
+                if value == 0:
+                    return res.failure(Exception("Division by zero"))
+                array[idx] = array[idx] // value if isinstance(array[idx], int) else array[idx] / value
+            elif op_type == TT_MODAND:
+                if value == 0:
+                    return res.failure(Exception("Modulo by zero"))
+                array[idx] %= value
+            else:
+                return res.failure(Exception(f"Unsupported assignment operator: {op_type}"))
+        else:
+            target = array
+            for i in range(len(indices) - 1):
+                if not isinstance(target, list):
+                    return res.failure(Exception("Trying to index a non-list."))
+                idx = indices[i]
+                if 0 <= idx < len(target):
+                    target = target[idx]
+                else:
+                    return res.failure(Exception(f"Ledger index {idx} out of bounds."))
+            
+            last_idx = indices[-1]
+            if not isinstance(target, list):
+                return res.failure(Exception("Target is not a list for assignment."))
+            
+            if last_idx < 0 or last_idx >= len(target):
+                return res.failure(Exception(f"Ledger index {last_idx} out of bounds."))
+            
+            op_type = node.operator.type
+            if op_type == TT_EQUAL:
+                target[last_idx] = value
+            elif op_type == TT_PLUSAND:
+                target[last_idx] += value
+            elif op_type == TT_MINUSAND:
+                target[last_idx] -= value
+            elif op_type == TT_MULAND:
+                target[last_idx] *= value
+            elif op_type == TT_DIVAND:
+                if value == 0:
+                    return res.failure(Exception("Division by zero"))
+                target[last_idx] = target[last_idx] // value if isinstance(target[last_idx], int) else target[last_idx] / value
+            elif op_type == TT_MODAND:
+                if value == 0:
+                    return res.failure(Exception("Modulo by zero"))
+                target[last_idx] %= value
+            else:
+                return res.failure(Exception(f"Unsupported assignment operator: {op_type}"))
+        
+        return res.success(None)
+
+    def visit_ArrayLiteral(self, node, context):
+        res = RTResult()
+        elements = []
+        
+        for element in node.elements:
+            # Properly visit each element in the array using RTResult
+            value = res.register(self.visit(element, context))
+            if res.error:
+                return res
+            elements.append(value)
+        
+        return res.success(elements)
+
+    def visit_ArrayInitializer(self, node, context):
+        res = RTResult()
+        values = res.register(self.visit(node.values, context))
+        if res.error:
+            return res
+        return res.success(values)

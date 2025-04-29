@@ -1,0 +1,22 @@
+Embark() {
+    Numeral n=7;
+		Numeral arr[7] = {1, 2, 3, 2, 4, 3, 5};
+		Numeral i, j;
+    
+    
+    Emit("Unique elements in the array are: ");
+    Per (Numeral i = 0; i < n; i++) {
+        Numeral isUnique = 1; 
+        Per (Numeral j = 0; j < n; j++) {
+            Thou (i != j && arr[i] == arr[j]) {
+                isUnique = 0;
+                Halt;
+            }
+        }
+        Thou (isUnique) {
+            Emit("%d ", arr[i]);
+        }
+    }
+    Emit("\n");
+    Recede 0;
+}

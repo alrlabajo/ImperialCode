@@ -1,0 +1,22 @@
+Embark() {
+    Numeral n;
+    Numeral cnt = 0;
+
+				Emit("Enter a number: ");
+				Seek("%d", &n);
+
+    Thou (n <= 1) {
+        Emit("%d is NOT prime\n", n);
+    } Or {
+        Per (Numeral i = 1; i <= n; i++) {
+            Thou (n % i == 0) {
+               cnt++;
+												}
+        }
+        Thou (cnt > 2) {
+            Emit("%d is NOT prime\n", n);
+         } Or {
+            Emit("%d is prime", n);
+								}
+    }
+}

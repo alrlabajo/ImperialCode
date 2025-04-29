@@ -43,84 +43,57 @@ class SemanticAnalyzer:
             if context.symbol_table.is_constant(name):
                 return subres.failure(Exception(f"'{name}' is a constant."))
 
-            # If this is a normal variable (no array)
-            if dimensions is None and row is None:
-                if assignment_expr:
-                    value = subres.register(self.analyze(assignment_expr, context))
-                else:
-                    default_values = {
-                        TT_INT: 0,
-                        TT_FLOAT: 0.0,
-                        TT_STRING: "",
-                        TT_CHAR: '',
-                        TT_BOOL: False
-                    }
-                    value = default_values.get(data_type, None)
-
-                if subres.error:
-                    return subres
-
-                context.symbol_table.set(name, value, var_type=data_type)
-
-                if value is not None:
-                    if not self.is_type_compatible(data_type, value):
-                        expected = self.get_type_name(None, data_type)
-                        actual = self.get_type_name(value)
-                        return subres.failure(Exception(f"Semantic Error: Invalid type for '{name}': {actual} instead of {expected}."))
-
-            else:
-                if dimensions:
-                    for i in range(len(dimensions)):
-                        dim = dimensions[i]
-                        res.register(self.analyze(dim, context))
-                        if res.error:
-                            return res
-                        if isinstance(dim, IntLiteral):
-                            dimensions[i] = dim.value 
-                        elif isinstance(dim, Identifier):
-                            var_info = context.symbol_table.get(dim.name)
-                            if var_info is None:
-                                return res.failure(Exception(f"Semantic Error: Ledger size variable '{dim.name}' is not declared."))
-                            var_type = context.symbol_table.lookup_type(dim.name)
-                            if var_type != TT_INT:
-                                return res.failure(Exception(f"Semantic Error: Ledger size variable '{dim.name}' must be an Numeral Literal."))
-                        elif isinstance(dim, BinaryOp):
-                            if not self.is_valid_int_expression(dim, context):
-                                return res.failure(Exception("Semantic Error: Invalid ledger size expression."))
-                        else:
-                            return res.failure(Exception("Semantic Error: Invalid ledger size expression."))
-
-                if row:
-                    subres.register(self.analyze(row, context))
+            if dimensions is not None:
+                # Handle array declaration
+                processed_dimensions = []
+                for dim in dimensions:
+                    subres.register(self.analyze(dim, context))
                     if subres.error:
                         return subres
+                    if isinstance(dim, IntLiteral):
+                        processed_dimensions.append(dim.value)
+                    else:
+                        return subres.failure(Exception("Ledger size must be an integer."))
 
-                    if isinstance(row, list):
-                        expected_size = dimensions[0] if dimensions else None
-                        if expected_size is not None and len(row) != expected_size:
-                            return subres.failure(Exception(
-                                f"Semantic Error: Array '{name}' expected {expected_size} elements but got {len(row)}."
-                            ))
-                    elif isinstance(row, ArrayLiteral):
-                        expected_rows = dimensions[0] if dimensions else None
-                        expected_cols = dimensions[1] if len(dimensions) > 1 else None
+                # Default values by type
+                default_values = {
+                    TT_INT: 0,
+                    TT_FLOAT: 0.0,
+                    TT_STRING: "",
+                    TT_CHAR: '',
+                    TT_BOOL: False
+                }
+                default_value = default_values.get(data_type, None)
 
-                        if expected_rows is not None and len(row.elements) != expected_rows:
-                            return subres.failure(Exception(
-                                f"Semantic Error: Matrix '{name}' expected {expected_rows} rows but got {len(row.elements)}."
-                            ))
+                if len(processed_dimensions) == 1:
+                    array_value = [default_value for _ in range(processed_dimensions[0])]
+                elif len(processed_dimensions) == 2:
+                    array_value = [[default_value for _ in range(processed_dimensions[1])] for _ in range(processed_dimensions[0])]
+                else:
+                    return subres.failure(Exception("Only 1D and 2D ledgers are supported."))
 
-                        if expected_cols is not None:
-                            for idx, subrow in enumerate(row.elements):
-                                if not isinstance(subrow, list):
-                                    return subres.failure(Exception(
-                                        f"Semantic Error: Row {idx+1} of matrix '{name}' must be a list."
-                                    ))
-                                if len(subrow) != expected_cols:
-                                    return subres.failure(Exception(
-                                        f"Semantic Error: Row {idx+1} of matrix '{name}' expected {expected_cols} columns but got {len(subrow)}."
-                                    ))
+                context.symbol_table.set(name, {"value": array_value, "dimensions": processed_dimensions}, var_type=data_type)
 
+                # 🛠 Patch: Initialize from row if available
+                if row:
+                    init_values = subres.register(self.analyze(row, context))
+                    if subres.error:
+                        return subres
+                    if isinstance(init_values, list):
+                        for idx in range(min(len(init_values), len(array_value))):
+                            array_value[idx] = init_values[idx]
+
+            else:
+                # Regular variable
+                default_values = {
+                    TT_INT: 0,
+                    TT_FLOAT: 0.0,
+                    TT_STRING: "",
+                    TT_CHAR: '',
+                    TT_BOOL: False
+                }
+                value = default_values.get(data_type, None)
+                context.symbol_table.set(name, value, var_type=data_type)
 
             return subres.success(None)
 
@@ -150,57 +123,34 @@ class SemanticAnalyzer:
             return var_type == TT_INT
         else:
             return False
-
-
+        
     def analyze_ValueAssignment(self, node, context):
         res = RTResult()
 
-        var_name = node.identifier.name if hasattr(node.identifier, 'name') else node.identifier
-        var_value = context.symbol_table.get(var_name)
+        var_name = node.identifier.name
+        current_val = context.symbol_table.get_value(var_name)
         var_type = context.symbol_table.lookup_type(var_name)
 
-        if var_value is None:
+        if current_val is None:
             return res.failure(Exception(f"'{var_name}' is not defined"))
 
-        value = res.register(self.analyze(node.value, context))
-        if res.error:
-            return res
+        is_array_access = (hasattr(node.value, 'identifier') and 
+                           hasattr(node.value, 'indices'))
 
-        op_type = node.operator.type if hasattr(node.operator, 'type') else node.operator
-
-        if op_type == TT_EQUAL:
-            new_value = value
-        elif op_type == TT_PLUSAND:
-            new_value = var_value + value
-        elif op_type == TT_MINUSAND:
-            new_value = var_value - value
-        elif op_type == TT_MULAND:
-            new_value = var_value * value
-        elif op_type == TT_DIVAND:
-            if value == 0:
-                return res.failure(Exception("Semantic Error: Division by zero"))
-            new_value = var_value // value if isinstance(var_value, int) else var_value / value
-        elif op_type == TT_MODAND:
-            if value == 0:
-                return res.failure(Exception("Semantic Error: Modulo by zero"))
-            new_value = var_value % value
-        else:
-            return res.failure(Exception(f"Semantic Error: Unsupported assignment operator: {op_type}"))
-
-        if not self.is_type_compatible(var_type, new_value):
-            expected_type = self.map_type_token_to_class(var_type)
-            actual_type = self.get_type_name(new_value)
-            return res.failure(Exception(f"Semantic Error: Invalid type for '{var_name}': {actual_type} instead of {expected_type}."))
-
-        context.symbol_table.set(var_name, new_value, var_type=var_type)
-
-        if node.tail and node.tail is not None:
-            for assign in node.tail:
-                res.register(self.analyze(assign, context))
-                if res.error:
-                    return res
-
-        return res.success(new_value)
+        if is_array_access or isinstance(node.value, LedgerAccess) or isinstance(node.value, list):
+            if var_type == TT_INT:
+                return res.success(0) 
+            elif var_type == TT_FLOAT:
+                return res.success(0.0)
+            elif var_type == TT_STRING:
+                return res.success("")
+            elif var_type == TT_CHAR:
+                return res.success('')
+            elif var_type == TT_BOOL:
+                return res.success(False)
+            else:
+                return res.success(0)
+        return res.success(None)
 
     def analyze_ConstantDeclaration(self, node, context):
         res = RTResult()
@@ -455,11 +405,10 @@ class SemanticAnalyzer:
 
     def analyze_SwitchStatement(self, node, context):
         res = RTResult()
-        identifier_name = node.expression
-        expression_value = context.symbol_table.get(identifier_name)
 
-        if expression_value is None:
-            return res.failure(Exception(f"Semantic Error: '{identifier_name}' is not defined"))
+        expression_value = res.register(self.analyze(node.expression, context))
+        if res.error:
+            return res
 
         case_matched = False
 
@@ -478,16 +427,18 @@ class SemanticAnalyzer:
 
                 if case_matched:
                     for stmt in case.body_statements:
+                        if isinstance(stmt, HaltStatement):
+                            return res.success(None)
+
                         res.register(self.analyze(stmt, context))
                         if res.error:
                             return res
-
+                        
         if not case_matched and node.default_case:
             for stmt in node.default_case.body_statements:
                 res.register(self.analyze(stmt, context))
                 if res.error:
                     return res
-
         return res.success(None)
 
     def analyze_WhileLoop(self, node, context):
@@ -505,7 +456,7 @@ class SemanticAnalyzer:
                 res.register(self.analyze(stmt, context))
                 if res.error:
                     return res
-
+                
         return res.success(None)
 
     def analyze_ForLoop(self, node, context):
@@ -528,7 +479,7 @@ class SemanticAnalyzer:
                 res.register(self.analyze(stmt, context))
                 if res.error:
                     return res
-
+                
             if node.update:
                 res.register(self.analyze(node.update, context))
                 if res.error:
@@ -665,7 +616,6 @@ class SemanticAnalyzer:
         return False
 
     def check_format_specifier_compatibility_with_var(self, specifier, var_token_type):
-        # Handle case where var_token_type might be None
         if var_token_type is None:
             return False
             
@@ -742,7 +692,6 @@ class SemanticAnalyzer:
         op_type = node.operator.type if hasattr(node.operator, 'type') else node.operator
 
         if op_type in (TT_PLUS, TT_MINUS, TT_MUL, TT_DIV, TT_MODULO):
-            # For arithmetic operations
             if isinstance(left, int) and isinstance(right, int):
                 return res.success(0)  
             elif isinstance(left, float) or isinstance(right, float):
@@ -771,10 +720,7 @@ class SemanticAnalyzer:
         if not context.symbol_table.exists(var_name):
             return res.failure(Exception(f"Semantic Error: '{var_name}' not declared."))
 
-        var_value = context.symbol_table.get(var_name)
-        var_type = context.symbol_table.lookup_type(var_name)
-        
-        return res.success(var_value)
+        return res.success(context.symbol_table.get_value(var_name))
 
     def analyze_LedgerDeclaration(self, node, context):
         res = RTResult()
@@ -811,69 +757,72 @@ class SemanticAnalyzer:
 
         return res.success(None)
     
-    def analyze_LedgerAssignment(self, node, context):
+    def analyze_LedgerAccess(self, node, context):
         res = RTResult()
+        array_name = node.identifier.name
 
-        var_name = node.identifier.name
-        var_value = context.symbol_table.get(var_name)
-        var_type = context.symbol_table.lookup_type(var_name)
+        array_info = context.symbol_table.get(array_name)
+        if array_info is None:
+            return res.failure(Exception(f"Semantic Error: Ledger '{array_name}' is not defined."))
 
-        if var_value is None:
-            return res.failure(Exception(f"Semantic Error: Array '{var_name}' is not defined."))
-
-        for dim in node.dimensions:
-            if not isinstance(dim, int):
-                return res.failure(Exception(f"Semantic Error: Array indices must be integers, got '{dim}'."))
-
-        value = res.register(self.analyze(node.value, context))
-        if res.error:
-            return res
-
-        op_type = node.operator.type if hasattr(node.operator, 'type') else node.operator
-
-        if op_type == TT_EQUAL:
-            new_value = value
-        elif op_type == TT_PLUSAND:
-            new_value = var_value + value
-        elif op_type == TT_MINUSAND:
-            new_value = var_value - value
-        elif op_type == TT_MULAND:
-            new_value = var_value * value
-        elif op_type == TT_DIVAND:
-            if value == 0:
-                return res.failure(Exception("Semantic Error: Division by zero"))
-            new_value = var_value // value if isinstance(var_value, int) else var_value / value
-        elif op_type == TT_MODAND:
-            if value == 0:
-                return res.failure(Exception("Semantic Error: Modulo by zero"))
-            new_value = var_value % value
+        if isinstance(array_info, dict) and 'value' in array_info and 'dimensions' in array_info:
+            current = array_info['value']  # Get the actual array from the 'value' field
         else:
-            return res.failure(Exception(f"Semantic Error: Unsupported assignment operator: {op_type}"))
+            current = array_info 
 
-        if not self.is_type_compatible(var_type, new_value):
-            expected_type = self.map_type_token_to_class(var_type)
-            actual_type = self.get_type_name(new_value)
-            return res.failure(Exception(f"Semantic Error: Invalid type for array '{var_name}': {actual_type} instead of {expected_type}."))
+        if not isinstance(current, list):
+            return res.failure(Exception(f"Semantic Error: '{array_name}' is not a ledger."))
 
-        if node.tail:
-            res.register(self.analyze(node.tail, context))
+        for idx_node in node.indices:
+            idx_val = res.register(self.analyze(idx_node, context))
             if res.error:
                 return res
 
-        return res.success(new_value)
+            if not isinstance(idx_val, int):
+                return res.failure(Exception(f"Semantic Error: Ledger index must be an integer."))
 
-    def analyze_LedgerAccess(self, node, context):
+            if idx_val < 0 or idx_val >= len(current):
+                return res.failure(Exception(f"Semantic Error: Ledger index {idx_val} out of bounds for '{array_name}'."))
+
+            current = current[idx_val]
+
+        if current is None:
+            return res.failure(Exception(f"Semantic Error: Use of uninitialized ledger element '{array_name}'."))
+
+        array_type = context.symbol_table.lookup_type(array_name)
+        if array_type == TT_INT:
+            return res.success(0)
+        elif array_type == TT_FLOAT:
+            return res.success(0.0)
+        elif array_type == TT_STRING:
+            return res.success("")
+        elif array_type == TT_CHAR:
+            return res.success('')
+        elif array_type == TT_BOOL:
+            return res.success(False)
+        else:
+            return res.success(0)
+
+    def analyze_LedgerAssignment(self, node, context):
         res = RTResult()
 
-        var_name = node.identifier.name
-        var_value = context.symbol_table.get(var_name)
-        var_type = context.symbol_table.lookup_type(var_name)
+        array_name = node.identifier.name
+        array_info = context.symbol_table.get(array_name)
+        
+        if array_info is None:
+            return res.failure(Exception(f"Semantic Error: Ledger '{array_name}' is not defined."))
 
-        if var_value is None:
-            return res.failure(Exception(f"Semantic Error: Array '{var_name}' is not defined."))
+        # Analyze the indices
+        for idx in node.dimensions:
+            index_val = res.register(self.analyze(idx, context))
+            if res.error:
+                return res
+            if not isinstance(index_val, int):
+                return res.failure(Exception(f"Semantic Error: Ledger index must be an integer, got {type(index_val).__name__}."))
 
-        for index in node.indices:
-            if not isinstance(index, int):
-                return res.failure(Exception(f"Semantic Error: Array index must be an integer, got '{index}'."))
+        # Analyze the value to be assigned
+        value = res.register(self.analyze(node.value, context))
+        if res.error:
+            return res
 
         return res.success(None)

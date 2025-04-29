@@ -151,13 +151,8 @@ class Parser:
         return None
 
     def parse_var_declaration(self):
-        data_type = self.parse_data_type()
+        data_type = self.parse_data_type()  # e.g., Numeral for 'int'
         identifier_token = self.expect(TT_IDENTIFIER)
-        if isinstance(identifier_token, InvalidSyntaxError):
-            self.errors.append(identifier_token)
-            self.synchronize()
-            return identifier_token
-
         identifier = Identifier(identifier_token.value)
 
         dimensions = None
@@ -165,7 +160,7 @@ class Parser:
         tail = None
 
         if self.current_token.type == TT_LBRACKET:
-            dimensions = self.parse_ledger_element()
+            dimensions = self.parse_ledger_element()  # Ensure it's an array like [3]
             if self.current_token.type == TT_EQUAL:
                 row = self.parse_ledger_declaration_row()
                 return VariableDeclaration(data_type, identifier, dimensions, row)
@@ -304,8 +299,7 @@ class Parser:
             self.errors.append(lbracket)
 
         expr = self.parse_expression()
-        if expr is not None:
-            sizes.append(expr)
+        sizes.append(expr)
 
         rbracket = self.expect(TT_RBRACKET)
         if isinstance(rbracket, InvalidSyntaxError):
@@ -316,7 +310,7 @@ class Parser:
             if isinstance(lbracket, InvalidSyntaxError):
                 self.errors.append(lbracket)
 
-            expr = self.parse_expression()  # <-- again, allow full expression
+            expr = self.parse_expression()
             if expr is not None:
                 sizes.append(expr)
 
@@ -325,7 +319,6 @@ class Parser:
                 self.errors.append(rbracket)
 
         return sizes
-
 
     def parse_ledger_declaration_row(self):
         equal = self.expect(TT_EQUAL)
@@ -363,88 +356,77 @@ class Parser:
                 self.current_token.pos_end,f"Expected {TT_INT_LITERAL}, {TT_FLOAT_LITERAL}, {TT_CHAR_LITERAL}, {TT_STRING_LITERAL}, {TT_TRUE}, or {TT_FALSE}")
 
     def parse_numeral_ledger(self):
-        values = [self.current_token.value]
+        elements = []
+        # First element
+        elements.append(IntLiteral(self.current_token.value))
         num_lit = self.expect(TT_INT_LITERAL)
         if isinstance(num_lit, InvalidSyntaxError):
             self.errors.append(num_lit)
-        if self.current_token.type != TT_COMMA and self.current_token.type != TT_RBRACE:
-            self.errors.append(InvalidSyntaxError(
-                self.current_token.pos_start,
-                self.current_token.pos_end,
-                f"Expected {TT_COMMA} or {TT_RBRACE}"
-            ))
+
         while self.current_token.type == TT_COMMA:
             comma = self.expect(TT_COMMA)
             if isinstance(comma, InvalidSyntaxError):
                 self.errors.append(comma)
-            values.append(self.current_token.value)
+            elements.append(IntLiteral(self.current_token.value))
             num_lit = self.expect(TT_INT_LITERAL)
             if isinstance(num_lit, InvalidSyntaxError):
                 self.errors.append(num_lit)
-        return values
+
+        return ArrayLiteral(elements)
 
     def parse_decimal_ledger(self):
-        values = [self.current_token.value]
+        elements = []
+        elements.append(FloatLiteral(self.current_token.value))
         dec_lit = self.expect(TT_FLOAT_LITERAL)
         if isinstance(dec_lit, InvalidSyntaxError):
             self.errors.append(dec_lit)
-        if self.current_token.type != TT_COMMA and self.current_token.type != TT_RBRACE:
-            self.errors.append(InvalidSyntaxError(
-                self.current_token.pos_start,
-                self.current_token.pos_end,
-                f"Expected {TT_COMMA} or {TT_RBRACE}"
-            ))
+            
         while self.current_token.type == TT_COMMA:
             comma = self.expect(TT_COMMA)
             if isinstance(comma, InvalidSyntaxError):
                 self.errors.append(comma)
-            values.append(self.current_token.value)
+            elements.append(FloatLiteral(self.current_token.value))
             dec_lit = self.expect(TT_FLOAT_LITERAL)
             if isinstance(dec_lit, InvalidSyntaxError):
                 self.errors.append(dec_lit)
-        return values
+
+        return ArrayLiteral(elements)
 
     def parse_letter_ledger(self):
-        values = [self.current_token.value]
+        elements = []
+        elements.append(CharLiteral(self.current_token.value))
         let_lit = self.expect(TT_CHAR_LITERAL)
         if isinstance(let_lit, InvalidSyntaxError):
             self.errors.append(let_lit)
-        if self.current_token.type != TT_COMMA and self.current_token.type != TT_RBRACE:
-            self.errors.append(InvalidSyntaxError(
-                self.current_token.pos_start,
-                self.current_token.pos_end,
-                f"Expected {TT_COMMA} or {TT_RBRACE}"
-            ))
+            
         while self.current_token.type == TT_COMMA:
             comma = self.expect(TT_COMMA)
             if isinstance(comma, InvalidSyntaxError):
                 self.errors.append(comma)
-            values.append(self.current_token.value)
+            elements.append(CharLiteral(self.current_token.value))
             let_lit = self.expect(TT_CHAR_LITERAL)
             if isinstance(let_lit, InvalidSyntaxError):
                 self.errors.append(let_lit)
-        return values
+                
+        return ArrayLiteral(elements)
 
     def parse_missive_ledger(self):
-        values = [self.current_token.value]
+        elements = []
+        elements.append(StringLiteral(self.current_token.value))
         miss_lit = self.expect(TT_STRING_LITERAL)
         if isinstance(miss_lit, InvalidSyntaxError):
             self.errors.append(miss_lit)
-        if self.current_token.type != TT_COMMA and self.current_token.type != TT_RBRACE:
-            self.errors.append(InvalidSyntaxError(
-                self.current_token.pos_start,
-                self.current_token.pos_end,
-                f"Expected {TT_COMMA} or {TT_RBRACE}"
-            ))
+            
         while self.current_token.type == TT_COMMA:
             comma = self.expect(TT_COMMA)
             if isinstance(comma, InvalidSyntaxError):
                 self.errors.append(comma)
-            values.append(self.current_token.value)
+            elements.append(StringLiteral(self.current_token.value))
             miss_lit = self.expect(TT_STRING_LITERAL)
             if isinstance(miss_lit, InvalidSyntaxError):
                 self.errors.append(miss_lit)
-        return values
+                
+        return ArrayLiteral(elements)
 
     def parse_veracity_ledger(self):
         values = [self.current_token.value]
@@ -469,11 +451,16 @@ class Parser:
         lbrace = self.expect(TT_LBRACE)
         if isinstance(lbrace, InvalidSyntaxError):
             self.errors.append(lbrace)
-        rows.append(self.parse_ledger_value())
+            
+        # Parse the first row
+        row = self.parse_ledger_value()  # Already returns an ArrayLiteral
+        rows.append(row)
+        
         rbrace = self.expect(TT_RBRACE)
         if isinstance(rbrace, InvalidSyntaxError):
             self.errors.append(rbrace)
 
+        # Parse additional rows
         while self.current_token.type == TT_COMMA:
             comma = self.expect(TT_COMMA)
             if isinstance(comma, InvalidSyntaxError):
@@ -481,11 +468,16 @@ class Parser:
             lbrace = self.expect(TT_LBRACE)
             if isinstance(lbrace, InvalidSyntaxError):
                 self.errors.append(lbrace)
-            rows.append(self.parse_ledger_value())
+                
+            row = self.parse_ledger_value()
+            rows.append(row)
+            
             rbrace = self.expect(TT_RBRACE)
             if isinstance(rbrace, InvalidSyntaxError):
                 self.errors.append(rbrace)
-        return rows
+                
+        # Return an ArrayLiteral containing ArrayLiterals for each row
+        return ArrayLiteral(rows)
 
     def parse_data_type(self):
         if self.current_token.type in (TT_INT, TT_FLOAT, TT_CHAR, TT_STRING):
@@ -504,25 +496,8 @@ class Parser:
         return Identifier(id_token.value)
 
     def parse_value(self):
-        if self.current_token.type in (TT_IDENTIFIER, TT_INT_LITERAL, TT_FLOAT_LITERAL,
-                                    TT_CHAR_LITERAL, TT_STRING_LITERAL):
-            return self.parse_expression()
-        elif self.current_token.type == TT_LPAREN:
-            lpar = self.expect(TT_LPAREN)
-            if isinstance(lpar, InvalidSyntaxError):
-                self.errors.append(lpar)
-            expr = self.parse_expression()
-            rpar = self.expect(TT_RPAREN)
-            if isinstance(rpar, InvalidSyntaxError):
-                self.errors.append(rpar)
-            return expr
-        else:
-            error = InvalidSyntaxError(
-                self.current_token.pos_start,
-                self.current_token.pos_end,f"Expected {TT_IDENTIFIER}, {TT_INT_LITERAL}, {TT_FLOAT_LITERAL}, {TT_CHAR_LITERAL}, {TT_STRING_LITERAL}, or {TT_LPAREN}")
-            self.errors.append(error)
-            return None
-
+        return self.parse_expression()
+    
     def parse_expression(self):
         return self.parse_logical_or()
 
@@ -598,14 +573,21 @@ class Parser:
             id_token = self.current_token
             self.advance()
 
+            node = Identifier(id_token.value)
             if self.current_token.type == TT_LPAREN:
-                return self.parse_function_call(id_token)
-            elif self.current_token.type == TT_LBRACKET:
-                return self.parse_ledger_element()
-            else:
-                return Identifier(id_token.value)
-        elif self.current_token.type in (TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL,
-                                    TT_STRING_LITERAL):
+                node = self.parse_function_call(id_token)
+            
+            indices = []
+            while self.current_token.type == TT_LBRACKET:
+                self.advance()
+                idx_expr = self.parse_expression()
+                indices.append(idx_expr)
+                self.expect(TT_RBRACKET)
+            if indices:
+                node = LedgerAccess(node, indices)
+            return node
+        
+        elif self.current_token.type in (TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL):
             token = self.current_token
             self.advance()
             if token.type == TT_INT_LITERAL:
@@ -623,7 +605,7 @@ class Parser:
                 f"Expected {TT_IDENTIFIER}, {TT_INT_LITERAL}, {TT_FLOAT_LITERAL}, {TT_CHAR_LITERAL}, {TT_STRING_LITERAL}, {TT_LPAREN}, or {TT_LBRACKET}"
             ))
             return None
-
+        
     def parse_expression_tail(self, left=None):
         if self.current_token and self.current_token.type in self.get_all_operator_tokens():
             op = self.current_token
@@ -1078,7 +1060,7 @@ class Parser:
         rbrace = self.expect(TT_RBRACE)
         if isinstance(rbrace, InvalidSyntaxError):
             self.errors.append(rbrace)
-        return SwitchStatement(identifier_token.value, opt_values, usual_value)
+        return SwitchStatement(Identifier(identifier_token.value), opt_values, usual_value)
 
     def parse_opt_value(self):
         cases = []
@@ -1284,7 +1266,7 @@ class Parser:
         return InvalidSyntaxError(
             self.current_token.pos_start,
             self.current_token.pos_end,
-            f"Expected {TT_INT_LITERAL}, {TT_FLOAT_LITERAL}, {TT_CHAR_LITERAL}, {TT_STRING_LITERAL}, {TT_TRUE}, {TT_FALSE}or {TT_FORMATSPEC}"
+            f"Expected {TT_IDENTIFIER}, {TT_INT_LITERAL}, {TT_FLOAT_LITERAL}, {TT_CHAR_LITERAL}, {TT_STRING_LITERAL}, {TT_TRUE}, {TT_FALSE} or {TT_FORMATSPEC} enclosed in double quotes"
         )
 
 
