@@ -468,24 +468,6 @@ class SemanticAnalyzer:
                     return res
         return res.success(None)
 
-    def analyze_WhileLoop(self, node, context):
-        res = RTResult()
-
-        while True:
-            condition_value = res.register(self.analyze(node.condition, context))
-            if res.error:
-                return res
-
-            if not condition_value:
-                break
-
-            for stmt in node.body:
-                res.register(self.analyze(stmt, context))
-                if res.error:
-                    return res
-
-        return res.success(None)
-
     def analyze_ForLoop(self, node, context):
         res = RTResult()
 
@@ -494,41 +476,51 @@ class SemanticAnalyzer:
             if res.error:
                 return res
 
-        while True:
+        if node.condition:
             condition_value = res.register(self.analyze(node.condition, context))
             if res.error:
                 return res
 
-            if not condition_value:
-                break
+            if condition_value is not None and not isinstance(condition_value, bool):
+                pass
 
-            for stmt in node.body:
-                res.register(self.analyze(stmt, context))
-                if res.error:
-                    return res
+        for stmt in node.body:
+            res.register(self.analyze(stmt, context))
+            if res.error:
+                return res
 
-            if node.update:
-                res.register(self.analyze(node.update, context))
-                if res.error:
-                    return res
+        if node.update:
+            res.register(self.analyze(node.update, context))
+            if res.error:
+                return res
+
+        return res.success(None)
+
+    def analyze_WhileLoop(self, node, context):
+        res = RTResult()
+
+        condition_value = res.register(self.analyze(node.condition, context))
+        if res.error:
+            return res
+
+        for stmt in node.body:
+            res.register(self.analyze(stmt, context))
+            if res.error:
+                return res
 
         return res.success(None)
 
     def analyze_DoWhileLoop(self, node, context):
         res = RTResult()
 
-        while True:
-            for stmt in node.body:
-                res.register(self.analyze(stmt, context))
-                if res.error:
-                    return res
-
-            condition_value = res.register(self.analyze(node.condition, context))
+        for stmt in node.body:
+            res.register(self.analyze(stmt, context))
             if res.error:
                 return res
 
-            if not condition_value:
-                break
+        condition_value = res.register(self.analyze(node.condition, context))
+        if res.error:
+            return res
 
         return res.success(None)
 
