@@ -341,13 +341,13 @@ class Interpreter:
                 if res.error: return res
                 if val is None:
                     return res.failure(Exception("Runtime Error: Trying to output a variable that is None (uninitialized)."))
-                values.append(self.extract_raw_value(val))  # Extract raw value
+                values.append(self.extract_raw_value(val)) 
         else:
             val = res.register(self.visit(node.value, context))
             if res.error: return res
             if val is None:
                 return res.failure(Exception("Runtime Error: Trying to output a variable that is None (uninitialized)."))
-            values.append(self.extract_raw_value(val))  # Extract raw value
+            values.append(self.extract_raw_value(val))
 
 
         try:
@@ -448,15 +448,14 @@ class Interpreter:
                     break
 
             if should_break:
-                break  # Break out of the while loop
+                break 
                 
             if should_continue:
-                # Skip to next iteration, but don't forget to update
                 if node.update:
                     res.register(self.visit(node.update, context))
                     if res.error:
                         return res
-                continue  # Continue to next iteration
+                continue 
 
             if node.update:
                 res.register(self.visit(node.update, context))
@@ -494,10 +493,10 @@ class Interpreter:
                     break
 
             if should_break:
-                break  # Break out of the while loop
+                break 
                 
             if should_continue:
-                continue  # Skip to next iteration
+                continue 
 
 
         return res.success(None)
@@ -534,10 +533,10 @@ class Interpreter:
                     break
 
             if should_break:
-                break  # Break out of the while loop
+                break 
                 
             if should_continue:
-                continue  # Skip to next iteration
+                continue
  
         return res.success(None)
     
@@ -549,6 +548,19 @@ class Interpreter:
         context.symbol_table.set_function(name, func_obj)
 
         return res.success(func_obj)
+    
+    def is_type_compatible(self, expected_token_type, value):
+        if expected_token_type == TT_INT:  # Numeral
+            return isinstance(value, int)
+        elif expected_token_type == TT_FLOAT:  # Decimal
+            return isinstance(value, float)
+        elif expected_token_type == TT_STRING:  # Missive
+            return isinstance(value, str) and len(value) > 1
+        elif expected_token_type == TT_CHAR:  # Letter
+            return isinstance(value, str) and len(value) == 1
+        elif expected_token_type == TT_BOOL:  # Veracity
+            return isinstance(value, bool)
+        return False
 
     def visit_FunctionCall(self, node, context):
         res = RTResult()
@@ -556,37 +568,44 @@ class Interpreter:
         func_name = node.identifier.value if hasattr(node.identifier, 'value') else node.identifier
         func = context.symbol_table.get_function(func_name)
         if not func:
-            return res.failure(Exception(f"Function '{func_name}' not defined."))
+            func = context.symbol_table.get(func_name)
 
-        new_context = Context(f"<function {func_name}>", parent=context)
+        if func is None:
+            return res.failure(Exception(f"Function '{func_name}' not defined"))
+
+        if not isinstance(func, Function):
+            return res.failure(Exception(f"'{func_name}' is not a function"))
+
+        if len(node.arguments) != len(func.parameters):
+            return res.failure(Exception(f"Function '{func_name}' expects {len(func.parameters)} arguments, but got {len(node.arguments)}"))
+
+        new_context = Context(display_name=func_name, parent=context)
         new_context.symbol_table = SymbolTable(parent=context.symbol_table)
+        new_context.return_type = func.return_type
 
-        if func.parameters:
-            for i, param in enumerate(func.parameters):
-                param_value = res.register(self.visit(node.arguments[i], context))
-                if res.error: return res
-                
-                # Handle param correctly depending on its type
-                if isinstance(param, tuple):
-                    # If param is a tuple, it's likely (name, data_type)
-                    param_name = param[0]
-                    param_type = param[1] if len(param) > 1 else None
-                elif hasattr(param, 'name'):
-                    # If param is an object with a name attribute
-                    param_name = param.name
-                    param_type = param.data_type if hasattr(param, 'data_type') else None
-                else:
-                    # Fallback - use param as name directly
-                    param_name = param
-                    param_type = None
-                    
-                new_context.symbol_table.set(param_name, param_value, var_type=param_type)
+        for i, arg in enumerate(node.arguments):
+            arg_value = res.register(self.visit(arg, context))
+            if res.error:
+                return res
+
+            param_type = func.parameters[i][0]
+            if not self.is_type_compatible(param_type, arg_value):
+                expected_type = self.map_type_token_to_class(param_type)
+                actual_type = self.get_type_name(arg_value)
+                return res.failure(Exception(f"Invalid argument type for '{func_name}': {actual_type} instead of {expected_type}."))
+
+            param_name = func.parameters[i][1]
+            new_context.symbol_table.set(param_name, arg_value, var_type=param_type)
 
         for stmt in func.body:
-            res.register(self.visit(stmt, new_context))
-            if res.error: return res
-
+            stmt_res = self.visit(stmt, new_context)
+            if stmt_res.return_value is not None:
+                return res.success(stmt_res.return_value)
+            res.register(stmt_res)
+            if res.error:
+                return res
         return res.success(None)
+
     def visit_ReturnStatement(self, node, context):
         res = RTResult()
         if node.value:

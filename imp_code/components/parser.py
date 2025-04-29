@@ -236,7 +236,7 @@ class Parser:
         equal = self.expect(TT_EQUAL)
         if isinstance(equal, InvalidSyntaxError):
             self.errors.append(equal)
-        value = self.parse_veracity_lit()
+        value = self.parse_value()
         tail = self.parse_ver_declaration_tail() if self.current_token.type == TT_COMMA else None
         return value, tail if tail else None
     
@@ -598,6 +598,10 @@ class Parser:
                 return CharLiteral(token.value)
             elif token.type == TT_STRING_LITERAL:
                 return StringLiteral(token.value)
+        elif self.current_token.type in (TT_TRUE, TT_FALSE):
+            token = self.current_token
+            self.advance()
+            return BoolLiteral(token.value)
         else:
             self.errors.append(InvalidSyntaxError(
                 self.current_token.pos_start,

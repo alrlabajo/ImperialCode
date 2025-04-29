@@ -1,10 +1,19 @@
-Method Void greet(Missive name) 
-{
-    Emit("Hello, %s", name);
+Method Veracity isPositive(Numeral n) {
+    Recede n > 0;
 }
 
 Embark() {
-     Missive name = "Hyungwon";
-     greet(name);
-     Recede 0;
+    Numeral n;
+    Emit("Enter a number: ");
+    Seek("%d", n);
+
+    Veracity result1 = isPositive(n);       // from function
+    Veracity result2 = n > 0;               // from expression
+    Veracity result3 = Pure;                // from literal
+
+    Emit("From function: %v\n", result1);
+    Emit("From expression: %v\n", result2);
+    Emit("From literal: %v\n", result3);
+
+    Recede 0;
 }

@@ -1,0 +1,20 @@
+Embark() {
+   Numeral rows, coef = 1, space, i, j;
+   Emit("Enter the number of rows: ");
+   Seek("%d", &rows);
+   Per (Numeral i = 0; i < rows; i++) {
+      Per (Numeral space = 1; space <= rows - i; space++) {
+         Emit("  ");
+				}
+      Per (Numeral j = 0; j <= i; j++) {
+         Thou (j == 0 || i == 0) {
+            coef = 1;
+         } Or {
+            coef = coef * (i - j + 1) / j;
+					}
+         Emit("%4d", coef);
+      }
+      Emit("\n");
+   }
+   Recede 0;
+}

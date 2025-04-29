@@ -44,7 +44,6 @@ class SemanticAnalyzer:
                 return subres.failure(Exception(f"'{name}' is a constant."))
 
             if dimensions is not None:
-                # Handle array declaration
                 processed_dimensions = []
                 for dim in dimensions:
                     subres.register(self.analyze(dim, context))
@@ -84,16 +83,31 @@ class SemanticAnalyzer:
                             array_value[idx] = init_values[idx]
 
             else:
-                # Regular variable
-                default_values = {
-                    TT_INT: 0,
-                    TT_FLOAT: 0.0,
-                    TT_STRING: "",
-                    TT_CHAR: '',
-                    TT_BOOL: False
-                }
-                value = default_values.get(data_type, None)
-                context.symbol_table.set(name, value, var_type=data_type)
+                if assignment_expr is not None:
+                    assigned_value = subres.register(self.analyze(assignment_expr, context))
+                    if subres.error:
+                        return subres
+
+                    if not self.is_type_compatible(data_type, assigned_value):
+                        expected = self.map_type_token_to_class(data_type)
+                        actual = self.get_type_name(assigned_value, data_type)
+                        return subres.failure(Exception(
+                            f"Semantic Error: Invalid assignment type for '{name}': {actual} instead of {expected}."
+                        ))
+
+                    context.symbol_table.set(name, assigned_value, var_type=data_type)
+
+                else:
+                    # No assignment: set default value
+                    default_values = {
+                        TT_INT: 0,
+                        TT_FLOAT: 0.0,
+                        TT_STRING: "",
+                        TT_CHAR: '',
+                        TT_BOOL: False
+                    }
+                    value = default_values.get(data_type, None)
+                    context.symbol_table.set(name, value, var_type=data_type)
 
             return subres.success(None)
 
@@ -229,16 +243,16 @@ class SemanticAnalyzer:
 
     def get_type_name(self, value, data_type=None):
         if isinstance(value, int):
-            return "Numeral Literal"
+            return "Numeral"
         elif isinstance(value, float):
-            return "Decimal Literal"
+            return "Decimal"
         elif isinstance(value, str):
             if len(value) == 1:
-                return "Letter Literal"
+                return "Letter"
             else:
-                return "Missive Literal"
+                return "Missive"
         elif isinstance(value, bool):
-            return "Veracity Literal"
+            return "Veracity"
         elif data_type:
             type_names = {
                 TT_INT: "Numeral",
@@ -333,7 +347,22 @@ class SemanticAnalyzer:
 
             new_context.symbol_table.set(func_value.parameters[i][1], arg_value)
 
-        return res.success(None)
+        # 🔥 Explicitly simulate value based on return type
+        return_type = func_value.return_type
+        if return_type == TT_INT:
+            return res.success(0)
+        elif return_type == TT_FLOAT:
+            return res.success(0.0)
+        elif return_type == TT_CHAR:
+            return res.success('a')
+        elif return_type == TT_STRING:
+            return res.success("example")
+        elif return_type == TT_BOOL:
+            return res.success(True)  # Make sure True is treated correctly as boolean!
+        else:
+            return res.success(None)
+
+
 
     def analyze_Function(self, node, context):
         res = RTResult()

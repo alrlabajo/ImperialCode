@@ -1,19 +1,19 @@
-Method Numeral getSum(Numeral n) 
-{  
-   Numeral sum = 0; 
-   Until (n != 0) 
-   { 
-       sum = sum + n % 10; 
-       n = n/10; 
-   } 
-   Recede sum; 
-} 
-  
-Embark() 
-{ 
-  Numeral n;
-	
-		Emit("Enter a number: ");
-		Seek("%d", &n); 
-  Emit(" %d ", getSum(n));  
-} 
+Method Numeral sumOfDigits(Numeral num) {
+  Numeral sum = 0;
+  Until (num > 0) {
+    sum += num % 10;
+    num /= 10;
+  }
+  Recede sum;
+}
+
+Embark() {
+  Numeral number;
+
+  Emit("Enter a number: ");
+  Seek("%d", &number);
+
+  Emit("The sum of digits is: %d\n", sumOfDigits(number));
+
+  Recede 0;
+}
