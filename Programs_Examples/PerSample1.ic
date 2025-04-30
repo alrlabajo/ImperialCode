@@ -5,7 +5,7 @@ Embark() {
 
 	
 		Numeral square = k * k; 
-		Emit("%f", square); 
+		Emit("%d", square); 
 	Emit("\n");
 }
 

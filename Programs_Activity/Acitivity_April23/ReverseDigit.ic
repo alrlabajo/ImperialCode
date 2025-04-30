@@ -1,0 +1,27 @@
+Embark() {
+  Numeral n, reverse = 0, remainder, original;
+
+  Emit("Enter an integer: ");
+  Seek("%d", &n);
+
+  original = n;  
+
+  Until (n != 0) {
+    remainder = n % 10;
+    reverse = reverse * 10 + remainder;
+    n /= 10;
+  }
+
+  Thou (original % 10 == 0) {
+    Emit("Reversed number = %d", reverse);
+    
+    Until (original % 10 == 0) {
+      Emit("0");
+      original /= 10;
+    }
+  } Or {
+    Emit("Reversed number = %d", reverse);
+  }
+
+  Recede 0;
+}

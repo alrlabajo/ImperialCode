@@ -1,0 +1,17 @@
+Embark() {
+   Numeral i, n, sum = 0;
+
+   Emit("Input the number of terms : ");
+   Seek("%d", &n);
+
+   Emit("\nThe square natural numbers up to %d terms are :", n);
+
+   Per(i = 1; i <= n; i++) 
+   {
+			Numeral loop = i*i;
+     Emit("%d  ", loop);
+     sum = sum+loop;
+   }
+
+   Emit("\nThe Sum of Square Natural Numbers up to %d terms = %d \n", n, sum); // Print the sum.
+}

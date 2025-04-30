@@ -1,0 +1,18 @@
+Method Void rightTriangle() {
+	Numeral n;
+
+	Emit("Enter the number of rows for Right Triangle: ");
+	Seek("%d", n);
+	Emit("Right Triangle:\n");
+
+	Per(Numeral i=1; i<= n; i++) {
+		Per(Numeral j=1; j<= i; j++) {
+			Emit("*");
+		}
+		Emit("\n");
+	}
+}
+
+Embark() {
+	rightTriangle();
+}

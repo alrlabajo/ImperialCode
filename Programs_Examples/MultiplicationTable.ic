@@ -1,0 +1,19 @@
+Embark() {
+    Numeral rows, cols;
+
+    Emit("Enter number of rows: ");
+    Seek("%d", &rows);
+    Emit("Enter number of columns: ");
+    Seek("%d", &cols);
+  
+  	Emit("\nMultiplication Table:\n\n");
+
+    Per(Numeral i = 1; i <= rows; i++) {
+        Per(Numeral j = 1; j <= cols; j++) {
+            Emit("%d\t", i * j);  
+        }
+        Emit("\n");
+    }
+
+    Recede 0;
+}

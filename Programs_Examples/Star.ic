@@ -1,0 +1,13 @@
+Embark() {
+    Numeral num, i;
+    Numeral fact = 1;
+
+    Emit("Enter a number: ");
+    Seek("%d", &num);
+
+   Per (Numeral i = 1; i <= num; i++) {
+        fact = fact * i;
+    }
+
+    Emit("Factorial is %d\n", fact);
+}

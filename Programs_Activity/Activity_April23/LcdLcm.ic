@@ -1,0 +1,24 @@
+Embark() {
+    Numeral a, b, x, y, temp, gcd, lcm, product;
+
+    Emit("Enter two numbers: ");
+    Seek("%d %d", &a, &b);
+
+    // Save original values
+    x = a;
+    y = b;
+
+    // GCD using Euclidean algorithm
+    Until (b != 0) {
+        temp = b;
+        b = a % b;
+        a = temp;
+    }
+
+    gcd = a;
+    product = x * y;
+    lcm = product / gcd;
+
+    Emit("GCD (LCD) of %d and %d is: %d\n", x, y, gcd);
+    Emit("LCM of %d and %d is: %d\n", x, y, lcm);
+}

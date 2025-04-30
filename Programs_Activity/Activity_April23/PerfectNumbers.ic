@@ -1,0 +1,23 @@
+Embark() {
+    Numeral n;
+
+			Emit("Enter number of limit: ");
+			Seek("%d", &n);
+
+    Emit("Perfect numbers from 1 to %d are:\n", n);
+
+    Per (Numeral num = 1; num <= n; num++) {
+        Numeral sum = 0;
+        
+        Per (Numeral i = 1; i < num; i++) {
+            Numeral remainder = num % i;
+            Thou (remainder == 0) {
+                sum = sum + i;
+            }
+        }
+        
+        Thou (sum == num) {
+            Emit("%d ", num);
+        }
+    }
+}

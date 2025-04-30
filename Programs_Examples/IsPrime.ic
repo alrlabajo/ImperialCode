@@ -1,0 +1,26 @@
+Embark() {
+    Numeral num, i;
+    Numeral isPrime = 1;
+
+    Emit("Enter a number: ");
+    Seek("%d", &num);
+
+    Thou (num <= 1) {
+        isPrime = 0;
+    } Or {
+        Per (i = 2; i <= num / 2; i++) {
+            Thou (num % i == 0) {
+                isPrime = 0;
+                Halt;
+            }
+        }
+    }
+
+    Thou (isPrime == 1) {
+        Emit("%d is a prime number.\n", num);
+    } Or {
+        Emit("%d is not a prime number.\n", num);
+    }
+
+    Recede 0;
+}

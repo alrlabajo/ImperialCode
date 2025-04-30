@@ -1,0 +1,17 @@
+Embark() {
+  Numeral size = 5;
+
+        Per(Numeral i = 0; i < size; i++) { 
+            Per(Numeral j = size; j > i; j--) {
+                Emit(" ");
+            }
+            Per(Numeral k = 0; k < (2 * i - 1); k++) {
+                Emit("*");
+            }
+
+           Emit("\n");
+            
+        }
+   }
+   Recede 0;
+}

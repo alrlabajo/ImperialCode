@@ -1,0 +1,44 @@
+Method Void changePosition(Letter ch1, Letter ch2) {
+    Letter tmp;
+    tmp = ch1;
+    ch1 = ch2;
+    ch2 = tmp;
+}
+
+Method Void charPermu(Missive cht, Numeral stno, Numeral endno) {
+    Numeral i;
+    
+    Thou (stno == endno) {
+        Emit("%s  ", cht);
+    } Or {
+        Per (i = stno; i <= endno; i++) {
+            changePosition(cht + stno, cht + i);
+            charPermu(cht, stno + 1, endno);
+            changePosition(cht + stno, cht + i); // Backtrack
+        }
+    }
+}
+
+Embark() {
+    // Wrap the intended string with quotes so that it is a valid Missive literal.
+    Missive str = "\"abcd\"";
+    Numeral n = 0;
+    Numeral i;
+    
+    Emit("\n\n Pointer : Generate permutations of a given string :\n");
+    Emit("--------------------------------------------------------\n");
+
+    // Compute the length of the string *inside* the quotes.
+    // Assuming str[0] is the starting quote and the final quote is the terminator.
+    Per (Numeral i = 1; str != "\0"; i++) {
+        n = n + 1;
+    }
+
+    Emit(" The permutations of the string are : \n");
+    // Permute only the characters inside the quotes.
+    charPermu(str, 1, n);
+    
+    Emit("\n\n");
+
+    Recede 0;
+}

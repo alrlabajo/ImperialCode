@@ -1,0 +1,37 @@
+Embark() {
+    // 1) Left-aligned right triangle
+    Emit("\n1) Left-Aligned Right Triangle:\n");
+    Emit("*\n");
+    Emit("**\n");
+    Emit("***\n");
+    Emit("****\n");
+
+    // 2) Right-aligned right triangle
+    Emit("\n2) Right-Aligned Right Triangle:\n");
+    Emit("   *\n");
+    Emit("  **\n");
+    Emit(" ***\n");
+    Emit("****\n");
+
+    // 3) Isosceles triangle
+    Emit("\n3) Isosceles Triangle:\n");
+    Emit("   *\n");
+    Emit("  ***\n");
+    Emit(" *****\n");
+    Emit("*******\n");
+
+    // 4) Square (4x4)
+    Emit("\n4) Square:\n");
+    Emit("*********\n");
+    Emit("*********\n");
+    Emit("*********\n");
+    Emit("*********\n");
+
+    // 5) Rectangle (5 wide, 3 tall)
+    Emit("\n5) Rectangle:\n");
+    Emit("****************\n");
+    Emit("****************\n");
+    Emit("****************\n");
+    Emit("****************\n");
+}
+

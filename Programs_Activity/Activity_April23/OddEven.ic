@@ -1,0 +1,11 @@
+Embark() {
+    Numeral number;
+    Emit("Enter a number: ");
+    Seek("%d", &number);
+
+    Thou (number % 2 == 0) {
+        Emit("Even\n");
+    } Or {
+        Emit("Odd\n");
+    }
+}

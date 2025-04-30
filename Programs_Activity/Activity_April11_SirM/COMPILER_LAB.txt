@@ -1,0 +1,167 @@
+Embark() {
+    // 6) Left-aligned right triangle
+    Emit("\n6) Left-Aligned Right Triangle:\n");
+    Emit("*");
+    Emit("**");
+    Emit("***");
+    Emit("****");
+
+    // 7) Right-aligned right triangle
+    // (we’ll add spaces on the left to push the stars over)
+    Emit("\n7) Right-Aligned Right Triangle:\n");
+    Emit("   *");
+    Emit("  **");
+    Emit(" ***");
+    Emit("****");
+
+    // 8) Triangle
+    Emit("\n8) Triangle:\n");
+    Emit("   *");
+    Emit("  ***");
+    Emit(" *****");
+    Emit("*******");
+
+    // 9) Square
+    Emit("\n9) Square:\n");
+    Emit("*********");
+    Emit("*********");
+    Emit("*********");
+    Emit("*********");
+
+    // 10) Rectangle
+    Emit("\n10) Rectangle:\n");
+    Emit("****************");
+    Emit("****************");
+    Emit("****************");
+    Emit("****************");
+}
+
+
+
+//11. 
+Method Void rightTriangle() {
+
+  Emit("   *");
+  Emit("  **");
+  Emit(" ***");
+  Emit("****");
+}
+
+//12. 
+Method Void leftTriangle() {
+
+  Emit("*");
+  Emit("**");
+  Emit("***");
+  Emit("****");
+}
+
+//13. 
+Method Void triangle() {
+  Emit("   *");
+  Emit("  ***");
+  Emit(" *****");
+  Emit("*******");
+}
+
+//14.
+Method Void square() {
+  Emit("*******");
+  Emit("*******");
+  Emit("*******");
+  Emit("*******");
+}
+
+//15. 
+Method Void rectangle() {
+  Emit("************");
+  Emit("************");
+  Emit("************");
+  Emit("************");
+}
+
+Embark() {
+	Numeral choice;
+
+	Emit("Enter your choice: ");
+	Seek("%d", &choice);
+
+	Thou (choice ==1) {
+		rightTriangle();
+	} Or Thou (choice == 2) {
+		leftTriangle();
+	} Or Thou (choice ==3) {
+		triangle();
+	} Or Thou (choice ==4) {
+		square();
+	} Or Thou (choice ==5) {
+		rectangle();
+	} Or {
+		Emit ("None of the choices");
+	}
+}
+
+// 17. Compute the area
+
+Embark() {
+    Decimal length, width;
+    Decimal area;
+    
+    Emit("Enter length: ");
+    Seek("%f", &length);
+
+    Emit("Enter width: ");
+    Seek("%f", &width);
+
+    area = length*width;
+    Emit("The area of the rectangle is %f", area);
+
+}
+
+// 18. Compute the Perimeter
+
+Embark() {
+    Decimal length, width;
+    Decimal perimeter;
+    
+    Emit("Enter length: ");
+    Seek("%f", &length);
+
+    Emit("Enter width: ");
+    Seek("%f", &width);
+
+    perimeter = length+width;
+    Emit("The perimeter of the rectangle is %f", perimeter);
+}
+
+// 19. Determine if number is odd or even
+
+Method Void odd_or_even(Numeral number) {
+	Thou(number % 2 == 0) {
+		Emit("%d is an even number", number);
+	} Or {
+		Emit("%d is an odd number", number);
+	}
+}
+
+Embark() {
+	Numeral num =22+3;
+	odd_or_even(num);
+}
+
+
+
+// 20. Calculate Leap Year
+
+Embark() {
+    Numeral year;
+    
+    Emit("Enter year: ");
+    Seek("%d", &year);
+
+    Thou (year % 4 == 0) {
+        Emit("%d might be a leap year", year);
+    } Or {
+        Emit("%d is definitely not a leap year.", year);
+    }
+}

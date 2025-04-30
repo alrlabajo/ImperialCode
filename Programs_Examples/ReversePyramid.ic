@@ -2,11 +2,11 @@ Embark() {
    Numeral rows;
    Emit("Enter the number of rows: ");
    Seek("%d", &rows);
-
-   Per(Numeral i = 1; i <= rows; i++) {
+   Per(Numeral i = rows; i >= 1; i--) {
       Per(Numeral j = 1; j <= i; j++) {
-         Emit("* ");
+         Emit("%d ", j);
       }
       Emit("\n");
    }
+   Recede 0;
 }

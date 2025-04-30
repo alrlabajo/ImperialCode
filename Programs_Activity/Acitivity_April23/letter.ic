@@ -1,0 +1,15 @@
+Embark() {
+    Letter letter = ' ';
+
+    Emit("Enter a letter: ");
+    Seek("%c", &letter);
+
+    Thou (letter == 'a' || letter == 'e' || letter == 'i' ||
+        letter == 'o' || letter == 'u' ||
+        letter == 'A' || letter == 'E' || letter == 'I' ||
+        letter == 'O' || letter == 'U') {
+        Emit("It is a vowel.\n");
+    } Or {
+        Emit("It is not a vowel.\n");
+    }
+}
