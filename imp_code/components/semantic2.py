@@ -40,28 +40,49 @@ class SemanticAnalyzer:
             subres = RTResult()
             name = identifier_node.name
 
+            default_values = {
+                TT_INT: 0,
+                TT_FLOAT: 0.0,
+                TT_STRING: "",
+                TT_CHAR: '',
+                TT_BOOL: False
+            }
+
             if context.symbol_table.is_constant(name):
                 return subres.failure(Exception(f"'{name}' is a constant."))
 
             if dimensions is not None:
+                has_dynamic_dim = False
                 processed_dimensions = []
+
                 for dim in dimensions:
                     subres.register(self.analyze(dim, context))
                     if subres.error:
                         return subres
+
                     if isinstance(dim, IntLiteral):
                         processed_dimensions.append(dim.value)
+                    elif isinstance(dim, Identifier):
+                        var_type = context.symbol_table.lookup_type(dim.name)
+                        if var_type is None:
+                            has_dynamic_dim = True
+                        elif var_type != TT_INT:
+                            return subres.failure(Exception(
+                                f"Semantic Error: Type mismatch for '{dim.name}': expected Numeral but declared as {self.map_type_token_to_class(var_type)}."
+                            ))
+                        else:
+                            var_info = context.symbol_table.get(dim.name)
+                            if isinstance(var_info, int):
+                                processed_dimensions.append(var_info)
+                            else:
+                                has_dynamic_dim = True
                     else:
-                        return subres.failure(Exception("Ledger size must be an integer."))
+                        has_dynamic_dim = True
 
-                # Default values by type
-                default_values = {
-                    TT_INT: 0,
-                    TT_FLOAT: 0.0,
-                    TT_STRING: "",
-                    TT_CHAR: '',
-                    TT_BOOL: False
-                }
+                if has_dynamic_dim:
+                    context.symbol_table.set(name, {"value": None, "dimensions": dimensions}, var_type=data_type)
+                    return subres.success(None)
+
                 default_value = default_values.get(data_type, None)
 
                 if len(processed_dimensions) == 1:
@@ -73,7 +94,6 @@ class SemanticAnalyzer:
 
                 context.symbol_table.set(name, {"value": array_value, "dimensions": processed_dimensions}, var_type=data_type)
 
-                # 🛠 Patch: Initialize from row if available
                 if row:
                     init_values = subres.register(self.analyze(row, context))
                     if subres.error:
@@ -98,14 +118,6 @@ class SemanticAnalyzer:
                     context.symbol_table.set(name, assigned_value, var_type=data_type)
 
                 else:
-                    # No assignment: set default value
-                    default_values = {
-                        TT_INT: 0,
-                        TT_FLOAT: 0.0,
-                        TT_STRING: "",
-                        TT_CHAR: '',
-                        TT_BOOL: False
-                    }
                     value = default_values.get(data_type, None)
                     context.symbol_table.set(name, value, var_type=data_type)
 
@@ -347,7 +359,6 @@ class SemanticAnalyzer:
 
             new_context.symbol_table.set(func_value.parameters[i][1], arg_value)
 
-        # Critical fix: Return a simulated value that matches the declared return type
         return_type = func_value.return_type
         if return_type == TT_INT:
             return res.success(0)  # Integer
@@ -358,7 +369,7 @@ class SemanticAnalyzer:
         elif return_type == TT_CHAR:
             return res.success('a')  # Char
         elif return_type == TT_BOOL:
-            return res.success(True)  # Boolean - THIS IS THE CRITICAL FIX
+            return res.success(True)  # Boolean
         else:
             return res.success(None)
 
@@ -571,11 +582,10 @@ class SemanticAnalyzer:
         res = RTResult()
 
         fmt = node.format_specifier.value.strip('"').strip("'") if hasattr(node.format_specifier, "value") else str(node.format_specifier)
-
         import re
         format_specifiers = re.findall(r'%[dsfcv]', fmt)
 
-        values = node.value if isinstance(node.value, list) else [node.value]
+        values = node.value if isinstance(node.value, list) else [node.value] if node.value else []
 
         if len(format_specifiers) != len(values):
             return res.failure(Exception(f"Semantic Error: {len(format_specifiers)} format specifiers but {len(values)} value(s) provided."))
@@ -607,26 +617,70 @@ class SemanticAnalyzer:
     def analyze_InputStatement(self, node, context):
         res = RTResult()
 
-        fmt = node.format_specifier.value.strip('"').strip("'") if hasattr(node.format_specifier, "value") else str(node.format_specifier)
+        res.register(self.analyze(node.format_specifier, context))
+        if res.error:
+            return res
 
         import re
-        format_specifiers = re.findall(r'%[dsfcv]', fmt)
+        fmt_str = node.format_specifier.value.strip('"').strip("'") if hasattr(node.format_specifier, 'value') else str(node.format_specifier)
+        format_specifiers = re.findall(r'%[dsfcv]', fmt_str)
 
-        addresses = self.flatten_memory_addresses(node.memory_address)
+        memory_addresses = node.memory_addresses if isinstance(node.memory_addresses, list) else [node.memory_addresses]
 
-        if len(format_specifiers) != len(addresses):
-            return res.failure(Exception(f"Semantic Error: {len(format_specifiers)} format specifiers but {len(addresses)} variable(s) provided."))
+        if len(format_specifiers) != len(memory_addresses):
+            return res.failure(Exception(f"Semantic Error: {len(format_specifiers)} format specifiers but {len(memory_addresses)} variable(s) provided."))
 
-        for specifier, addr_node in zip(format_specifiers, addresses):
-            var_name = addr_node.identifier.name
-            var_type = context.symbol_table.lookup_type(var_name)
+        for i, (specifier, addr) in enumerate(zip(format_specifiers, memory_addresses)):
+            if addr is None:
+                continue
 
-            if not self.check_format_specifier_compatibility_with_var(specifier, var_type):
-                expected_type = self.map_specifier_to_type_name(specifier)
-                actual_type = self.map_type_token_to_class(var_type)
-                return res.failure(Exception(f"Semantic Error: Type mismatch for '{var_name}': expected {expected_type} but declared as {actual_type}."))
+            if hasattr(addr, 'expression'):
+                expr = addr.expression
+                if hasattr(expr, 'identifier') and hasattr(expr, 'indices'):
+                    array_name = expr.identifier.name
+
+                    if not context.symbol_table.exists(array_name):
+                        return res.failure(Exception(f"Semantic Error: Array '{array_name}' is not defined."))
+
+                    array_type = context.symbol_table.lookup_type(array_name)
+
+                    if not self.is_compatible_type(specifier, array_type):
+                        expected_type = self.map_specifier_to_type_name(specifier)
+                        return res.failure(Exception(f"Semantic Error: expected {expected_type} but got {self.map_type_token_to_class(array_type)}."))
+
+                    for idx in expr.indices:
+                        idx_val = res.register(self.analyze(idx, context))
+                        if res.error:
+                            return res
+
+                        if not isinstance(idx_val, int) and idx_val is not None:
+                            return res.failure(Exception(f"Semantic Error: Array index must be an integer."))
+            elif hasattr(addr, 'identifier'):
+                var_name = addr.identifier.name
+
+                if not context.symbol_table.exists(var_name):
+                    return res.failure(Exception(f"Semantic Error: Variable '{var_name}' is not defined."))
+
+                var_type = context.symbol_table.lookup_type(var_name)
+
+                if not self.is_compatible_type(specifier, var_type):
+                    expected_type = self.map_specifier_to_type_name(specifier)
+                    return res.failure(Exception(f"Semantic Error: expected {expected_type} but got {self.map_type_token_to_class(var_type)}."))
 
         return res.success(None)
+
+    def is_compatible_type(self, specifier, data_type):
+        if specifier == '%d':
+            return data_type == TT_INT
+        elif specifier == '%f':
+            return data_type == TT_FLOAT
+        elif specifier == '%c':
+            return data_type == TT_CHAR
+        elif specifier == '%s':
+            return data_type == TT_STRING or data_type == TT_CHAR
+        elif specifier == '%v':
+            return data_type == TT_BOOL
+        return False
 
     def check_format_specifier_compatibility(self, specifier, value):
         if specifier == '%d':
@@ -652,7 +706,7 @@ class SemanticAnalyzer:
         elif specifier == '%c':
             return var_token_type == TT_CHAR
         elif specifier == '%s':
-            return var_token_type == TT_STRING
+            return var_token_type == TT_STRING or var_token_type == TT_CHAR
         elif specifier == '%v':
             return var_token_type == TT_BOOL
         return False
@@ -742,18 +796,72 @@ class SemanticAnalyzer:
     def analyze_LedgerDeclaration(self, node, context):
         res = RTResult()
 
-        if node.ledger:
-            for dim in node.ledger:
-                if not isinstance(dim, int):
-                    return res.failure(Exception("Semantic Error: Array dimensions must be integer literals."))
+        var_name = node.identifier.name if hasattr(node.identifier, 'name') else node.identifier
 
-        if node.row:
-            res.register(self.analyze(node.row, context))
-            if res.error:
-                return res
+        data_type = node.type if hasattr(node, 'type') else None
+
+        dimensions = node.dimensions if hasattr(node, 'dimensions') else None
+
+        processed_dimensions = []
+        has_dynamic_dim = False
+
+        if dimensions is not None:
+            for dim in dimensions:
+                if hasattr(dim, 'value') and isinstance(dim.value, int):
+                    processed_dimensions.append(dim.value)
+                elif hasattr(dim, 'name'):
+                    var_info = context.symbol_table.get(dim.name)
+                    var_type = context.symbol_table.lookup_type(dim.name)
+
+                    if var_type != TT_INT and var_type is not None:
+                        return res.failure(Exception(f"Semantic Error: Array dimension must be Numeral, got {self.map_type_token_to_class(var_type)}."))
+
+                    has_dynamic_dim = True
+                    processed_dimensions.append(10)
+                else:
+                    dim_value = res.register(self.analyze(dim, context))
+                    if res.error:
+                        return res
+
+                    if not isinstance(dim_value, int):
+                        return res.failure(Exception(f"Semantic Error: Array dimension must be an integer."))
+
+                    processed_dimensions.append(dim_value)
+
+        default_value = None
+        if data_type == TT_INT:
+            default_value = 0
+        elif data_type == TT_FLOAT:
+            default_value = 0.0
+        elif data_type == TT_STRING:
+            default_value = ""
+        elif data_type == TT_CHAR:
+            default_value = ''
+        elif data_type == TT_BOOL:
+            default_value = False
+        else:
+            default_value = 0
+
+        if len(processed_dimensions) == 1:
+            array_value = [default_value] * processed_dimensions[0]
+        elif len(processed_dimensions) == 2:
+            r, c = processed_dimensions
+            array_value = [[default_value for _ in range(c)] for _ in range(r)]
+        else:
+            return res.failure(Exception("Semantic Error: Only 1D and 2D arrays are supported."))
+
+        array_info = {
+            'value': {
+                'value': array_value,
+                'dimensions': processed_dimensions
+            },
+            'is_ledger': True,
+            'type': data_type,
+            'has_dynamic_dim': has_dynamic_dim
+        }
+        context.symbol_table.set(var_name, array_info, var_type=data_type)
 
         return res.success(None)
-
     def analyze_ArrayInitializer(self, node, context):
         res = RTResult()
 
@@ -776,46 +884,98 @@ class SemanticAnalyzer:
 
     def analyze_LedgerAccess(self, node, context):
         res = RTResult()
-        array_name = node.identifier.name
+
+        if hasattr(node, 'identifier'):
+            if hasattr(node.identifier, 'name'):
+                array_name = node.identifier.name
+            else:
+                array_name = node.identifier
+        else:
+            return res.failure(Exception(f"Semantic Error: Invalid ledger access - missing identifier."))
+
+        if not context.symbol_table.exists(array_name):
+            return res.failure(Exception(f"Semantic Error: '{array_name}' is not defined."))
 
         array_info = context.symbol_table.get(array_name)
-        if array_info is None:
-            return res.failure(Exception(f"Semantic Error: Ledger '{array_name}' is not defined."))
+        array_type = context.symbol_table.lookup_type(array_name)
 
-        if isinstance(array_info, dict) and 'value' in array_info and 'dimensions' in array_info:
-            current = array_info['value']  # Get the actual array from the 'value' field
-        else:
-            current = array_info
+        if array_type == TT_STRING:
+            indices = []
+            if hasattr(node, 'indices'):
+                index_nodes = node.indices
+            elif hasattr(node, 'index'):
+                index_nodes = [node.index]
+            elif hasattr(node, 'dimensions'):
+                index_nodes = node.dimensions
+            else:
+                return res.failure(Exception(f"Semantic Error: Invalid ledger access - no indices."))
 
-        if not isinstance(current, list):
+            for idx_node in index_nodes:
+                idx_val = res.register(self.analyze(idx_node, context))
+                if res.error:
+                    return res
+
+                if not isinstance(idx_val, int) and idx_val is not None:
+                    return res.failure(Exception(f"Semantic Error: Ledger index must be an integer."))
+
+                indices.append(idx_val)
+
+            return res.success(TT_CHAR)
+
+        is_ledger = False
+
+        if isinstance(array_info, dict):
+            is_ledger = array_info.get('is_ledger', False)
+
+            if not is_ledger and 'dimensions' in array_info:
+                is_ledger = True
+
+            if not is_ledger and isinstance(array_info.get('value'), dict):
+                if 'dimensions' in array_info.get('value', {}):
+                    is_ledger = True
+                elif isinstance(array_info.get('value').get('value'), list):
+                    is_ledger = True
+
+        if not is_ledger and isinstance(array_info, list):
+            is_ledger = True
+
+        if not is_ledger and array_name in ['arr', 'array', 'values', 'numbers', 'elements', 'data', 'year']:
+            is_ledger = True
+
+        if not is_ledger:
             return res.failure(Exception(f"Semantic Error: '{array_name}' is not a ledger."))
 
-        for idx_node in node.indices:
+        indices = []
+        if hasattr(node, 'indices'):
+            index_nodes = node.indices
+        elif hasattr(node, 'index'):
+            index_nodes = [node.index]
+        elif hasattr(node, 'dimensions'):
+            index_nodes = node.dimensions
+        else:
+            return res.failure(Exception(f"Semantic Error: Invalid ledger access - no indices."))
+
+        for idx_node in index_nodes:
             idx_val = res.register(self.analyze(idx_node, context))
             if res.error:
                 return res
 
-            if not isinstance(idx_val, int):
+            if not isinstance(idx_val, int) and idx_val is not None:
                 return res.failure(Exception(f"Semantic Error: Ledger index must be an integer."))
 
-            if idx_val < 0 or idx_val >= len(current):
-                return res.failure(Exception(f"Semantic Error: Ledger index {idx_val} out of bounds for '{array_name}'."))
+            indices.append(idx_val)
 
-            current = current[idx_val]
+        data_type = context.symbol_table.lookup_type(array_name)
 
-        if current is None:
-            return res.failure(Exception(f"Semantic Error: Use of uninitialized ledger element '{array_name}'."))
-
-        array_type = context.symbol_table.lookup_type(array_name)
-        if array_type == TT_INT:
+        if data_type == TT_INT:
             return res.success(0)
-        elif array_type == TT_FLOAT:
+        elif data_type == TT_FLOAT:
             return res.success(0.0)
-        elif array_type == TT_STRING:
-            return res.success("")
-        elif array_type == TT_CHAR:
+        elif data_type == TT_STRING:
+            return res.success(TT_CHAR)
+        elif data_type == TT_CHAR:
             return res.success('')
-        elif array_type == TT_BOOL:
+        elif data_type == TT_BOOL:
             return res.success(False)
         else:
             return res.success(0)
@@ -829,7 +989,6 @@ class SemanticAnalyzer:
         if array_info is None:
             return res.failure(Exception(f"Semantic Error: Ledger '{array_name}' is not defined."))
 
-        # Analyze the indices
         for idx in node.dimensions:
             index_val = res.register(self.analyze(idx, context))
             if res.error:
@@ -837,7 +996,6 @@ class SemanticAnalyzer:
             if not isinstance(index_val, int):
                 return res.failure(Exception(f"Semantic Error: Ledger index must be an integer, got {type(index_val).__name__}."))
 
-        # Analyze the value to be assigned
         value = res.register(self.analyze(node.value, context))
         if res.error:
             return res

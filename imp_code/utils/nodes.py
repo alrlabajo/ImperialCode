@@ -145,9 +145,9 @@ class OutputStatement(ASTNode):
         self.value = value
 
 class InputStatement(ASTNode):
-    def __init__(self, format_specifier, memory_address):
+    def __init__(self, format_specifier, memory_addresses):
         self.format_specifier = format_specifier
-        self.memory_address = memory_address
+        self.memory_addresses = memory_addresses
 
 class LedgerAccess(ASTNode):
     def __init__(self, identifier, indices):
@@ -190,9 +190,9 @@ class ValueAssignment(ASTNode):
             self.tail = tail
 
 class LedgerAssignment(ASTNode):
-        def __init__(self, identifier, dimensions, operator, value, tail=None):
+        def __init__(self, identifier, indices, operator, value, tail=None):
             self.identifier = identifier
-            self.dimensions = dimensions
+            self.indices = indices
             self.operator = operator
             self.value = value
             self.tail = tail

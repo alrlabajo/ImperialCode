@@ -1,21 +1,33 @@
+Letter arr[10];
+Numeral i, j;
+Veracity isPalindrome = Pure;
+
 Embark() {
-    Letter text[5] = { 'm' , 'a' , 'd' , 'a' , 'm' };  
-    Numeral n = 5;             
+    Emit("Enter a word (end with #): ");
+    Seek("%s", &arr[0]);
 
-    Veracity isPal = Pure;
+    // Detect length safely with limit
+    Numeral length = 0;
+    Until (length >= 10 | arr[length] == "#") {
+        length = length + 1;
+    }
 
-    Per(Numeral i = 0; i < n/2; i++) {
-        Thou(text[i] != text[n - 1 - i]) {
-            Veracity isPal = Nay;
+    // Compare mirrored characters
+    i = 0;
+    j = length - 1;
+
+    Until (i >= j) {
+        Thou (arr[i] != arr[j]) {
+            isPalindrome = Nay;
             Halt;
         }
+        i = i + 1;
+        j = j - 1;
     }
 
-    Thou(isPal) {
-        Emit("Yes, it's a palindrome!\n");
+    Thou (isPalindrome == Pure) {
+        Emit("It is a palindrome");
     } Or {
-        Emit("No, not a palindrome.\n");
+        Emit("It is not a palindrome");
     }
-
-    Recede 0;
 }

@@ -3,7 +3,7 @@ class SymbolTable:
         self.symbols = {}
         self.functions = {}
         self.parent = parent
-    
+
     def get(self, name):
         value = self.symbols.get(name)
         if value is None and self.parent:
@@ -22,6 +22,10 @@ class SymbolTable:
         self.symbols[name]['value'] = value
 
     def set(self, name, value, var_type=None, is_constant=False, is_array=False, dimensions=None):
+        if name in self.symbols:
+            existing = self.symbols[name]
+            if isinstance(existing.get("value"), list) and not isinstance(value, list):
+                raise Exception(f"Runtime Error: Cannot assign scalar to ledger '{name}'.")
         self.symbols[name] = {
             'value': value,
             'type': var_type
@@ -34,36 +38,37 @@ class SymbolTable:
             self.symbols[name]['dimensions'] = dimensions
         return value
 
+
     def remove(self, name):
         if name in self.symbols:
             del self.symbols[name]
-    
+
     def exists(self, name):
         if name in self.symbols:
             return True
         if self.parent:
             return self.parent.exists(name)
         return False
-    
+
     def exists_in_current_scope(self, name):
         return name in self.symbols
-    
+
     def get_function(self, name):
         func = self.functions.get(name)
         if func is None and self.parent:
             return self.parent.get_function(name)
         return func
-    
+
     def set_function(self, name, func_obj):
         self.functions[name] = func_obj
         return func_obj
-    
+
     def is_constant(self, name):
         symbol = self.symbols.get(name)
         if symbol and isinstance(symbol, dict):
             return symbol.get('is_constant', False)
         return False
-    
+
     def lookup_type(self, name):
         symbol = self.symbols.get(name)
         if symbol and isinstance(symbol, dict):

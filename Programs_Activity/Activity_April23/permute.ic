@@ -1,0 +1,37 @@
+Letter arr[10];
+Numeral length;
+
+Embark() {
+    Emit("Enter a word (end with #): ");
+    Seek("%s", &arr[0]);
+
+    Numeral i = 0;
+    Until (i >= 10 | arr[i] == '#') {
+        i = i + 1;
+    }
+    length = i;
+
+    Veracity isPalindrome = Pure;
+    Numeral start = 0;
+    Numeral end = length - 1;
+
+    Thou (end < 0) {
+        Emit("Invalid input or empty word.");
+        Halt;
+    }
+
+    Until (start >= end) {
+        Thou (arr[start] != arr[end]) {
+            isPalindrome = Nay;
+            Halt;
+        }
+        start = start + 1;
+        end = end - 1;
+    }
+
+    Thou (isPalindrome == Pure) {
+        Emit("It is a palindrome");
+    } Or {
+        Emit("It is not a palindrome");
+    }
+}

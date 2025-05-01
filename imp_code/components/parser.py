@@ -912,7 +912,7 @@ class Parser:
                 self.current_token.pos_end,f"Expected assignment operator: {TT_EQUAL}, {TT_PLUSAND}, {TT_MINUSAND}, {TT_MULAND}, {TT_DIVAND}, {TT_MODAND}")
 
     def parse_ledger_assign(self, identifier_token):
-        dimensions = self.parse_ledger_element()
+        indices = self.parse_ledger_element()
         op = self.parse_assignment_op()
         value = self.parse_value()
         semi = self.expect(TT_TERMINATE)
@@ -921,7 +921,7 @@ class Parser:
 
         tail = self.parse_ledger_assign_tail() if self.current_token.type == TT_LBRACKET else None
 
-        return LedgerAssignment(Identifier(identifier_token.value), dimensions, op, value, tail)
+        return LedgerAssignment(Identifier(identifier_token.value), indices, op, value, tail)
 
     def parse_ledger_assign_tail(self):
         if self.current_token.type == TT_IDENTIFIER:
@@ -1262,6 +1262,7 @@ class Parser:
         rpar = self.expect(TT_RPAREN)
         if isinstance(rpar, InvalidSyntaxError):
             self.errors.append(rpar)
+
         return OutputStatement(emit_value, data)
 
     def parse_emit_value(self):
@@ -1303,17 +1304,15 @@ class Parser:
 
     def parse_data_storage(self):
         if self.current_token.type == TT_COMMA:
-            comma = self.expect(TT_COMMA)
-            if isinstance(comma, InvalidSyntaxError):
-                self.errors.append(comma)
+            self.expect(TT_COMMA)
             expr = self.parse_expression()
             if expr is None:
-                return InvalidSyntaxError(
+                self.errors.append(InvalidSyntaxError(
                     self.current_token.pos_start,
                     self.current_token.pos_end,
                     "Expected identifier or expression after ','"
-                )
-
+                ))
+                return []
             tail = self.parse_data_storage_tail()
             return [expr] + tail
         return []
@@ -1334,23 +1333,46 @@ class Parser:
         seek = self.expect(TT_INPUT)
         if isinstance(seek, InvalidSyntaxError):
             self.errors.append(seek)
+
         lpar = self.expect(TT_LPAREN)
         if isinstance(lpar, InvalidSyntaxError):
             self.errors.append(lpar)
+
         if self.current_token.type != TT_STRING_LITERAL:
             return InvalidSyntaxError(
                 self.current_token.pos_start,
                 self.current_token.pos_end,
                 "Expected format specifier"
             )
+
         token = self.current_token
         self.advance()
         fmt = StringLiteral(token.value)
+
+        # Parse memory address
         memory_addr_root = self.parse_memory_address()
+        if isinstance(memory_addr_root, InvalidSyntaxError):
+            return memory_addr_root
+
+        # Collect addresses into a list
+        memory_addresses = []
+
+        def collect_addresses(node):
+            if isinstance(node, list):
+                for item in node:
+                    collect_addresses(item)
+            elif isinstance(node, MemoryAddress):
+                memory_addresses.append(node)
+                if hasattr(node, "tail") and node.tail:
+                    collect_addresses(node.tail)
+
+        collect_addresses(memory_addr_root)
+
         rpar = self.expect(TT_RPAREN)
         if isinstance(rpar, InvalidSyntaxError):
             self.errors.append(rpar)
-        return InputStatement(fmt, memory_addr_root)
+
+        return InputStatement(fmt, memory_addresses)
 
     def parse_memory_address(self):
         if self.current_token.type != TT_COMMA:
@@ -1366,76 +1388,89 @@ class Parser:
         first = self.parse_memory_address_continue()
         return first
 
-    def flatten_memory_addresses(self, memory_addr):
-        flat = []
+    def flatten_memory_addresses(self, addr):
+        result = []
 
-        def recurse(node):
-            if node is None:
-                return
-            flat.append(node)
-            if hasattr(node, "tail") and node.tail:
-                if isinstance(node.tail, list):
-                    for t in node.tail:
-                        recurse(t)
-                else:
-                    recurse(node.tail)
+        if addr is None:
+            return result
 
-        recurse(memory_addr)
-        return flat
+        # Handle list input
+        if isinstance(addr, list):
+            for item in addr:
+                result.extend(self.flatten_memory_addresses(item))
+            return result
+
+        # Add the current address
+        result.append(addr)
+
+        # Recursively add any linked addresses
+        if hasattr(addr, 'tail') and addr.tail:
+            result.extend(self.flatten_memory_addresses(addr.tail))
+
+        return result
 
     def parse_memory_address_continue(self):
-        if self.current_token.type == TT_ADDRESS:
-            self.advance()
-
-            if self.current_token.type != TT_IDENTIFIER:
-                return InvalidSyntaxError(
-                    self.current_token.pos_start,
-                    self.current_token.pos_end,
-                    "Expected identifier after '&'"
-                )
-
-            ident_token = self.current_token
-            self.advance()
-            base = Identifier(ident_token.value)
-
-            index = self.parse_ledger_element_value()
-            memory_addr = MemoryAddress(base)
-            memory_addr.index = index
-
-            tail = self.parse_memory_address_tail()
-            if tail:
-                memory_addr.tail = tail
-
-            return memory_addr
-
-        elif self.current_token.type == TT_IDENTIFIER:
-            ident_token = self.current_token
-            next_token = self.peek()
-            self.advance()
-
-            base = Identifier(ident_token.value)
-
-            if next_token and next_token.type == TT_LPAREN:
-                func_call = self.parse_function_call(base)
-                memory_addr = MemoryAddress(func_call)
-            else:
-                memory_addr = MemoryAddress(base)
-
-            index = self.parse_ledger_element_value()
-            memory_addr.index = index
-
-            tail = self.parse_memory_address_tail()
-            if tail:
-                memory_addr.tail = tail
-
-            return memory_addr
-
-        else:
+        if self.current_token.type != TT_ADDRESS:
             return InvalidSyntaxError(
-                self.current_token.pos_start,
-                self.current_token.pos_end,
-                "Expected memory address (either '&identifier' or identifier)"
+                self.current_token.position,
+                f"Expected {TT_ADDRESS}, got {self.current_token.type}"
             )
+        self.advance()
+
+        if self.current_token.type != TT_IDENTIFIER:
+            return InvalidSyntaxError(
+                self.current_token.position,
+                f"Expected identifier after {TT_ADDRESS}, got {self.current_token.type}"
+            )
+
+        identifier = Identifier(self.current_token.value)
+        self.advance()
+
+        if self.current_token.type == TT_LBRACKET:
+            indices = []
+
+            while self.current_token.type == TT_LBRACKET:
+                self.advance()
+                index_expr = self.parse_expression()
+                if isinstance(index_expr, InvalidSyntaxError):
+                    return index_expr
+
+                indices.append(index_expr)
+
+                if self.current_token.type != TT_RBRACKET:
+                    return InvalidSyntaxError(
+                        self.current_token.position,
+                        f"Expected ']', got {self.current_token.type}"
+                    )
+
+                self.advance()
+
+            array_access = LedgerAccess(identifier, indices)
+
+            memory_addr = MemoryAddress(array_access)
+            memory_addr.expression = array_access
+
+            if self.current_token.type == TT_COMMA:
+                self.advance()
+                next_addr = self.parse_memory_address_continue()
+                if isinstance(next_addr, InvalidSyntaxError):
+                    return next_addr
+                memory_addr.tail = next_addr
+
+            return memory_addr
+        else:
+
+            memory_addr = MemoryAddress(identifier)
+            memory_addr.identifier = identifier
+            if self.current_token.type == TT_COMMA:
+                self.advance()
+                next_addr = self.parse_memory_address_continue()
+                if isinstance(next_addr, InvalidSyntaxError):
+                    return next_addr
+
+                memory_addr.tail = next_addr
+
+            return memory_addr
 
     def parse_ledger_element_value(self):
         if self.current_token.type == TT_LBRACKET:

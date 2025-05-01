@@ -5,20 +5,24 @@ from ..utils.context import Context
 from ..utils.symbol_table import *
 from .semantic2 import SemanticAnalyzer
 
+INT_LIM = 999999999
+FLOAT_LIM = 999999999.999999
+FLOAT_PRECISION_LIM = 6
+
 class Interpreter:
     def __init__(self):
         self.semantic_analyzer = SemanticAnalyzer()
 
     def visit(self, node, context):
         method_name = f'visit_{type(node).__name__}'
-        if isinstance(node, list): 
+        if isinstance(node, list):
             res = RTResult()
             for subnode in node:
                 res.register(self.visit(subnode, context))
                 if res.error:
                     return res
             return res.success(None)
-        
+
         method = getattr(self, method_name, self.no_visit_method)
         return method(node, context)
 
@@ -71,13 +75,14 @@ class Interpreter:
 
             if dimensions is not None:
                 processed_dimensions = []
-                for dim in dimensions:
-                    dim_value = subres.register(self.visit(dim, context))
+
+                for dim_expr in dimensions:
+                    dim_val = subres.register(self.visit(dim_expr, context))
                     if subres.error:
                         return subres
-                    if not isinstance(dim_value, int):
-                        return subres.failure(Exception("Ledger size must be an integer."))
-                    processed_dimensions.append(dim_value)
+                    if not isinstance(dim_val, int):
+                        return subres.failure(Exception("Runtime Error: Ledger size must evaluate to an integer."))
+                    processed_dimensions.append(dim_val)
 
                 defaults = {
                     TT_INT: 0,
@@ -87,11 +92,12 @@ class Interpreter:
                     TT_BOOL: False
                 }
                 default_value = defaults.get(data_type, 0)
+
                 if len(processed_dimensions) == 1:
                     array_value = [default_value] * processed_dimensions[0]
                 elif len(processed_dimensions) == 2:
                     r, c = processed_dimensions
-                    array_value = [[default_value] * c for _ in range(r)]
+                    array_value = [[default_value for _ in range(c)] for _ in range(r)]
                 else:
                     return subres.failure(Exception("Only 1D and 2D ledgers are supported."))
 
@@ -111,14 +117,10 @@ class Interpreter:
                                     array_value[i][j] = init_list[i][j]
                                 except (IndexError, TypeError):
                                     array_value[i][j] = default_value
- 
                     elif isinstance(init_list, list):
-                        if len(processed_dimensions) == 1:
-                            for i, v in enumerate(init_list[: len(array_value)]):
-                                array_value[i] = v
-                        else:
-                            for j, v in enumerate(init_list[: len(array_value[0])]):
-                                array_value[0][j] = v
+                        for i in range(min(len(init_list), len(array_value))):
+                            array_value[i] = init_list[i]
+
             else:
                 defaults = {
                     TT_INT: 0,
@@ -171,15 +173,14 @@ class Interpreter:
         res = RTResult()
         var_name = node.identifier.name
         var_data = context.symbol_table.get(var_name)
-        
+
         if var_data is None and not context.symbol_table.exists(var_name):
             return res.failure(Exception(f"Runtime Error: Variable '{var_name}' is not declared."))
 
-        # Extract the actual value from the dictionary if needed
         current_value = var_data
         if isinstance(var_data, dict) and 'value' in var_data:
             current_value = var_data['value']
-        
+
         value = res.register(self.visit(node.value, context))
         if res.error:
             return res
@@ -221,22 +222,22 @@ class Interpreter:
             return res.failure(Exception(f"'{var_name}' is not defined."))
 
         if isinstance(value, dict):
-            return res.success(value.get('value')) 
+            return res.success(value.get('value'))
 
         return res.success(value)
 
     def visit_BinaryOp(self, node, context):
         res = RTResult()
-        
+
         left = res.register(self.visit(node.left, context))
         if res.error: return res
-        
+
         right = res.register(self.visit(node.right, context))
         if res.error: return res
 
         if left is None:
             return res.failure(Exception(f"Left operand of '{node.operator.type}' is None"))
-        
+
         if right is None:
             return res.failure(Exception(f"Right operand of '{node.operator.type}' is None"))
 
@@ -246,11 +247,11 @@ class Interpreter:
             if op_type == TT_PLUS: return res.success(left + right)
             if op_type == TT_MINUS: return res.success(left - right)
             if op_type == TT_MUL: return res.success(left * right)
-            if op_type == TT_DIV: 
+            if op_type == TT_DIV:
                 if right == 0:
                     return res.failure(Exception("Division by zero"))
                 return res.success(left / right)
-            if op_type == TT_MODULO: 
+            if op_type == TT_MODULO:
                 if right == 0:
                     return res.failure(Exception("Modulo by zero"))
                 return res.success(left % right)
@@ -267,7 +268,7 @@ class Interpreter:
             return res.failure(Exception(f"Type error in operation {left} {op_type} {right}: {str(e)}"))
         except Exception as e:
             return res.failure(e)
-        
+
     def visit_UnaryOp(self, node, context):
         res = RTResult()
         operand = res.register(self.visit(node.operand, context))
@@ -280,46 +281,119 @@ class Interpreter:
 
     def visit_InputStatement(self, node, context):
         res = RTResult()
-
-        fmt = node.format_specifier.value.strip('"').strip("'") if hasattr(node.format_specifier, "value") else str(node.format_specifier)
+        fmt_str = node.format_specifier.value.strip('"').strip("'") if hasattr(node.format_specifier, 'value') else str(node.format_specifier)
 
         import re
-        specifiers = re.findall(r'%[dsfcv]', fmt)
+        format_specifiers = re.findall(r'%[dsfcv]', fmt_str)
 
-        addresses = self.semantic_analyzer.flatten_memory_addresses(node.memory_address)
+        memory_addresses = node.memory_addresses if isinstance(node.memory_addresses, list) else [node.memory_addresses]
+        if len(format_specifiers) != len(memory_addresses):
+            return res.failure(Exception(f"Runtime Error: {len(format_specifiers)} format specifiers but {len(memory_addresses)} variable(s) provided."))
 
-        for i, addr in enumerate(addresses):
-            if addr is None:
-                continue
-
-            var_name = addr.identifier.name
-
+        for i, (specifier, addr) in enumerate(zip(format_specifiers, memory_addresses)):
             user_input = input()
-
             try:
-                match specifiers[i]:
-                    case "%d":
-                        user_input = int(user_input)
-                    case "%f":
-                        user_input = float(user_input)
-                    case "%c":
-                        user_input = user_input[0]
-                    case "%s":
-                        user_input = str(user_input)
-                    case "%v":
-                        lowered = user_input.strip().lower()
-                        if lowered == "pure":
-                            user_input = True
-                        elif lowered == "nay":
-                            user_input = False
-                        else:
-                            raise ValueError("Expected Pure or Nay for Veracity.")
-            except Exception as e:
-                return res.failure(Exception(f"Input format error: {e}"))
+                if specifier == '%d':
+                    value = int(user_input)
+                elif specifier == '%f':
+                    value = float(user_input)
+                elif specifier == '%c':
+                    if len(user_input) != 1:
+                        return res.failure(Exception("Runtime Error: Only one character expected for %c"))
+                    value = user_input
+                elif specifier == '%s':
+                    value = user_input
+                elif specifier == '%v':
+                    value = True if user_input.lower() == 'pure' else False
+                else:
+                    return res.failure(Exception(f"Runtime Error: Unsupported format specifier: {specifier}"))
+            except ValueError as e:
+                return res.failure(Exception(f"Runtime Error: Input format error - {str(e)}"))
 
-            context.symbol_table.set(var_name, user_input)
+            if isinstance(addr, MemoryAddress):
+                if hasattr(addr, 'expression'):
+                    expr = addr.expression
+                    array_name = expr.identifier.name if hasattr(expr.identifier, 'name') else expr.identifier
+                    indices = expr.indices if hasattr(expr, 'indices') else []
+
+                    array_info = context.symbol_table.get(array_name)
+                    if array_info is None:
+                        return res.failure(Exception(f"Runtime Error: Array '{array_name}' is not defined."))
+                    array = array_info.get('value', [''] * array_info.get('dimensions', [10])[0])
+
+                    if specifier == '%s':
+                        if len(indices) == 0:
+                            start_idx = 0
+                        elif len(indices) == 1:
+                            start_idx = res.register(self.visit(indices[0], context))
+                            if res.error:
+                                return res
+                            if not isinstance(start_idx, int):
+                                return res.failure(Exception("Runtime Error: Array index must be an integer."))
+                        else:
+                            return res.failure(Exception("Runtime Error: String input to array supports only 1D."))
+
+                        for offset, ch in enumerate(value):
+                            if start_idx + offset >= len(array):
+                                break
+                            array[start_idx + offset] = ch
+
+                        array_info['value'] = array
+                        context.symbol_table.symbols[array_name] = array_info
+
+                    else:
+                        if len(indices) != 1:
+                            return res.failure(Exception("Runtime Error: Only 1D array access supported."))
+                        idx_val = res.register(self.visit(indices[0], context))
+                        if res.error:
+                            return res
+                        array[idx_val] = value
+                        context.symbol_table.set(array_name, {
+                            'value': array,
+                            'type': 'Letter',
+                            'dimensions': [len(array)]
+                        })
+                elif hasattr(addr, 'identifier'):
+                    var_name = addr.identifier.name if hasattr(addr.identifier, 'name') else addr.identifier
+                    context.symbol_table.set(var_name, value)
+                else:
+                    return res.failure(Exception(f"Runtime Error: Invalid memory address: {addr}"))
+            else:
+                return res.failure(Exception(f"Runtime Error: Invalid memory address type: {type(addr).__name__}"))
 
         return res.success(None)
+
+    def flatten_memory_addresses(self, addr):
+        result = []
+
+        if isinstance(addr, Exception):
+            return result
+
+        if isinstance(addr, list):
+            for a in addr:
+                result.extend(self.flatten_memory_addresses(a))
+        elif hasattr(addr, 'tail') and addr.tail:
+            result.append(addr)
+            result.extend(self.flatten_memory_addresses(addr.tail))
+        else:
+            result.append(addr)
+
+        return result
+
+    def _read_input_for_specifier(self, specifier):
+        raw = input()
+        if specifier == "%d":
+            return int(raw)
+        elif specifier == "%f":
+            return float(raw)
+        elif specifier == "%c":
+            return raw[0]
+        elif specifier == "%s":
+            return str(raw)
+        elif specifier == "%v":
+            return raw.lower() in ("true", "1")
+        else:
+            raise Exception(f"Unsupported format specifier '{specifier}'")
 
     def extract_raw_value(self, value):
         if isinstance(value, dict) and 'value' in value:
@@ -341,14 +415,13 @@ class Interpreter:
                 if res.error: return res
                 if val is None:
                     return res.failure(Exception("Runtime Error: Trying to output a variable that is None (uninitialized)."))
-                values.append(self.extract_raw_value(val)) 
+                values.append(self.extract_raw_value(val))
         else:
             val = res.register(self.visit(node.value, context))
             if res.error: return res
             if val is None:
                 return res.failure(Exception("Runtime Error: Trying to output a variable that is None (uninitialized)."))
             values.append(self.extract_raw_value(val))
-
 
         try:
             if values:
@@ -432,7 +505,7 @@ class Interpreter:
 
             should_break = False
             should_continue = False
-            
+
             for stmt in node.body:
                 stmt_result = self.visit(stmt, context)
                 res.register(stmt_result)
@@ -448,14 +521,14 @@ class Interpreter:
                     break
 
             if should_break:
-                break 
-                
+                break
+
             if should_continue:
                 if node.update:
                     res.register(self.visit(node.update, context))
                     if res.error:
                         return res
-                continue 
+                continue
 
             if node.update:
                 res.register(self.visit(node.update, context))
@@ -477,7 +550,7 @@ class Interpreter:
 
             should_break = False
             should_continue = False
-            
+
             for stmt in node.body:
                 stmt_result = self.visit(stmt, context)
                 res.register(stmt_result)
@@ -493,11 +566,10 @@ class Interpreter:
                     break
 
             if should_break:
-                break 
-                
-            if should_continue:
-                continue 
+                break
 
+            if should_continue:
+                continue
 
         return res.success(None)
 
@@ -517,7 +589,7 @@ class Interpreter:
 
             should_break = False
             should_continue = False
-            
+
             for stmt in node.body:
                 stmt_result = self.visit(stmt, context)
                 res.register(stmt_result)
@@ -533,13 +605,13 @@ class Interpreter:
                     break
 
             if should_break:
-                break 
-                
+                break
+
             if should_continue:
                 continue
- 
+
         return res.success(None)
-    
+
     def visit_Function(self, node, context):
         res = RTResult()
 
@@ -548,7 +620,7 @@ class Interpreter:
         context.symbol_table.set_function(name, func_obj)
 
         return res.success(func_obj)
-    
+
     def is_type_compatible(self, expected_token_type, value):
         if expected_token_type == TT_INT:  # Numeral
             return isinstance(value, int)
@@ -686,7 +758,7 @@ class Interpreter:
 
         context.symbol_table.set(var_name, var_value)
         return res.success(var_value)
-    
+
     def visit_Initialization(self, node, context):
         res = RTResult()
         res.register(self.visit(node.declaration, context))
@@ -696,133 +768,194 @@ class Interpreter:
 
     def visit_LedgerAccess(self, node, context):
         res = RTResult()
-        
-        array_name = node.identifier.name
+
+        # Get array name
+        array_name = node.identifier.name if hasattr(node.identifier, 'name') else node.identifier
+
+        # Get array from symbol table
         array_info = context.symbol_table.get(array_name)
         if array_info is None:
-            return res.failure(Exception(f"'{array_name}' is not defined."))
+            return res.failure(Exception(f"Runtime Error: '{array_name}' is not defined."))
 
-        if isinstance(array_info, dict) and 'value' in array_info:
-            current = array_info['value']
+        # Extract the actual array/string
+        array = None
+        is_string = False
+
+        # Check if it's a string - multiple ways to detect
+        if isinstance(array_info, str):
+            # Direct string
+            is_string = True
+            array = array_info
+        elif isinstance(array_info, dict):
+            # Check different dict structures
+            if array_info.get('type') == 'Missive' or array_info.get('type') == TT_STRING:
+                is_string = True
+                if 'value' in array_info:
+                    array = array_info['value']
+                else:
+                    array = ""
+            elif 'value' in array_info:
+                # Check nested value
+                if isinstance(array_info['value'], str):
+                    is_string = True
+                    array = array_info['value']
+                elif isinstance(array_info['value'], dict):
+                    if array_info['value'].get('type') == 'Missive' or array_info['value'].get('type') == TT_STRING:
+                        is_string = True
+                        if 'value' in array_info['value']:
+                            array = array_info['value']['value']
+                        else:
+                            array = ""
+                    else:
+                        # Regular array in nested structure
+                        array = array_info['value'].get('value', array_info['value'])
+                else:
+                    # Regular array direct value
+                    array = array_info['value']
+            else:
+                # Default case
+                array = array_info
         else:
-            current = array_info
+            # Default case
+            array = array_info
 
+        # Force string detection for common string names
+        if not is_string and array_name.lower() in ['str', 'string', 'text', 'input', 'inputstr', 'userstr', 'output', 'message', 'msg']:
+            if isinstance(array, str):
+                is_string = True
+            elif isinstance(array, dict) and 'value' in array_info and isinstance(array_info['value'], str):
+                is_string = True
+                array = array_info['value']
+
+        # Evaluate indices
+        indices = []
         for idx_node in node.indices:
-            idx = res.register(self.visit(idx_node, context))
+            idx_val = res.register(self.visit(idx_node, context))
             if res.error:
                 return res
-            
-            if not isinstance(idx, int):
-                return res.failure(Exception("Ledger index must be an integer"))
-            if idx < 0 or idx >= len(current):
-                return res.failure(Exception(f"Index {idx} out of bounds for ledger '{array_name}'"))
-            current = current[idx]
 
-        return res.success(current)
+            if not isinstance(idx_val, int):
+                return res.failure(Exception(f"Runtime Error: Ledger index must be an integer."))
+
+            indices.append(idx_val)
+
+        # Access the array/string
+        try:
+            if is_string:
+                if len(indices) != 1:
+                    return res.failure(Exception(f"Runtime Error: String '{array_name}' requires exactly one index."))
+
+                idx = indices[0]
+
+                if idx < 0:
+                    return res.failure(Exception(f"Runtime Error: Negative string index {idx} not allowed."))
+
+                # IMPORTANT: Return null character for out-of-bounds access
+                if idx >= len(array):
+                    print(f"[DEBUG] String index {idx} is beyond length {len(array)} for '{array_name}', returning null character")
+                    return res.success('\0')  # Return null character for beyond-end access
+
+                return res.success(array[idx])
+            else:
+                # Force treating as string for common string variable names if value is string
+                if isinstance(array, str):
+                    if len(indices) != 1:
+                        return res.failure(Exception(f"Runtime Error: String '{array_name}' requires exactly one index."))
+
+                    idx = indices[0]
+
+                    if idx < 0:
+                        return res.failure(Exception(f"Runtime Error: Negative string index {idx} not allowed."))
+
+                    # Return null character for out of bounds
+                    if idx >= len(array):
+                        print(f"[DEBUG] String index {idx} is beyond length {len(array)} for '{array_name}', returning null character")
+                        return res.success('\0')  # Return null character for beyond-end access
+
+                    return res.success(array[idx])
+
+                # Array indexing
+                if not isinstance(array, list):
+                    return res.failure(Exception(f"Runtime Error: '{array_name}' is not a ledger."))
+
+                result = array
+                for i, idx in enumerate(indices):
+                    if not isinstance(result, list):
+                        return res.failure(Exception(f"Runtime Error: Cannot index into non-list at dimension {i}."))
+
+                    if idx < 0 or idx >= len(result):
+                        return res.failure(Exception(f"Runtime Error: Index {idx} out of bounds for array '{array_name}'."))
+
+                    result = result[idx]
+
+                return res.success(result)
+        except Exception as e:
+            return res.failure(Exception(f"Runtime Error: {str(e)}"))
 
     def visit_LedgerAssignment(self, node, context):
         res = RTResult()
 
-        array_name = node.identifier.name
-        value = res.register(self.visit(node.value, context))
-        if res.error:
-            return res
-        
-        array_data = context.symbol_table.get(array_name)
-        if array_data is None:
-            return res.failure(Exception(f"'{array_name}' is not defined."))
-        
-        array = array_data
-        if isinstance(array_data, dict) and 'value' in array_data:
-            array = array_data['value']
-        
+        var_name = node.identifier.name if hasattr(node.identifier, 'name') else node.identifier
+        array_info = context.symbol_table.get(var_name)
+
+        if array_info is None:
+            return res.failure(Exception(f"Runtime Error: Array '{var_name}' is not defined."))
+
+        if isinstance(array_info, dict):
+            array = array_info.get('value', [])
+        else:
+            array = array_info
+
         if not isinstance(array, list):
-            return res.failure(Exception(f"Target '{array_name}' is not a list for assignment."))
-        
-        indices = []
-        for idx_node in node.dimensions:
-            idx = res.register(self.visit(idx_node, context))
+            return res.failure(Exception(f"Runtime Error: '{var_name}' is not an array."))
+
+        if hasattr(node, 'indices'):
+            index_values = []
+            for idx_node in node.indices:
+                idx_val = res.register(self.visit(idx_node, context))
+                if res.error:
+                    return res
+                if not isinstance(idx_val, int):
+                    return res.failure(Exception("Runtime Error: Array index must be an integer."))
+                index_values.append(idx_val)
+
+            value = res.register(self.visit(node.value, context))
             if res.error:
                 return res
-            if not isinstance(idx, int):
-                return res.failure(Exception("Ledger index must be an integer."))
-            indices.append(idx)
-        
-        if len(indices) == 1:
-            idx = indices[0]
-            if idx < 0 or idx >= len(array):
-                return res.failure(Exception(f"Ledger index {idx} out of bounds."))
-                
-            op_type = node.operator.type
-            if op_type == TT_EQUAL:
-                array[idx] = value
-            elif op_type == TT_PLUSAND:
-                array[idx] += value
-            elif op_type == TT_MINUSAND:
-                array[idx] -= value
-            elif op_type == TT_MULAND:
-                array[idx] *= value
-            elif op_type == TT_DIVAND:
-                if value == 0:
-                    return res.failure(Exception("Division by zero"))
-                array[idx] = array[idx] // value if isinstance(array[idx], int) else array[idx] / value
-            elif op_type == TT_MODAND:
-                if value == 0:
-                    return res.failure(Exception("Modulo by zero"))
-                array[idx] %= value
+
+            if len(index_values) == 1:
+                i = index_values[0]
+                if i < 0 or i >= len(array):
+                    return res.failure(Exception(f"Runtime Error: Index {i} out of bounds for array '{var_name}'"))
+                array[i] = value
+            elif len(index_values) == 2:
+                r, c = index_values
+                if r < 0 or r >= len(array):
+                    return res.failure(Exception(f"Runtime Error: Row index {r} out of bounds for array '{var_name}'"))
+                if c < 0 or c >= len(array[r]):
+                    return res.failure(Exception(f"Runtime Error: Column index {c} out of bounds for array '{var_name}'"))
+                array[r][c] = value
             else:
-                return res.failure(Exception(f"Unsupported assignment operator: {op_type}"))
+                return res.failure(Exception("Runtime Error: Only 1D and 2D array assignments are supported."))
         else:
-            target = array
-            for i in range(len(indices) - 1):
-                if not isinstance(target, list):
-                    return res.failure(Exception("Trying to index a non-list."))
-                idx = indices[i]
-                if 0 <= idx < len(target):
-                    target = target[idx]
-                else:
-                    return res.failure(Exception(f"Ledger index {idx} out of bounds."))
-            
-            last_idx = indices[-1]
-            if not isinstance(target, list):
-                return res.failure(Exception("Target is not a list for assignment."))
-            
-            if last_idx < 0 or last_idx >= len(target):
-                return res.failure(Exception(f"Ledger index {last_idx} out of bounds."))
-            
-            op_type = node.operator.type
-            if op_type == TT_EQUAL:
-                target[last_idx] = value
-            elif op_type == TT_PLUSAND:
-                target[last_idx] += value
-            elif op_type == TT_MINUSAND:
-                target[last_idx] -= value
-            elif op_type == TT_MULAND:
-                target[last_idx] *= value
-            elif op_type == TT_DIVAND:
-                if value == 0:
-                    return res.failure(Exception("Division by zero"))
-                target[last_idx] = target[last_idx] // value if isinstance(target[last_idx], int) else target[last_idx] / value
-            elif op_type == TT_MODAND:
-                if value == 0:
-                    return res.failure(Exception("Modulo by zero"))
-                target[last_idx] %= value
-            else:
-                return res.failure(Exception(f"Unsupported assignment operator: {op_type}"))
-        
+            if isinstance(array, list) and len(array) == 1:
+                value = res.register(self.visit(node.value, context))
+                if res.error:
+                    return res
+                array[0] = value
+                return res.success(None)
         return res.success(None)
 
     def visit_ArrayLiteral(self, node, context):
         res = RTResult()
         elements = []
-        
+
         for element in node.elements:
-            # Properly visit each element in the array using RTResult
             value = res.register(self.visit(element, context))
             if res.error:
                 return res
             elements.append(value)
-        
+
         return res.success(elements)
 
     def visit_ArrayInitializer(self, node, context):
@@ -831,3 +964,53 @@ class Interpreter:
         if res.error:
             return res
         return res.success(values)
+
+    def visit_LedgerDeclaration(self, node, context):
+        res = RTResult()
+
+        var_name = node.identifier.name if hasattr(node.identifier, 'name') else node.identifier
+
+        dimensions = []
+        dynamic_dimensions = []
+
+        if hasattr(node, 'dimensions') and node.dimensions:
+            for dim_node in node.dimensions:
+                if isinstance(dim_node, Identifier):
+                    dynamic_dimensions.append(dim_node)
+                    dimensions.append(0)
+                else:
+                    dim_value = res.register(self.visit(dim_node, context))
+                    if res.error: return res
+
+                    if not isinstance(dim_value, int):
+                        return res.failure(Exception(f"Runtime Error: Ledger dimension must be an integer, got {type(dim_value).__name__}"))
+
+                    dimensions.append(dim_value)
+
+        data_type = node.type if hasattr(node, 'type') else None
+
+        if dynamic_dimensions:
+
+            array_info = {
+                'value': [],
+                'dimensions': dimensions,
+                'dynamic_dimensions': dynamic_dimensions,
+                'type': data_type
+            }
+        else:
+            if len(dimensions) == 1:
+                array = [0] * dimensions[0]
+            elif len(dimensions) == 2:
+                rows, cols = dimensions
+                array = [[0 for _ in range(cols)] for _ in range(rows)]
+            else:
+                return res.failure(Exception("Runtime Error: Only 1D and 2D ledgers are supported"))
+            array_info = {
+                'value': array,
+                'dimensions': dimensions,
+                'type': data_type
+            }
+
+        context.symbol_table.set(var_name, array_info)
+
+        return res.success(None)

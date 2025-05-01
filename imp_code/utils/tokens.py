@@ -130,7 +130,8 @@ ESC_SEQ = {
     't': '\t',
     '\\': '\\',
     '"': '"',
-    "'": "'"
+    "'": "'",
+    "\0": '\0'
 }
 
 DD_DTYPE = [" ", "[", "(", ",", *ALPHABET, "\n"]
@@ -272,7 +273,7 @@ class Tokens:
     def __init__(self, type_, value=None, pos_start=None, pos_end=None):
         self.type = type_
         self.value = value
-        self.pos_start = pos_start 
+        self.pos_start = pos_start
         self.pos_end = pos_end
 
         if pos_start:
