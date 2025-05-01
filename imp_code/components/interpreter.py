@@ -168,6 +168,24 @@ class Interpreter:
             tail = tail.next_tail
 
         return res.success(None)
+    
+    def visit_ConstantDeclaration(self, node, context):
+        res = RTResult()
+
+        name = node.identifier.name if hasattr(node.identifier, 'name') else node.identifier
+        data_type = node.data_type
+
+        if not node.value:
+            return res.failure(Exception(f"Runtime Error: Constant '{name}' must be initialized with a value."))
+
+        value = res.register(self.visit(node.value, context))
+        if res.error:
+            return res
+
+        context.symbol_table.set(name, value, var_type=data_type, is_constant=True)
+
+        return res.success(None)
+
 
     def visit_ValueAssignment(self, node, context):
         res = RTResult()

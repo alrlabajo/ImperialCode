@@ -1,0 +1,16 @@
+Embark() {
+	Numeral year,weeks, remaining, days, total_days;
+
+	Emit("Enter number of days: ");
+	Seek("%d", &total_days);
+
+	year = total_days/365;
+	remaining = total_days%365;
+	weeks = remaining/7;
+	days = remaining%7;
+	
+	Emit("Years: %d\n", year);
+	Emit("Weeks: %d\n", weeks);
+	Emit("Days: %d", days);
+
+}

@@ -1,8 +1,10 @@
 Embark() {
-  Numeral n, reverse = 0, remainder, original;
+  Numeral n, reverse = 0, remainder, original, m;
+	Numeral n[m];
 
-  Emit("Enter an integer: ");
-  Seek("%d", &n);
+
+  Emit("Enter size of ledger: ");
+  Seek("%d", &m);
 
   original = n;  
 

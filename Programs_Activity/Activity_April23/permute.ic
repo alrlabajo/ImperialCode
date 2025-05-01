@@ -1,37 +1,43 @@
+
 Letter arr[10];
 Numeral length;
 
 Embark() {
-    Emit("Enter a word (end with #): ");
+    Emit("Enter a word: ");
     Seek("%s", &arr[0]);
 
+    // Manual length detection
     Numeral i = 0;
-    Until (i >= 10 | arr[i] == '#') {
+    Until (arr[i] != "") {
         i = i + 1;
     }
     length = i;
 
-    Veracity isPalindrome = Pure;
-    Numeral start = 0;
-    Numeral end = length - 1;
+    Emit("\nAll permutations:\n");
+    permute(0, length - 1);
 
-    Thou (end < 0) {
-        Emit("Invalid input or empty word.");
-        Halt;
-    }
+    Recede 0;
+}
 
-    Until (start >= end) {
-        Thou (arr[start] != arr[end]) {
-            isPalindrome = Nay;
-            Halt;
+
+Method Void permute(Numeral l, Numeral r) {
+    Thou (l == r) {
+        Per (Numeral i = 0; i <= r; i++) {
+            Emit("%c", arr[i]);
         }
-        start = start + 1;
-        end = end - 1;
-    }
-
-    Thou (isPalindrome == Pure) {
-        Emit("It is a palindrome");
+        Emit("\n");
     } Or {
-        Emit("It is not a palindrome");
+        Per (Numeral i = l; i <= r; i++) {
+            swap(l, i);
+            permute(l + 1, r);
+            swap(l, i);
+        }
     }
+}
+
+Method Void swap(Numeral i, Numeral j) {
+    Letter temp;
+    temp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = temp;
 }

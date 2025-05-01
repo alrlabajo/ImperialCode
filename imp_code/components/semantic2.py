@@ -154,6 +154,10 @@ class SemanticAnalyzer:
         res = RTResult()
 
         var_name = node.identifier.name
+
+        if context.symbol_table.is_constant(var_name):
+            return res.failure(Exception(f"Semantic Error: Cannot assign to constant '{var_name}'."))
+        
         current_val = context.symbol_table.get_value(var_name)
         var_type = context.symbol_table.lookup_type(var_name)
 

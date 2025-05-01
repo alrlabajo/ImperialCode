@@ -5,8 +5,8 @@ Embark() {
   }
 
 	Emit("\n\nExample 6: Nested for loops to print a 3x3 grid\n");
-  Per (Numeral i = 0; i < 11; i++) {
-    Per (Numeral j = 0; j < 11; j++) {
+  Per (Numeral i = 0; i < 6; i++) {
+    Per (Numeral j = 0; j < 6; j++) {
       Emit("(%d, %d) ", i, j);
     }
     Emit("\n");
