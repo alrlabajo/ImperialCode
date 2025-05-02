@@ -266,9 +266,12 @@ class Interpreter:
             if op_type == TT_MINUS: return res.success(left - right)
             if op_type == TT_MUL: return res.success(left * right)
             if op_type == TT_DIV:
-                if right == 0:
-                    return res.failure(Exception("Division by zero"))
-                return res.success(left / right)
+               if right == 0:
+                   return res.failure(Exception("Division by zero"))
+               if isinstance(left, int) and isinstance(right, int):
+                   return res.success(left // right)
+               else:
+                   return res.success(left / right)
             if op_type == TT_MODULO:
                 if right == 0:
                     return res.failure(Exception("Modulo by zero"))

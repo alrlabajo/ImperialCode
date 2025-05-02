@@ -1,26 +1,36 @@
 Embark() {
-  Numeral n, reverse = 0, remainder, original;
+  Numeral n, reverse = 0, remainder;
+  Numeral original, isNegative = 0;
 
+  // 1) Read input
   Emit("Enter an integer: ");
   Seek("%d", &n);
+  original = n;
 
-  original = n;  
-
-  Until (n != 0) {
-    remainder = n % 10;
-    reverse = reverse * 10 + remainder;
-    n /= 10;
+  // 2) Handle sign
+  Thou (n < 0) {
+    isNegative = 1;
+    n = -n;
   }
 
-  Thou (original % 10 == 0) {
-    Emit("Reversed number = %d", reverse);
-    
-    Until (original % 10 == 0) {
-      Emit("0");
-      original /= 10;
-    }
+  // 3) Special case zero
+  Thou (original == 0) {
+    Emit("Reversed number = 0\n");
+    Recede 0;
+  }
+
+  // 4) Reverse the digits
+  Until (n != 0) {
+    remainder = n % 10;
+    reverse  = reverse * 10 + remainder;
+    n        = n / 10;    // integer division
+  }
+
+  // 5) Print with sign
+  Thou (isNegative) {
+    Emit("Reversed number = -%d\n", reverse);
   } Or {
-    Emit("Reversed number = %d", reverse);
+    Emit("Reversed number = %d\n", reverse);
   }
 
   Recede 0;
