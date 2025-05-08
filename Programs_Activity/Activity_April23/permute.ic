@@ -20,6 +20,10 @@ Embark() {
 }
 
 
+
+
+
+
 Method Void permute(Numeral l, Numeral r) {
     Thou (l == r) {
         Per (Numeral i = 0; i <= r; i++) {
@@ -41,3 +45,4 @@ Method Void swap(Numeral i, Numeral j) {
     arr[i] = arr[j];
     arr[j] = temp;
 }
+

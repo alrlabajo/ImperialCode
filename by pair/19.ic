@@ -1,0 +1,20 @@
+Embark (){
+Numeral size;
+Emit("Input the size of the square matrix:");
+Seek("%d", &size);
+Numeral matrix [size][size];
+
+Per(Numeral i = 1; i<= size*2; i++) {
+Emit("Input elements in the first matrix:");
+Emit("element [
+Per(Numeral j = 1; <
+
+
+
+Per(Numeral i = 1; i <= rows; i++) {
+        Per(Numeral j = 1; j <= cols; j++) {
+            Emit("%d\t", i * j);  
+        }
+        Emit("\n");
+    }
+

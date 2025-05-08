@@ -30,7 +30,7 @@ Embark() {
   Thou (isNegative) {
     Emit("Reversed number = -%d\n", reverse);
   } Or {
-    Emit("Reversed number = %d\n", reverse);
+    Emit("Reversed number = %d%d\n", reverse, original);
   }
 
   Recede 0;

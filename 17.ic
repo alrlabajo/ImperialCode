@@ -1,0 +1,25 @@
+Embark() {
+  Numeral size, arr = 0, original;
+
+  Emit("Input the number of element to store in the array: ");
+  Seek("%d", &size);
+  Per(Numeral i = 0; i <= size; i++) {
+  Emit("element %d", arr);
+  Seek("%d", &arr);
+  i++
+}
+  original = size;  
+
+  Thou (original % 10 == 0) {
+    Emit("Reversed number = %d", arr);
+    
+    Until (original % 10 == 0) {
+      Emit("0");
+      original /= 10;
+    }
+  } Or {
+    Emit("Reversed number = %d", arr);
+  }
+
+  Recede 0;
+}

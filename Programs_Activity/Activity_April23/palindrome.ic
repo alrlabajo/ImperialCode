@@ -5,7 +5,6 @@ Embark() {
     Emit("Enter a word: ");
     Seek("%s", &arr[0]);
 
-    // Compute length up to the '\0' terminator
     length = 0;
     Per (Numeral i = 0; i < 10; i++) {
         Thou (arr[i] == "") {
@@ -14,7 +13,6 @@ Embark() {
         length = length + 1;
     }
 
-    // Kick off
     check(0, length - 1);
 
     Recede 0;

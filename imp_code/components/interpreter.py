@@ -316,8 +316,17 @@ class Interpreter:
             try:
                 if specifier == '%d':
                     value = int(user_input)
+                    if abs(value) > INT_LIM:
+                        return res.failure(Exception(f"Runtime Error: Numeral input {value} exceeds Numeral limit."))
                 elif specifier == '%f':
                     value = float(user_input)
+                    if abs(value) > FLOAT_LIM:
+                        return res.failure(Exception(f"Runtime Error: Decimal input exceeds limit."))
+                    # Check for allowed decimal precision:
+                    if '.' in user_input:
+                        fraction = user_input.split('.')[1]
+                        if len(fraction) > FLOAT_PRECISION_LIM:
+                            return res.failure(Exception(f"Runtime Error: Decimal input  exceeds allowed precision of {FLOAT_PRECISION_LIM} decimal places."))
                 elif specifier == '%c':
                     if len(user_input) != 1:
                         return res.failure(Exception("Runtime Error: Only one character expected for %c"))
@@ -330,6 +339,7 @@ class Interpreter:
                     return res.failure(Exception(f"Runtime Error: Unsupported format specifier: {specifier}"))
             except ValueError as e:
                 return res.failure(Exception(f"Runtime Error: Input format error - {str(e)}"))
+
 
             if isinstance(addr, MemoryAddress):
                 if hasattr(addr, 'expression'):

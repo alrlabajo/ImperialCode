@@ -1,0 +1,24 @@
+Embark() {
+    Letter str[10];
+    Numeral len, isPalindrome = 1;
+
+    Emit("Enter a string: ");
+    Seek("%c", str);
+
+    //len = strlen(str);
+
+    Per(Numeral i = 0; i < len / 2; i++) {
+        Thou(str[i] != str[len - i - 1]) {
+            isPalindrome = 0;
+            Halt;
+        }
+    }
+
+    Thou(isPalindrome) {
+        Emit("The string is a palindrome.\n"); 
+}
+    Or {
+        Emit("The string is not a palindrome.\n");
+}
+    Recede 0;
+}

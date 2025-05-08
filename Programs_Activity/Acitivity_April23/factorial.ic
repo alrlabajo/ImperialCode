@@ -1,13 +1,13 @@
 Embark() {
-    Numeral num, i;
-    Numeral fact = 1;
+    Decimal num;
+    Decimal fact = 1.00;
 
     Emit("Enter a number: ");
-    Seek("%d", &num);
+    Seek("%f", &num);
 
    Per (Numeral i = 1; i <= num; i++) {
         fact = fact * i;
     }
 
-    Emit("Factorial is %d\n", fact);
+    Emit("Factorial is %f\n", fact);
 }
