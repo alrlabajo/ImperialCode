@@ -45,9 +45,9 @@ class Parser:
 
             if expected_tokens:
                 expected_str = ', '.join(expected_tokens)
-                message = f"Expected one of: {expected_str}, got {found}"
+                message = f"Expected one of: {expected_str}, but found {found}"
             else:
-                message = f"Expected {token_type}, got {found}"
+                message = f"Expected {token_type}, but found {found}"
 
             return InvalidSyntaxError(start, end, message)
 
@@ -86,7 +86,6 @@ class Parser:
         global_decls_after = self.parse_global()
 
         return Program(global_decls_before + global_decls_after, main_statements)
-
 
     def parse_global(self):
         declarations = []
@@ -153,23 +152,35 @@ class Parser:
     def parse_var_declaration(self):
         data_type = self.parse_data_type()
         identifier_token = self.expect(TT_IDENTIFIER)
-        identifier = Identifier(identifier_token.value)
+        if isinstance(identifier_token, InvalidSyntaxError):
+            self.errors.append(identifier_token)
+            return None
 
+        identifier = Identifier(identifier_token.value)
         dimensions = None
         assignment = None
         tail = None
 
-        if self.current_token.type == TT_LBRACKET:
-            dimensions = self.parse_ledger_element()  # Ensure it's an array like [3]
-            if self.current_token.type == TT_EQUAL:
+        if self.current_token and self.current_token.type == TT_LBRACKET:
+            dimensions = self.parse_ledger_element()
+            if self.current_token and self.current_token.type == TT_EQUAL:
                 row = self.parse_ledger_declaration_row()
                 return VariableDeclaration(data_type, identifier, dimensions, row)
+            else:
+                return VariableDeclaration(data_type, identifier, dimensions)
 
-        elif self.current_token.type == TT_EQUAL:
+        elif self.current_token and self.current_token.type == TT_EQUAL:
             assignment, tail = self.parse_var_declaration_assign()
 
-        elif self.current_token.type == TT_COMMA:
+        elif self.current_token and self.current_token.type == TT_COMMA:
             tail = self.parse_declare_tail()
+
+        elif self.current_token and self.current_token.type != TT_TERMINATE:
+            self.errors.append(InvalidSyntaxError(
+                self.current_token.pos_start,
+                self.current_token.pos_end,
+                f"Expected {TT_EQUAL}, {TT_COMMA}, {TT_LBRACKET}, but found {self.current_token.type}"
+            ))
 
         return VariableDeclaration(data_type, identifier, dimensions, assignment, tail)
 
@@ -455,15 +466,13 @@ class Parser:
         if isinstance(lbrace, InvalidSyntaxError):
             self.errors.append(lbrace)
 
-        # Parse the first row
-        row = self.parse_ledger_value()  # Already returns an ArrayLiteral
+        row = self.parse_ledger_value()
         rows.append(row)
 
         rbrace = self.expect(TT_RBRACE)
         if isinstance(rbrace, InvalidSyntaxError):
             self.errors.append(rbrace)
 
-        # Parse additional rows
         while self.current_token.type == TT_COMMA:
             comma = self.expect(TT_COMMA)
             if isinstance(comma, InvalidSyntaxError):
@@ -479,7 +488,6 @@ class Parser:
             if isinstance(rbrace, InvalidSyntaxError):
                 self.errors.append(rbrace)
 
-        # Return an ArrayLiteral containing ArrayLiterals for each row
         return ArrayLiteral(rows)
 
     def parse_data_type(self):
@@ -499,14 +507,31 @@ class Parser:
         return Identifier(id_token.value)
 
     def parse_value(self):
+        if self.current_token is None:
+            return None
+
+        if self.current_token.type not in (
+            TT_IDENTIFIER, TT_INT_LITERAL, TT_FLOAT_LITERAL,
+            TT_CHAR_LITERAL, TT_STRING_LITERAL, TT_NOT, TT_LPAREN
+        ):
+            self.errors.append(InvalidSyntaxError(
+                self.current_token.pos_start,
+                self.current_token.pos_end,
+                f"Expected {TT_IDENTIFIER}, {TT_INT_LITERAL}, {TT_FLOAT_LITERAL}, {TT_CHAR_LITERAL}, {TT_STRING_LITERAL},{TT_LPAREN}, {TT_LBRACKET}, {TT_NOT} but found {self.current_token.type}")
+            )
+            self.synchronize()
+            return None
+
         return self.parse_expression()
 
     def parse_expression(self):
-        return self.parse_logical_or()
+        node = self.parse_logical_or()
+        self._check_unexpected_token_after_expression()
+        return node
 
     def parse_logical_or(self):
         node = self.parse_logical_and()
-        while self.current_token.type == TT_OR:
+        while self.current_token and self.current_token.type == TT_OR:
             op_tok = self.current_token
             self.advance()
             right = self.parse_logical_and()
@@ -515,7 +540,7 @@ class Parser:
 
     def parse_logical_and(self):
         node = self.parse_equality()
-        while self.current_token.type == TT_AND:
+        while self.current_token and self.current_token.type == TT_AND:
             op_tok = self.current_token
             self.advance()
             right = self.parse_equality()
@@ -524,7 +549,7 @@ class Parser:
 
     def parse_equality(self):
         node = self.parse_comparison()
-        while self.current_token.type in (TT_EQUALTO, TT_NOTEQUAL):
+        while self.current_token and self.current_token.type in (TT_EQUALTO, TT_NOTEQUAL):
             op_tok = self.current_token
             self.advance()
             right = self.parse_comparison()
@@ -533,7 +558,7 @@ class Parser:
 
     def parse_comparison(self):
         node = self.parse_term()
-        while self.current_token.type in (TT_LESSTHAN, TT_LESSTHANEQUAL, TT_GREATERTHAN, TT_GREATERTHANEQUAL):
+        while self.current_token and self.current_token.type in (TT_LESSTHAN, TT_LESSTHANEQUAL, TT_GREATERTHAN, TT_GREATERTHANEQUAL):
             op_tok = self.current_token
             self.advance()
             right = self.parse_term()
@@ -542,24 +567,38 @@ class Parser:
 
     def parse_term(self):
         node = self.parse_factor()
-        while self.current_token.type in (TT_PLUS, TT_MINUS):
+        while self.current_token and self.current_token.type in (TT_PLUS, TT_MINUS):
             op_tok = self.current_token
             self.advance()
             right = self.parse_factor()
+            if isinstance(right, InvalidSyntaxError) or right is None:
+                self.errors.append(InvalidSyntaxError(
+                    self.current_token.pos_start,
+                    self.current_token.pos_end,
+                    f"Expected expression after '{op_tok.type}'"
+                ))
+                return node
             node = BinaryOp(node, op_tok, right)
         return node
 
     def parse_factor(self):
         node = self.parse_unary()
-        while self.current_token.type in (TT_MUL, TT_DIV, TT_MODULO):
+        while self.current_token and self.current_token.type in (TT_MUL, TT_DIV, TT_MODULO):
             op_tok = self.current_token
             self.advance()
             right = self.parse_unary()
+            if isinstance(right, InvalidSyntaxError) or right is None:
+                self.errors.append(InvalidSyntaxError(
+                    self.current_token.pos_start,
+                    self.current_token.pos_end,
+                    f"Expected expression after '{op_tok.type}'"
+                ))
+                return node
             node = BinaryOp(node, op_tok, right)
         return node
 
     def parse_unary(self):
-        if self.current_token.type in (TT_MINUS, TT_NOT):
+        if self.current_token and self.current_token.type in (TT_MINUS, TT_NOT):
             op_tok = self.current_token
             self.advance()
             node = self.parse_unary()
@@ -567,6 +606,9 @@ class Parser:
         return self.parse_primary()
 
     def parse_primary(self):
+        if self.current_token is None:
+            return None
+
         if self.current_token.type == TT_LPAREN:
             self.advance()
             expr = self.parse_expression()
@@ -575,13 +617,11 @@ class Parser:
         elif self.current_token.type == TT_IDENTIFIER:
             id_token = self.current_token
             self.advance()
-
             node = Identifier(id_token.value)
-            if self.current_token.type == TT_LPAREN:
+            if self.current_token and self.current_token.type == TT_LPAREN:
                 node = self.parse_function_call(id_token)
-
             indices = []
-            while self.current_token.type == TT_LBRACKET:
+            while self.current_token and self.current_token.type == TT_LBRACKET:
                 self.advance()
                 idx_expr = self.parse_expression()
                 indices.append(idx_expr)
@@ -589,7 +629,6 @@ class Parser:
             if indices:
                 node = LedgerAccess(node, indices)
             return node
-
         elif self.current_token.type in (TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL, TT_STRING_LITERAL):
             token = self.current_token
             self.advance()
@@ -609,20 +648,20 @@ class Parser:
             self.errors.append(InvalidSyntaxError(
                 self.current_token.pos_start,
                 self.current_token.pos_end,
-                f"Expected {TT_IDENTIFIER}, {TT_INT_LITERAL}, {TT_FLOAT_LITERAL}, {TT_CHAR_LITERAL}, {TT_STRING_LITERAL}, {TT_LPAREN}, or {TT_LBRACKET}"
+                f"Expected {TT_IDENTIFIER}, {TT_INT_LITERAL}, {TT_FLOAT_LITERAL}, {TT_CHAR_LITERAL}, {TT_STRING_LITERAL},{TT_LPAREN}, or {TT_LBRACKET}, but found {self.current_token.type}"
             ))
             return None
 
-    def parse_expression_tail(self, left=None):
-        if self.current_token and self.current_token.type in self.get_all_operator_tokens():
-            op = self.current_token
-            self.advance()
-            right = self.parse_expression()
-            if right is None:
-                return InvalidSyntaxError(op.pos_start, op.pos_end, "Missing right-hand side of expression")
-            combined = BinaryOp(left, op, right)
-            return combined
-        return left
+    def _check_unexpected_token_after_expression(self):
+        if self.current_token and self.current_token.type in (
+            TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL,
+            TT_STRING_LITERAL, TT_IDENTIFIER
+        ):
+            self.errors.append(InvalidSyntaxError(
+                self.current_token.pos_start,
+                self.current_token.pos_end,
+                f"Expected {self.get_all_operator_tokens()} or '(', but found {self.current_token.type}"
+            ))
 
     def parse_update_expression(self):
         if self.current_token.type == TT_IDENTIFIER:
@@ -663,12 +702,7 @@ class Parser:
                 self.current_token.pos_end,f"Expected any of the operators: {self.get_all_operator_tokens()}")
 
     def get_all_operator_tokens(self):
-        return (
-            TT_PLUS, TT_MINUS, TT_MUL, TT_DIV, TT_MODULO,
-            TT_AND, TT_OR,
-            TT_LESSTHAN, TT_GREATERTHAN, TT_LESSTHANEQUAL, TT_GREATERTHANEQUAL,
-            TT_EQUALTO, TT_NOTEQUAL
-        )
+        return TT_PLUS, TT_MINUS, TT_MUL, TT_DIV, TT_MODULO, TT_AND, TT_OR, TT_LESSTHAN, TT_GREATERTHAN, TT_LESSTHANEQUAL, TT_GREATERTHANEQUAL, TT_EQUALTO, TT_NOTEQUAL
 
     def parse_function(self):
         method = self.expect(TT_FUNCTION)
@@ -1394,16 +1428,13 @@ class Parser:
         if addr is None:
             return result
 
-        # Handle list input
         if isinstance(addr, list):
             for item in addr:
                 result.extend(self.flatten_memory_addresses(item))
             return result
 
-        # Add the current address
         result.append(addr)
 
-        # Recursively add any linked addresses
         if hasattr(addr, 'tail') and addr.tail:
             result.extend(self.flatten_memory_addresses(addr.tail))
 
@@ -1413,14 +1444,14 @@ class Parser:
         if self.current_token.type != TT_ADDRESS:
             return InvalidSyntaxError(
                 self.current_token.position,
-                f"Expected {TT_ADDRESS}, got {self.current_token.type}"
+                f"Expected {TT_ADDRESS}, but found {self.current_token.type}"
             )
         self.advance()
 
         if self.current_token.type != TT_IDENTIFIER:
             return InvalidSyntaxError(
                 self.current_token.position,
-                f"Expected identifier after {TT_ADDRESS}, got {self.current_token.type}"
+                f"Expected identifier after {TT_ADDRESS}, but found {self.current_token.type}"
             )
 
         identifier = Identifier(self.current_token.value)
@@ -1440,7 +1471,7 @@ class Parser:
                 if self.current_token.type != TT_RBRACKET:
                     return InvalidSyntaxError(
                         self.current_token.position,
-                        f"Expected ']', got {self.current_token.type}"
+                        f"Expected {TT_RBRACKET}, but found {self.current_token.type}"
                     )
 
                 self.advance()

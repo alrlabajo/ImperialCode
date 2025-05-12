@@ -168,7 +168,7 @@ class Interpreter:
             tail = tail.next_tail
 
         return res.success(None)
-    
+
     def visit_ConstantDeclaration(self, node, context):
         res = RTResult()
 
@@ -322,7 +322,6 @@ class Interpreter:
                     value = float(user_input)
                     if abs(value) > FLOAT_LIM:
                         return res.failure(Exception(f"Runtime Error: Decimal input exceeds limit."))
-                    # Check for allowed decimal precision:
                     if '.' in user_input:
                         fraction = user_input.split('.')[1]
                         if len(fraction) > FLOAT_PRECISION_LIM:
