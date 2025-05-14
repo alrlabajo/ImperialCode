@@ -444,13 +444,13 @@ class Interpreter:
                 val = res.register(self.visit(v, context))
                 if res.error: return res
                 if val is None:
-                    return res.failure(Exception("Runtime Error: Trying to output a variable that is None (uninitialized)."))
+                    return res.failure(Exception("Runtime Error: Variable uninitialized."))
                 values.append(self.extract_raw_value(val))
         else:
             val = res.register(self.visit(node.value, context))
             if res.error: return res
             if val is None:
-                return res.failure(Exception("Runtime Error: Trying to output a variable that is None (uninitialized)."))
+                return res.failure(Exception("Runtime Error: Variable uninitialized."))
             values.append(self.extract_raw_value(val))
 
         try:
@@ -459,7 +459,7 @@ class Interpreter:
                 for i, specifier in enumerate(format_specifiers):
                     if specifier == "%v":
                         val_fmt = val_fmt.replace("%v", "%s", 1)
-                        values[i] = "Pure" if values[i] else "Nay"
+                        values[i] = 1 if values[i] else 0
                 print(val_fmt % tuple(values), end='', flush=True)
             else:
                 print(fmt, end='', flush=True)

@@ -1,4 +1,4 @@
 Embark() {
-Numeral num  3 + 2 + 3 - 4;
+    Veracity isPure = Pure;
+				Emit("%v", isPure);
 }
-
