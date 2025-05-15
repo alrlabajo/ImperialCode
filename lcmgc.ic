@@ -1,0 +1,53 @@
+Embark() {
+    Numeral a, b, x, y, choice;
+
+    Emit("Enter two numbers: ");
+    Seek("%d %d", &a, &b);
+
+			Emit("\n1. LCD \n2. GCD");
+			Emit("\nEnter your choice: ");
+    Seek("%d ", &choice);
+
+    Shift(choice) {
+			Opt 1:
+				lcd(a, b);
+				Halt;
+			Opt 2:
+				gcd(a, b);
+				Halt;
+			Usual:
+				Emit("No option chosen");
+		}
+
+}
+
+Method Void gcd(Numeral x, Numeral y) {
+		Numeral temp, gcd;
+
+		Emit("%d", y);
+		
+		Until (y != 0) {
+        temp = y;
+        y = x % y;
+        x = temp;
+    }
+		gcd = x;
+
+		Emit("GCD of %d and %d is: %d\n", x, y, gcd);
+}
+
+Method Void lcd(Numeral x, Numeral y) {
+			Numeral temp, lcm, gcd, product;
+		
+		Until (y != 0) {
+        temp = y;
+        y = x % y;
+        x = temp;
+    }
+		gcd = x;
+
+		 product = x*y;
+		lcm = product / gcd;
+
+    Emit("LCM of %d and %d is: %d\n", x, y, lcm);
+}

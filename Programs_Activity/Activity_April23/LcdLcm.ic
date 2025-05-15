@@ -1,24 +1,52 @@
 Embark() {
-    Numeral a, b, x, y, temp, gcd, lcm, product;
+    Numeral a, b, x, y, choice;
 
     Emit("Enter two numbers: ");
-    Seek("%d %d", &a, &b);
+    Seek("%d", &a);
+		Seek("%d", &b);
 
-    // Save original values
+			Emit("\n1. LCD \n2. GCD");
+			Emit("Enter your choice: ");
+    Seek("%d ", &choice);
+		
     x = a;
     y = b;
 
-    // GCD using Euclidean algorithm
-    Until (b != 0) {
+    Shift(choice) {
+			Opt 1:
+				lcd(x, y);
+				Halt;
+			Opt 2:
+				gcd(x, y);
+				Halt;
+			Usual:
+				Emit("No option chosen");
+
+}
+
+Method Void gcd(Numeral a, Numeral b) {
+		Numeral temp, gcd;
+		Until (b != 0) {
         temp = b;
         b = a % b;
         a = temp;
     }
+		gcd = a;
 
-    gcd = a;
-    product = x * y;
-    lcm = product / gcd;
+		Emit("GCD of %d and %d is: %d\n", a, b, gcd);
+}
 
-    Emit("GCD (LCD) of %d and %d is: %d\n", x, y, gcd);
-    Emit("LCM of %d and %d is: %d\n", x, y, lcm);
+Method Void lcd(Numeral a, Numeral b) {
+			Numeral temp, lcm, gcd;
+		Until (b != 0) {
+        temp = b;
+        b = a % b;
+        a = temp;
+    }
+		gcd = a;
+
+		 product = a*b;
+		lcm = product / gcd;
+
+    Emit("LCM of %d and %d is: %d\n", a, b, lcm);
 }

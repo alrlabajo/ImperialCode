@@ -1,0 +1,103 @@
+// Method to convert decimal to binary
+Method Void decBin(Numeral x) {
+    Numeral binary_num = 0, i = 1, remainder;
+
+    Until (x != 0) {
+        remainder = x % 2;
+        x /= 2;
+        binary_num += remainder * i;
+        i *= 10;
+    }
+
+    Emit("Binary equivalent: %d\n", binary_num);
+}
+
+// Method to convert decimal to octal
+Method Void decOct(Numeral x) {
+    Numeral octalNumber = 0, i = 1;
+
+    Until (x != 0) {
+        octalNumber += (x % 8) * i;
+        x /= 8;
+        i *= 10;
+    }
+
+    Emit("Octal equivalent: %d\n", octalNumber);
+}
+
+// Method to convert decimal to hexadecimal
+Method Void decHex(Numeral x) {
+    Letter hex[20];  // Array to store hexadecimal digits
+    Numeral index = 0, remainder;
+
+    // Handle the case for 0
+    Thou (x == 0) {
+        hex[index] = '0';
+        index = index + 1;
+        hex[index] = ' ';  // Null-terminate the string
+        Emit("Hexadecimal equivalent: %s\n", hex);
+        Recede 0;
+    }
+
+    // Convert decimal to hexadecimal
+    Until (x != 0) {
+        remainder = x % 16;
+
+        // Convert remainder to hexadecimal character
+        Thou (remainder < 10) {
+            hex[index] = '0' + remainder;  // For digits 0-9
+        } Or {
+            hex[index] = 'A' + (remainder - 10);  // For letters A-F
+        }
+
+        index = index + 1;
+        x /= 16;
+    }
+
+    // Null-terminate the string
+    hex[index] = ' ';
+
+    // Reverse the hexadecimal string
+    Numeral start = 0;
+    Numeral end = index - 1;
+    Until (start < end) {
+        Letter temp = hex[start];
+        hex[start] = hex[end];
+        hex[end] = temp;
+        start = start + 1;
+        end = end - 1;
+    }
+
+    // Display the result
+    Emit("Hexadecimal equivalent: %s\n", hex);
+}
+
+// Main program
+Embark() {
+    Numeral choice, decimal;
+
+    Emit("Enter a decimal number: ");
+    Seek("%d", &decimal);
+
+    Emit("\nEnter choice of conversion: ");
+    Emit("\n1. Binary \n2. Octal \n3. Hexadecimal");
+    Emit("\nChoice: ");
+    Seek("%d", &choice);
+
+    Shift(choice) {
+        Opt 1:
+            decBin(decimal);
+            Halt;
+
+        Opt 2:
+            decOct(decimal);
+            Halt;
+
+        Opt 3:
+            decHex(decimal);
+            Halt;
+
+        Usual:
+            Emit("No valid choice\n");
+    }
+}

@@ -1,5 +1,9 @@
 Embark() {
     Numeral binary, decimal=0, digit, weight=1;
+		Numeral hexDigits[20];
+    Numeral i = 0;
+    Numeral remainder = 0;
+    Numeral isNegative = 0;
     
     Emit("Enter a binary number: ");
     Seek("%d", &binary);
@@ -7,9 +11,8 @@ Embark() {
     Numeral original = binary;
     
     Until(binary > 0) {
-        digit = binary % 10;  // Get rightmost digit
-        
-        // Check if digit is valid (0 or 1)
+        digit = binary % 10; 
+
         Thou(digit > 1) {
             Emit("Invalid binary digit. Binary can only contain 0 and 1.\n");
             Emit("Enter a binary number: ");
@@ -18,14 +21,11 @@ Embark() {
             binary = binary;
             digit = binary % 10;
         } Or {
-            // Proceed with conversion for valid digit
             decimal = decimal + (digit * weight);
             weight = weight * 2;
-            binary = binary / 10;  // Remove rightmost digit
+            binary = binary / 10;
         }
     }
-
-
-    
     Emit("The decimal equivalent of %d is %d\n", original, decimal);
+
 }

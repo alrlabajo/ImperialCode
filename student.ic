@@ -1,0 +1,55 @@
+Embark() {
+  Numeral numStudents = 0;
+  Numeral i = 0;
+  Numeral maxStudents = 50;
+  Numeral grades[50];    
+	Missive arr[50];
+	Missive bday[50];
+	Missive name, date;  
+
+  Emit("Enter the number of students: ");
+  Seek("%d", &numStudents);
+
+  // Validate input
+  Thou (numStudents <= 0 || numStudents > maxStudents) {
+    Emit("Error: Number of students must be between 1 and %d\n", maxStudents);
+    Recede 0;
+  }
+  
+  i = 0;
+  Until (i < numStudents) {
+		Emit("Enter name of student: ");
+		Seek("%s", &name);
+		arr[i]=name;
+		Emit("Enter birthday: ");
+		Seek("%s", &date);
+		bday[i]=date;
+    Emit("Enter grade for student %d: ", i + 1);
+
+    Numeral grade = 0;
+    Seek("%d", &grade);
+    
+    // Then assign to the array
+    grades[i] = grade;
+    
+    i = i + 1;
+  }
+  
+  // Print all grades
+  Emit("\nStudent Grades:\n");
+  i = 0;
+  Until (i < numStudents) {
+		Emit("\nName: %s\n", arr[i]);
+		Emit("Birthday: %s\n", bday[i]);
+    Emit("Grade: %d\n", grades[i]);
+		Thou(grades[i] > 75) {
+			Emit("Passed");
+		} Or {
+			Emit("Failed");
+		}
+    i = i + 1;
+		
+  }
+  
+  Recede 0;
+}

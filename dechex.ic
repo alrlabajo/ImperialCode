@@ -1,0 +1,56 @@
+Embark() {
+    Numeral decimal = 0;
+    Numeral hexDigits[20];
+    Numeral i = 0;
+    Numeral remainder = 0;
+    Numeral isNegative = 0;
+    
+    Emit("Enter a decimal number: ");
+    Seek("%d", &decimal);
+
+    Thou (decimal < 0) {
+        isNegative = 1;
+        decimal = decimal * -1;
+    }
+    
+    Thou (decimal == 0) {
+        Emit("Hexadecimal: 0\n");
+        Recede 0;
+    }
+    
+    Numeral temp = decimal;
+    
+    Until (temp > 0) {
+        remainder = temp % 16;
+        
+        hexDigits[i] = remainder;
+        
+        i = i + 1;
+        temp = temp / 16;
+    }
+    
+    Thou (isNegative) {
+        Emit("Hexadecimal: -");
+    } Or {
+        Emit("Hexadecimal: "); 
+    }
+    
+		Numeral j = i - 1;
+    Until (j >= 0) {
+        Thou (hexDigits[j] < 10) {
+            Emit("%d", hexDigits[j]);
+        } Or {
+            Thou (hexDigits[j] == 10) { Emit("A"); }
+            Thou (hexDigits[j] == 11) { Emit("B"); }
+            Thou (hexDigits[j] == 12) { Emit("C"); }
+            Thou (hexDigits[j] == 13) { Emit("D"); }
+            Thou (hexDigits[j] == 14) { Emit("E"); }
+            Thou (hexDigits[j] == 15) { Emit("F"); }
+        }
+        
+        j = j - 1;
+    }
+    
+    Emit("\n");
+    Recede 0;
+}

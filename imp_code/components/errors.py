@@ -39,13 +39,10 @@ class Error(Exception):
     def as_string(self):
         result = f"{self.error_name}: {self.details}\n"
         
-        # More robust position handling
         try:
             if self.pos_start and hasattr(self.pos_start, 'fn'):
-                # Standard position object with filename and line number
                 result += f"File {self.pos_start.fn}, line {self.pos_start.ln + 1}\n\n"
-                
-                # Get the line content if available
+
                 if hasattr(self.pos_start, 'ftxt'):
                     line = self.pos_start.ftxt.split('\n')[self.pos_start.ln]
                     result += line + '\n'

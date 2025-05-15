@@ -83,7 +83,13 @@ class Parser:
             self.errors.append(rbrace)
             return None
 
+        if self.current_token and self.current_token.type == TT_MAIN:
+            self.errors.append(InvalidSyntaxError(
+            self.current_token.pos_start,
+            self.current_token.pos_end, "Embark already declared"))
+        
         global_decls_after = self.parse_global()
+
 
         return Program(global_decls_before + global_decls_after, main_statements)
 

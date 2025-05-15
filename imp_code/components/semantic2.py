@@ -993,7 +993,7 @@ class SemanticAnalyzer:
         if array_info is None:
             return res.failure(Exception(f"Semantic Error: Ledger '{array_name}' is not defined."))
 
-        for idx in node.dimensions:
+        for idx in node.indices:
             index_val = res.register(self.analyze(idx, context))
             if res.error:
                 return res

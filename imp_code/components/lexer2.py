@@ -108,7 +108,6 @@ class Lexer:
                         errors.append(error)
 
                 elif self.current_char and (self.current_char.isdigit() or self.current_char == '.'):
-                    # Now we handle digits or a leading '.'
                     token, error = self.make_numeral_decimal()
 
                     if token:
@@ -2105,7 +2104,6 @@ class Lexer:
                 return None, ExceedDecimalError(pos_start, self.pos, f"{num_str}")
             else:
                 return Tokens(TT_FLOAT_LITERAL, str(float(num_str)), pos_start, self.pos), None
-
 
 
     def make_missive(self):
