@@ -1,6 +1,6 @@
 Embark() {
     Veracity isPure = Pure;
 				Emit("%v", isPure);
-}
 
 Embark()
+}

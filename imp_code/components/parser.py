@@ -1389,12 +1389,10 @@ class Parser:
         self.advance()
         fmt = StringLiteral(token.value)
 
-        # Parse memory address
         memory_addr_root = self.parse_memory_address()
         if isinstance(memory_addr_root, InvalidSyntaxError):
             return memory_addr_root
 
-        # Collect addresses into a list
         memory_addresses = []
 
         def collect_addresses(node):
@@ -1415,13 +1413,6 @@ class Parser:
         return InputStatement(fmt, memory_addresses)
 
     def parse_memory_address(self):
-        if self.current_token.type != TT_COMMA:
-            return InvalidSyntaxError(
-                self.current_token.pos_start,
-                self.current_token.pos_end,
-                "Expected memory address"
-            )
-
         comma = self.expect(TT_COMMA)
         if isinstance(comma, InvalidSyntaxError):
             self.errors.append(comma)
@@ -1447,16 +1438,15 @@ class Parser:
         return result
 
     def parse_memory_address_continue(self):
-        if self.current_token.type != TT_ADDRESS:
-            return InvalidSyntaxError(
-                self.current_token.position,
-                f"Expected {TT_ADDRESS}, but found {self.current_token.type}"
-            )
+        address = self.expect(TT_ADDRESS)
+        if isinstance(address, InvalidSyntaxError):
+            self.errors.append(address)
         self.advance()
 
         if self.current_token.type != TT_IDENTIFIER:
             return InvalidSyntaxError(
-                self.current_token.position,
+                self.current_token.pos_start,
+                self.current_token.pos_end,
                 f"Expected identifier after {TT_ADDRESS}, but found {self.current_token.type}"
             )
 
@@ -1476,7 +1466,7 @@ class Parser:
 
                 if self.current_token.type != TT_RBRACKET:
                     return InvalidSyntaxError(
-                        self.current_token.position,
+                        self.current_token.pos,
                         f"Expected {TT_RBRACKET}, but found {self.current_token.type}"
                     )
 
