@@ -1,13 +1,13 @@
 Embark() {
   // Variable declarations
-  Numeral num = 0;
+  Numeral num, result = 0;
   Numeral originalNum = 0;
   Numeral remainder = 0;
   Numeral result = 0;
   
   // Get input from user
   Emit("Enter a number: ");
-  Seek("%d", num);
+  Seek("%d", &num);
   
   // Store original number
   originalNum = num;

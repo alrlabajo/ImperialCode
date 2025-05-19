@@ -148,7 +148,8 @@ class Parser:
         elif tok == TT_TERMINATE:
             return None
 
-        self.errors.append(InvalidSyntaxError(
+        else:
+            self.errors.append(InvalidSyntaxError(
             self.current_token.pos_start,
             self.current_token.pos_end,
             f"Expected {TT_EQUAL}, {TT_LBRACKET}, {TT_COMMA}, or {TT_TERMINATE}"
@@ -181,12 +182,13 @@ class Parser:
         elif self.current_token and self.current_token.type == TT_COMMA:
             tail = self.parse_declare_tail()
 
-        elif self.current_token and self.current_token.type != TT_TERMINATE:
+        if self.current_token and self.current_token.type not in (TT_EQUAL, TT_COMMA, TT_LBRACKET, TT_TERMINATE):
             self.errors.append(InvalidSyntaxError(
                 self.current_token.pos_start,
                 self.current_token.pos_end,
-                f"Expected {TT_EQUAL}, {TT_COMMA}, {TT_LBRACKET}, but found {self.current_token.type}"
+                f"Expected {TT_EQUAL}, {TT_COMMA}, {TT_LBRACKET}, or {TT_TERMINATE} but found {self.current_token.type}"
             ))
+            return None
 
         return VariableDeclaration(data_type, identifier, dimensions, assignment, tail)
 
@@ -1324,7 +1326,7 @@ class Parser:
         return InvalidSyntaxError(
             self.current_token.pos_start,
             self.current_token.pos_end,
-            f"Expected {TT_IDENTIFIER}, {TT_INT_LITERAL}, {TT_FLOAT_LITERAL}, {TT_CHAR_LITERAL}, {TT_STRING_LITERAL}, {TT_TRUE}, {TT_FALSE} or {TT_FORMATSPEC} enclosed in double quotes"
+            f"Expected {TT_IDENTIFIER}, {TT_INT_LITERAL}, {TT_FLOAT_LITERAL}, {TT_CHAR_LITERAL}, {TT_STRING_LITERAL}, {TT_TRUE}, {TT_FALSE} or {TT_FORMATSPEC} "
         )
 
     def parse_data_storage(self):
@@ -1366,11 +1368,9 @@ class Parser:
         string = self.expect(TT_STRING_LITERAL)
         if isinstance(string, InvalidSyntaxError):
             self.errors.append(string)
-        self.advance()
-
-        token = self.current_token
-        self.advance()
-        fmt = StringLiteral(token.value)
+            fmt = None
+        else:
+            fmt = StringLiteral(string.value)
 
         memory_addr_root = self.parse_memory_address()
         if isinstance(memory_addr_root, InvalidSyntaxError):
@@ -1424,7 +1424,6 @@ class Parser:
         address = self.expect(TT_ADDRESS)
         if isinstance(address, InvalidSyntaxError):
             self.errors.append(address)
-        self.advance()
 
         if self.current_token.type != TT_IDENTIFIER:
             return InvalidSyntaxError(
