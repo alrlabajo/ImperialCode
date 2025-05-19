@@ -6,7 +6,7 @@ Embark() {
     Numeral isNegative = 0;
     
     Emit("Enter a decimal number: ");
-    Seek("%d", &decimal);
+    Seek(, &decimal);
 
     Thou (decimal < 0) {
         isNegative = 1;

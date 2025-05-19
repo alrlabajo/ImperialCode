@@ -87,7 +87,7 @@ class Parser:
             self.errors.append(InvalidSyntaxError(
             self.current_token.pos_start,
             self.current_token.pos_end, "Embark already declared"))
-        
+
         global_decls_after = self.parse_global()
 
 
@@ -821,6 +821,16 @@ class Parser:
         return statements
 
     def parse_statement(self):
+        if self.current_token.type == TT_MAIN:
+            error = InvalidSyntaxError(
+                self.current_token.pos_start,
+                self.current_token.pos_end,
+                "Embark cannot be declared inside Embark"
+            )
+            self.errors.append(error)
+            self.advance()
+            return error
+
         if self.current_token.type in (TT_INT, TT_FLOAT, TT_CHAR, TT_STRING, TT_BOOL, TT_CONST):
             stmt = self.parse_declare()
             if isinstance(stmt, InvalidSyntaxError):
@@ -1317,31 +1327,6 @@ class Parser:
             f"Expected {TT_IDENTIFIER}, {TT_INT_LITERAL}, {TT_FLOAT_LITERAL}, {TT_CHAR_LITERAL}, {TT_STRING_LITERAL}, {TT_TRUE}, {TT_FALSE} or {TT_FORMATSPEC} enclosed in double quotes"
         )
 
-
-    # def parse_emit_value(self):
-    #     if self.current_token.type == TT_STRING_LITERAL:
-    #         token = self.current_token
-    #         self.advance()
-    #         inner = token.value.strip('"').strip("'")
-    #         valid_formats = ['%d', '%s', '%f', '%c', '%v']
-    #         if inner not in valid_formats:
-    #             error = InvalidSyntaxError(
-    #                 token.pos_start,
-    #                 token.pos_end,
-    #                 f"Invalid format specifier: '{inner}'. Expected one of: {', '.join(valid_formats)}"
-    #             )
-    #             self.errors.append(error)
-    #             return error
-    #         return StringLiteral(token.value)
-    #     else:
-    #         error = InvalidSyntaxError(
-    #             self.current_token.pos_start,
-    #             self.current_token.pos_end,
-    #             "Expected a format specifier string literal"
-    #         )
-    #         self.errors.append(error)
-    #         return error
-
     def parse_data_storage(self):
         if self.current_token.type == TT_COMMA:
             self.expect(TT_COMMA)
@@ -1378,12 +1363,10 @@ class Parser:
         if isinstance(lpar, InvalidSyntaxError):
             self.errors.append(lpar)
 
-        if self.current_token.type != TT_STRING_LITERAL:
-            return InvalidSyntaxError(
-                self.current_token.pos_start,
-                self.current_token.pos_end,
-                "Expected format specifier"
-            )
+        string = self.expect(TT_STRING_LITERAL)
+        if isinstance(string, InvalidSyntaxError):
+            self.errors.append(string)
+        self.advance()
 
         token = self.current_token
         self.advance()
