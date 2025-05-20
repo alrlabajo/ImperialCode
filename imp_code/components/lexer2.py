@@ -2089,14 +2089,12 @@ class Lexer:
             self.advance()
 
         if dot_count == 0:
-            # Handle integer literals
             if len(num_str.lstrip('-')) > INT_LIM:
                 truncated_num = num_str[:INT_LIM]
                 return None, ExceedNumeralError(pos_start, self.pos, f"{truncated_num}")
             else:
                 return Tokens(TT_INT_LITERAL, str(int(num_str)), pos_start, self.pos), None
         else:
-            # Handle decimal literals
             if num_str[0] == '.' and num_str[-1] == '.':
                 return None, ExceedDecimalError(
                     pos_start,
@@ -2104,7 +2102,11 @@ class Lexer:
                     f"Numeric literal cannot both start and end with a decimal point: '{num_str}'"
                 )
             if left_digits > FLOAT_LIM or right_digits > FLOAT_PRECISION_LIM:
-                return None, ExceedDecimalError(pos_start, self.pos, f"{num_str}")
+                left = num_str.split('.')[0][:FLOAT_LIM]
+                right = num_str.split('.')[1][:FLOAT_PRECISION_LIM] if '.' in num_str else ''
+                truncated = f"{left}.{right}" if right else left
+
+                return None, ExceedDecimalError(pos_start, self.pos, f"{truncated}")
             else:
                 return Tokens(TT_FLOAT_LITERAL, str(float(num_str)), pos_start, self.pos), None
 

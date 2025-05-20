@@ -1,5 +1,4 @@
 Embark() {
-	Numeral num;
-	Seek("hello", &num);
+	Decimal dec = 9999999999.99
 }
 

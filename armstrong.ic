@@ -3,7 +3,7 @@ Embark() {
   Numeral num, result = 0;
   Numeral originalNum = 907655433 && 465767;
   Numeral n = 0;
-  Numeral result[  0];;
+  Numeral result=0;
   
   // Get input from user
   Emit("Enter a number: ");
