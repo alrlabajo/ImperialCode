@@ -1,0 +1,4 @@
+Embark() {
+ Numeral x = 2 + 3;
+ Emit("%d", x);
+}

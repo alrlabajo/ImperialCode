@@ -1,5 +1,5 @@
 Embark() {
 	Numeral num;
-	Seek("%d", &num);
-	Emit(, num);
+	Seek("hello", &num);
 }
+

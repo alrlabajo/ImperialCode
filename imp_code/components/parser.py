@@ -15,12 +15,10 @@ class Parser:
         self.advance()
 
     def advance(self):
-        """Move to the next token."""
         self.index += 1
         self.current_token = self.tokens[self.index] if self.index < len(self.tokens) else None
 
     def peek(self, offset=1):
-        """Peek at the token at the given offset."""
         peek_index = self.index + offset
         return self.tokens[peek_index] if peek_index < len(self.tokens) else None
 
@@ -186,7 +184,7 @@ class Parser:
             self.errors.append(InvalidSyntaxError(
                 self.current_token.pos_start,
                 self.current_token.pos_end,
-                f"Expected {TT_EQUAL}, {TT_COMMA}, {TT_LBRACKET}, or {TT_TERMINATE} but found {self.current_token.type}"
+                f"Expected {TT_EQUAL}, {TT_COMMA}, {TT_LBRACKET}, {TT_TERMINATE}, but found {self.current_token.type}"
             ))
             return None
 
@@ -656,14 +654,13 @@ class Parser:
             self.errors.append(InvalidSyntaxError(
                 self.current_token.pos_start,
                 self.current_token.pos_end,
-                f"Expected {TT_IDENTIFIER}, {TT_INT_LITERAL}, {TT_FLOAT_LITERAL}, {TT_CHAR_LITERAL}, {TT_STRING_LITERAL},{TT_LPAREN}, or {TT_LBRACKET}, but found {self.current_token.type}"
+                f"Expected {TT_IDENTIFIER}, {TT_INT_LITERAL}, {TT_FLOAT_LITERAL}, {TT_CHAR_LITERAL}, {TT_STRING_LITERAL}, {TT_LPAREN}, but found {self.current_token.type}"
             ))
             return None
 
     def _check_unexpected_token_after_expression(self):
         if self.current_token and self.current_token.type in (
-            TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_CHAR_LITERAL,
-            TT_STRING_LITERAL, TT_IDENTIFIER
+            TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_IDENTIFIER
         ):
             self.errors.append(InvalidSyntaxError(
                 self.current_token.pos_start,
@@ -1370,6 +1367,12 @@ class Parser:
             self.errors.append(string)
             fmt = None
         else:
+            if "%" not in string.value:
+                self.errors.append(InvalidSyntaxError(
+                    string.pos_start,
+                    string.pos_end,
+                    "Expected format specifier"
+                ))
             fmt = StringLiteral(string.value)
 
         memory_addr_root = self.parse_memory_address()
@@ -1377,7 +1380,6 @@ class Parser:
             return memory_addr_root
 
         memory_addresses = []
-
         def collect_addresses(node):
             if isinstance(node, list):
                 for item in node:

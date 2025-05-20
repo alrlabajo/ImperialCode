@@ -2089,11 +2089,14 @@ class Lexer:
             self.advance()
 
         if dot_count == 0:
-            if len(num_str) > INT_LIM:
-                return None, ExceedNumeralError(pos_start, self.pos, f"{num_str}")
+            # Handle integer literals
+            if len(num_str.lstrip('-')) > INT_LIM:
+                truncated_num = num_str[:INT_LIM]
+                return None, ExceedNumeralError(pos_start, self.pos, f"{truncated_num}")
             else:
                 return Tokens(TT_INT_LITERAL, str(int(num_str)), pos_start, self.pos), None
         else:
+            # Handle decimal literals
             if num_str[0] == '.' and num_str[-1] == '.':
                 return None, ExceedDecimalError(
                     pos_start,
@@ -2104,7 +2107,6 @@ class Lexer:
                 return None, ExceedDecimalError(pos_start, self.pos, f"{num_str}")
             else:
                 return Tokens(TT_FLOAT_LITERAL, str(float(num_str)), pos_start, self.pos), None
-
 
     def make_missive(self):
         pos_start = self.pos
