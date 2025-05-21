@@ -660,7 +660,7 @@ class Parser:
 
     def _check_unexpected_token_after_expression(self):
         if self.current_token and self.current_token.type in (
-            TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_IDENTIFIER
+            TT_INT_LITERAL, TT_FLOAT_LITERAL, TT_IDENTIFIER, TT_EQUAL
         ):
             self.errors.append(InvalidSyntaxError(
                 self.current_token.pos_start,
@@ -1186,8 +1186,15 @@ class Parser:
         if isinstance(semi, InvalidSyntaxError):
             self.errors.append(semi)
         update = None
-        if self.current_token and self.current_token.type == TT_IDENTIFIER:
-            update = self.parse_update_expression()
+        if self.current_token:
+            if self.current_token.type == TT_IDENTIFIER:
+                update = self.parse_update_expression()
+            else:
+                self.errors.append(InvalidSyntaxError(
+                    self.current_token.pos_start,
+                    self.current_token.pos_end,
+                    f"Expected {TT_IDENTIFIER}, but found {self.current_token.type}"
+                ))
         rpar = self.expect(TT_RPAREN)
         if isinstance(rpar, InvalidSyntaxError):
             self.errors.append(rpar)
