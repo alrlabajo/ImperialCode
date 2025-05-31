@@ -2069,14 +2069,12 @@ class Lexer:
         if is_negative:
             num_str += '-'
 
+        start_idx = self.pos.idx
+
         while self.current_char is not None and (self.current_char.isdigit() or self.current_char == '.'):
             if self.current_char == '.':
                 if dot_count == 1:
-                    return None, ExceedDecimalError(
-                        pos_start,
-                        self.pos,
-                        f"Multiple decimal points in numeric literal: '{num_str + self.current_char}'"
-                    )
+                    break
                 dot_count += 1
                 is_left = False
             else:
@@ -2090,23 +2088,19 @@ class Lexer:
 
         if dot_count == 0:
             if len(num_str.lstrip('-')) > INT_LIM:
-                truncated_num = num_str[:INT_LIM]
-                return None, ExceedNumeralError(pos_start, self.pos, f"{truncated_num}")
+                self.pos.idx = start_idx + INT_LIM
+                self.current_char = self.text[self.pos.idx] if self.pos.idx < len(self.text) else None
+                return None, ExceedNumeralError(pos_start, self.pos, num_str[:INT_LIM])
             else:
                 return Tokens(TT_INT_LITERAL, str(int(num_str)), pos_start, self.pos), None
         else:
-            if num_str[0] == '.' and num_str[-1] == '.':
-                return None, ExceedDecimalError(
-                    pos_start,
-                    self.pos,
-                    f"Numeric literal cannot both start and end with a decimal point: '{num_str}'"
-                )
             if left_digits > FLOAT_LIM or right_digits > FLOAT_PRECISION_LIM:
-                left = num_str.split('.')[0][:FLOAT_LIM]
-                right = num_str.split('.')[1][:FLOAT_PRECISION_LIM] if '.' in num_str else ''
-                truncated = f"{left}.{right}" if right else left
-
-                return None, ExceedDecimalError(pos_start, self.pos, f"{truncated}")
+                left = num_str.split('.')[0]
+                right = num_str.split('.')[1]
+                truncated = f"{left[:FLOAT_LIM]}.{right[:FLOAT_PRECISION_LIM]}"
+                self.pos.idx = start_idx + len(truncated)
+                self.current_char = self.text[self.pos.idx] if self.pos.idx < len(self.text) else None
+                return None, ExceedDecimalError(pos_start, self.pos, truncated)
             else:
                 return Tokens(TT_FLOAT_LITERAL, str(float(num_str)), pos_start, self.pos), None
 
@@ -2170,16 +2164,19 @@ class Lexer:
 
     def make_identifier(self):
         pos_start = self.pos
-        identifier = ""
+        identifier = ''
+        start_idx = self.pos.idx
 
         while self.current_char is not None and (self.current_char.isalpha() or self.current_char.isdigit() or self.current_char == "_"):
             identifier += self.current_char
             self.advance()
 
         if len(identifier) > ID_LIM:
-                return None, IdentifierLimitError(pos_start, self.pos, f'"{identifier}"')
+            self.pos.idx = start_idx + ID_LIM
+            self.current_char = self.text[self.pos.idx] if self.pos.idx < len(self.text) else None
+            return None, IdentifierLimitError(pos_start, self.pos, f'"{identifier[:ID_LIM]}"')
 
-        return Tokens(TT_IDENTIFIER, identifier,  pos_start, self.pos), None
+        return Tokens(TT_IDENTIFIER, identifier, pos_start, self.pos), None
 
     def make_slinecom(self):
         sline = "//"
