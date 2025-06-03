@@ -111,13 +111,14 @@ class Lexer:
                     token, error = self.make_numeral_decimal()
 
                     if token:
-                        delim_error = self.check_delim(token)
-                        if delim_error:
-                            errors.append(delim_error)
+                        error = self.check_delim(token)
+                        if error:
+                            errors.append(error)
                         else:
                             tokens.append(token)
-                    if error:
+                    else:
                         errors.append(error)
+                        
 
                 elif self.current_char.islower():
                     token, error = self.make_identifier()
@@ -130,7 +131,6 @@ class Lexer:
                             tokens.append(token)
                     else:
                         errors.append(error)
-
 
                 elif self.current_char == 'A': # Act
                     self.state = '1'
@@ -2090,6 +2090,7 @@ class Lexer:
             if len(num_str.lstrip('-')) > INT_LIM:
                 self.pos.idx = start_idx + INT_LIM
                 self.current_char = self.text[self.pos.idx] if self.pos.idx < len(self.text) else None
+                print(num_str)
                 return None, ExceedNumeralError(pos_start, self.pos, num_str[:INT_LIM])
             else:
                 return Tokens(TT_INT_LITERAL, str(int(num_str)), pos_start, self.pos), None
